@@ -1,7 +1,7 @@
 export function DashboardPreview() {
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-md"
+      className="overflow-hidden rounded-xl bg-white"
       aria-hidden
     >
       <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50 px-4 py-3">
