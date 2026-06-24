@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, IBM_Plex_Sans, Instrument_Serif, Syne } from "next/font/google";
+import { IBM_Plex_Sans, Inter, Syne } from "next/font/google";
 import { WalletProvider } from "@/context/WalletProvider";
 import "./globals.css";
 import "./landing.css";
@@ -16,20 +16,14 @@ const ibmPlex = IBM_Plex_Sans({
   weight: ["400", "500", "600"],
 });
 
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  subsets: ["latin"],
-  weight: ["400"],
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Stolla — Stellar Community Governance",
+  title: "Stolla | Stellar Community Governance",
   description:
     "NFT-gated DAO voting for Stellar project communities on testnet.",
 };
@@ -42,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${ibmPlex.variable} ${instrumentSerif.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${syne.variable} ${ibmPlex.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-white text-zinc-900">
         <WalletProvider>{children}</WalletProvider>

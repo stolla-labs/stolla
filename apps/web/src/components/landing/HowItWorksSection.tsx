@@ -1,9 +1,10 @@
 import Image from "next/image";
+import { LandingSectionHeader } from "@/components/landing/LandingSectionHeader";
 import { LANDING_IMAGES } from "@/lib/landingImages";
 
 const STEPS = [
   {
-    step: "01",
+    step: "1",
     title: "Launch collection",
     description:
       "Deploy a community NFT contract with name, symbol, and metadata on Stellar testnet via Soroban.",
@@ -11,7 +12,7 @@ const STEPS = [
     imageAlt: "Rocket launching from a smart contract cube",
   },
   {
-    step: "02",
+    step: "2",
     title: "Mint members",
     description:
       "Issue membership NFTs with per-token IPFS metadata URIs. Each token is a governance identity.",
@@ -19,7 +20,7 @@ const STEPS = [
     imageAlt: "Membership NFT badge being minted",
   },
   {
-    step: "03",
+    step: "3",
     title: "Delegate power",
     description:
       "Holders activate voting rights by delegating to themselves on-chain. One NFT, one vote.",
@@ -27,7 +28,7 @@ const STEPS = [
     imageAlt: "Delegating voting power to a wallet",
   },
   {
-    step: "04",
+    step: "4",
     title: "Govern together",
     description:
       "Create proposals, cast votes, and track outcomes transparently. Signaling votes enforced by the Governor.",
@@ -39,36 +40,29 @@ const STEPS = [
 export function HowItWorksSection() {
   return (
     <section id="how-it-works" className="landing-section">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-12 max-w-2xl">
-          <p className="landing-eyebrow">How it works</p>
-          <h2 className="landing-section-title">
-            Four steps from deploy to first vote
-          </h2>
-          <p className="mt-4 text-[var(--lp-text-muted)]">
-            No accounts, no passwords. Just your Stellar wallet and a few
-            signed transactions.
-          </p>
-        </div>
+      <div className="landing-container">
+        <LandingSectionHeader
+          eyebrow="How it works"
+          title="Four steps from deploy to first vote"
+          description="No accounts, no passwords. Just your Stellar wallet and a few signed transactions."
+        />
 
-        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="landing-steps-grid">
           {STEPS.map((item) => (
-            <li key={item.step} className="landing-step-card lp-card overflow-hidden">
+            <li key={item.step} className="landing-step-card lp-card">
               <figure className="landing-step-image">
                 <Image
                   src={item.image}
                   alt={item.imageAlt}
                   width={400}
-                  height={280}
+                  height={250}
                   className="h-full w-full object-cover"
                 />
               </figure>
-              <div className="p-5">
+              <div className="landing-step-body">
                 <span className="landing-step-number">{item.step}</span>
-                <h3 className="mt-4 text-lg">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--lp-text-muted)]">
-                  {item.description}
-                </p>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
               </div>
             </li>
           ))}

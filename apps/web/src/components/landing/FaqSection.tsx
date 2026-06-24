@@ -1,3 +1,9 @@
+"use client";
+
+import { useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
+import { LandingSectionHeader } from "@/components/landing/LandingSectionHeader";
+
 const FAQ = [
   {
     question: "Do I need an account to use Stolla?",
@@ -17,43 +23,90 @@ const FAQ = [
   {
     question: "What can proposals do in the MVP?",
     answer:
-      "MVP proposals are signaling votes with empty on-chain targets. They record community decisions transparently; timelock and treasury execution are planned for later.",
+      "MVP proposals are signaling votes with empty on-chain targets. They record community decisions transparently. Timelock and treasury execution are planned for later.",
   },
   {
     question: "How is NFT metadata stored?",
     answer:
-      "Each token stores an IPFS metadata URI on-chain (SEP-0050 compatible). In the MVP you paste the URI when minting; an upload helper may come later.",
+      "Each token stores an IPFS metadata URI on-chain (SEP-0050 compatible). In the MVP you paste the URI when minting. An upload helper may come later.",
   },
 ] as const;
 
 export function FaqSection() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const triggerRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      triggerRefs.current[index + 1]?.focus();
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      triggerRefs.current[index - 1]?.focus();
+    }
+  }
+
   return (
     <section id="faq" className="landing-section">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-12 max-w-2xl">
-          <p className="landing-eyebrow">FAQ</p>
-          <h2 className="landing-section-title">Common questions</h2>
-          <p className="mt-4 text-[var(--lp-text-muted)]">
-            Quick answers before you jump into the app.
-          </p>
-        </div>
+      <div className="landing-container landing-container-narrow">
+        <LandingSectionHeader
+          eyebrow="FAQ"
+          title="Common questions"
+          description="Quick answers before you jump into the app."
+          align="center"
+        />
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          {FAQ.map((item) => (
-            <details key={item.question} className="landing-faq-item lp-card group">
-              <summary className="cursor-pointer list-none p-5 font-medium marker:content-none">
-                <span className="flex items-start justify-between gap-3">
-                  {item.question}
-                  <span className="landing-faq-chevron" aria-hidden="true">
-                    +
-                  </span>
-                </span>
-              </summary>
-              <p className="border-t border-[var(--lp-border)] px-5 pb-5 pt-4 text-sm leading-relaxed text-[var(--lp-text-muted)]">
-                {item.answer}
-              </p>
-            </details>
-          ))}
+        <div className="landing-faq-list">
+          {FAQ.map((item, index) => {
+            const isOpen = openIndex === index;
+            const panelId = `faq-panel-${index}`;
+            const buttonId = `faq-button-${index}`;
+
+            return (
+              <article
+                key={item.question}
+                className={`landing-faq-item lp-card ${isOpen ? "landing-faq-item-open" : ""}`}
+              >
+                <h3>
+                  <button
+                    id={buttonId}
+                    ref={(el) => {
+                      triggerRefs.current[index] = el;
+                    }}
+                    type="button"
+                    className="landing-faq-trigger"
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                    onKeyDown={(event) => handleKeyDown(event, index)}
+                  >
+                    <span>{item.question}</span>
+                    <span className="landing-faq-chevron" aria-hidden="true">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path
+                          d="M2.5 4.5L6 8L9.5 4.5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                </h3>
+                <div
+                  id={panelId}
+                  role="region"
+                  aria-labelledby={buttonId}
+                  hidden={!isOpen}
+                  className="landing-faq-panel"
+                >
+                  <p>{item.answer}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

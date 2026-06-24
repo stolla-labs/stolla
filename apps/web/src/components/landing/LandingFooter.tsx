@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
+import { scrollToSection } from "@/lib/scroll";
 
 const PRODUCT_LINKS = [
   { href: "/community", label: "Community" },
   { href: "/proposals", label: "Proposals" },
   { section: "features", label: "Features" },
   { section: "showcase", label: "Showcase" },
+  { section: "how-it-works", label: "How it works" },
   { section: "faq", label: "FAQ" },
 ] as const;
 
@@ -27,23 +31,26 @@ export function LandingFooter() {
 
   return (
     <footer className="landing-footer">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
+      <div className="landing-container py-14 sm:py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <Link href="/" className="block text-left transition-opacity hover:opacity-85">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
-                Stolla
-              </p>
-              <p className="mt-1 font-[family-name:var(--lp-font-display)] text-2xl">
-                Community Governance
-              </p>
+            <Link href="/" className="flex items-center gap-2.5">
+              <span className="landing-logo-mark" aria-hidden="true">
+                S
+              </span>
+              <span>
+                <p className="text-sm font-semibold">Stolla</p>
+                <p className="text-xs text-[var(--lp-text-muted)]">
+                  Community Governance
+                </p>
+              </span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--lp-text-muted)]">
               NFT-gated DAO voting for Stellar projects. Deploy membership
               collections, delegate voting power, and govern transparently on
               testnet.
             </p>
-            <div className="mt-6">
+            <div className="mt-5">
               <LinkButton href="/community">Launch app</LinkButton>
             </div>
           </div>
@@ -58,9 +65,13 @@ export function LandingFooter() {
                       {link.label}
                     </Link>
                   ) : (
-                    <a href={`/#${link.section}`} className="landing-footer-link">
+                    <button
+                      type="button"
+                      className="landing-footer-link"
+                      onClick={() => scrollToSection(link.section)}
+                    >
                       {link.label}
-                    </a>
+                    </button>
                   )}
                 </li>
               ))}
@@ -85,12 +96,14 @@ export function LandingFooter() {
             </ul>
             <div className="landing-footer-notice">
               <p className="font-medium text-[var(--lp-text)]">Stellar Testnet</p>
-              <p className="mt-1">Test XLM only. Signaling votes — no mainnet funds.</p>
+              <p className="mt-0.5">
+                Test XLM only. Signaling votes only. No mainnet funds.
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="landing-footer-bottom mt-12 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="landing-footer-bottom mt-10 flex flex-col gap-3 pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-[var(--lp-text-muted)]">
             © {year} Stolla. Open source under MIT.
           </p>

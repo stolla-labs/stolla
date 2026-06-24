@@ -4,11 +4,12 @@
 
 Before editing `/`, read **`docs/landing-page.md`**.
 
-The landing page uses a **cosmic editorial** dark-glass design. It is separate from the app dashboard. Key rules:
+The landing page uses a **professional light** enterprise SaaS design. It is separate from the app dashboard. Key rules:
 
 - Section order: Hero → Features → Showcase → How it works → Technology → FAQ → CTA
 - Landing header has section anchor nav + "Enter app", not app tabs
-- Use `landing.css` tokens (`.lp-*`, `.landing-*`) under `.landing-root` — no neo-brutalist borders or hard shadows
+- Use `landing.css` tokens (`.lp-*`, `.landing-*`) under `.landing-root`. Restrained, no decorative gradients or animated marquees.
+- No em dashes in landing copy.
 
 ## App routes
 

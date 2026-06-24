@@ -13,9 +13,7 @@ type LinkButtonProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 };
 
 function variantClass(variant: ButtonVariant) {
-  return variant === "primary"
-    ? "lp-btn px-5 py-3 min-h-11"
-    : "lp-btn-ghost px-5 py-3 min-h-11";
+  return variant === "primary" ? "lp-btn" : "lp-btn-ghost";
 }
 
 export function Button({

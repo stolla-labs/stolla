@@ -12,8 +12,8 @@ export const LANDING_IMAGES = {
     badge: "/images/showcase-badge.jpg",
   },
   thumbs: {
-    treasury: "/images/thumb-treasury.jpg",
-    brand: "/images/thumb-brand.jpg",
-    badge: "/images/thumb-badge.jpg",
+    treasury: "/images/showcase-treasury.jpg",
+    brand: "/images/showcase-brand.jpg",
+    badge: "/images/showcase-badge.jpg",
   },
 } as const;
