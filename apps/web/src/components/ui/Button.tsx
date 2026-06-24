@@ -14,8 +14,8 @@ type LinkButtonProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 function variantClass(variant: ButtonVariant) {
   return variant === "primary"
-    ? "neo-button px-4 py-3 min-h-11"
-    : "neo-button-ghost px-4 py-3 min-h-11";
+    ? "lp-btn px-5 py-3 min-h-11"
+    : "lp-btn-ghost px-5 py-3 min-h-11";
 }
 
 export function Button({

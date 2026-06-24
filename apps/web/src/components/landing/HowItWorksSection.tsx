@@ -38,22 +38,22 @@ const STEPS = [
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="landing-section landing-section-alt">
+    <section id="how-it-works" className="landing-section">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-10 max-w-2xl">
+        <div className="mb-12 max-w-2xl">
           <p className="landing-eyebrow">How it works</p>
-          <h2 className="font-[family-name:var(--font-display)] text-3xl font-black sm:text-4xl">
+          <h2 className="landing-section-title">
             Four steps from deploy to first vote
           </h2>
-          <p className="mt-3 text-[var(--ink-muted)]">
+          <p className="mt-4 text-[var(--lp-text-muted)]">
             No accounts, no passwords. Just your Stellar wallet and a few
             signed transactions.
           </p>
         </div>
 
-        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((item) => (
-            <li key={item.step} className="landing-step-card neo-card overflow-hidden">
+            <li key={item.step} className="landing-step-card lp-card overflow-hidden">
               <figure className="landing-step-image">
                 <Image
                   src={item.image}
@@ -65,10 +65,8 @@ export function HowItWorksSection() {
               </figure>
               <div className="p-5">
                 <span className="landing-step-number">{item.step}</span>
-                <h3 className="mt-4 font-[family-name:var(--font-display)] text-xl font-black">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-[var(--ink-muted)]">
+                <h3 className="mt-4 text-lg">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--lp-text-muted)]">
                   {item.description}
                 </p>
               </div>

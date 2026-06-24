@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import { scrollToSection } from "@/lib/scroll";
 
 const SECTION_LINKS = [
@@ -14,7 +13,7 @@ const SECTION_LINKS = [
 
 export function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-[var(--border)] bg-[var(--surface)]">
+    <header className="landing-header">
       <div className="landing-header-inner mx-auto max-w-6xl px-4 py-4">
         <button
           type="button"
@@ -22,28 +21,29 @@ export function LandingHeader() {
           className="landing-header-brand text-left transition-opacity hover:opacity-80"
           aria-label="Scroll to top"
         >
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
             Stolla
           </p>
-          <p className="text-xl font-black sm:text-2xl">Community Governance</p>
+          <p className="font-[family-name:var(--lp-font-display)] text-xl sm:text-2xl">
+            Community Governance
+          </p>
         </button>
 
         <nav className="landing-header-nav" aria-label="Landing sections">
           {SECTION_LINKS.map((link) => (
-            <Button
+            <button
               key={link.id}
               type="button"
-              variant="ghost"
-              className="landing-nav-btn shrink-0"
+              className="landing-nav-link"
               onClick={() => scrollToSection(link.id)}
             >
               {link.label}
-            </Button>
+            </button>
           ))}
         </nav>
 
         <div className="landing-header-actions">
-          <Link href="/community" className="neo-button w-full px-4 py-3 min-h-11 sm:w-auto">
+          <Link href="/community" className="lp-btn w-full px-5 py-3 min-h-11 sm:w-auto">
             Enter app
           </Link>
         </div>

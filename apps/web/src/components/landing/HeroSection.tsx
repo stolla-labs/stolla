@@ -27,15 +27,18 @@ const PREVIEW_ITEMS = [
 export function HeroSection() {
   return (
     <section className="landing-hero">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:py-16 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-20">
-        <div className="space-y-6">
-          <p className="landing-eyebrow">Community governance on Stellar</p>
-          <h1 className="font-[family-name:var(--font-display)] text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+      <div className="landing-hero-grid mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12 lg:py-28">
+        <div className="space-y-7">
+          <p className="landing-hero-badge">
+            <span className="landing-hero-badge-dot" aria-hidden="true" />
+            Community governance on Stellar
+          </p>
+          <h1 className="landing-hero-title">
             Launch your community.
             <br />
-            Govern on-chain.
+            <em>Govern on-chain.</em>
           </h1>
-          <p className="max-w-xl text-base text-[var(--ink-muted)] sm:text-lg">
+          <p className="max-w-xl text-base leading-relaxed text-[var(--lp-text-muted)] sm:text-lg">
             Stolla gives Stellar projects NFT membership collections and
             transparent DAO voting. Deploy contracts, mint members, delegate
             power, and vote — all from one dashboard.
@@ -63,7 +66,7 @@ export function HeroSection() {
         </div>
 
         <div className="space-y-4">
-          <figure className="landing-image-frame neo-card overflow-hidden">
+          <figure className="landing-image-frame lp-card overflow-hidden">
             <Image
               src={LANDING_IMAGES.hero}
               alt="Community members gathered for on-chain governance under a starry sky"
@@ -74,16 +77,16 @@ export function HeroSection() {
             />
           </figure>
 
-          <div className="landing-hero-panel neo-card p-4 sm:p-5">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[var(--accent)]">
+          <div className="landing-preview-panel p-4 sm:p-5">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lp-accent)]">
               Live governance preview
             </p>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {PREVIEW_ITEMS.map((item) => (
                 <PreviewRow key={item.title} {...item} />
               ))}
             </div>
-            <p className="mt-4 border-t-2 border-[var(--border)] pt-4 text-xs text-[var(--ink-muted)]">
+            <p className="mt-4 border-t border-[var(--lp-border)] pt-4 text-xs text-[var(--lp-text-muted)]">
               Proposal state and vote counts are read from Soroban contracts via
               RPC.
             </p>
@@ -114,15 +117,17 @@ function PreviewRow({
       <Image
         src={image}
         alt=""
-        width={56}
-        height={56}
+        width={48}
+        height={48}
         className="landing-preview-thumb"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-bold">{title}</p>
-        <p className="text-xs text-[var(--ink-muted)]">{votes}</p>
+        <p className="truncate text-sm font-medium">{title}</p>
+        <p className="text-xs text-[var(--lp-text-muted)]">{votes}</p>
       </div>
-      <span className="shrink-0 text-xs font-bold">{status}</span>
+      <span className="shrink-0 rounded-full border border-[var(--lp-border)] px-2 py-0.5 text-xs font-medium text-[var(--lp-accent)]">
+        {status}
+      </span>
     </div>
   );
 }

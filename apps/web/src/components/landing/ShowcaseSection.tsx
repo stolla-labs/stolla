@@ -28,15 +28,15 @@ const SHOWCASE_ITEMS = [
 
 export function ShowcaseSection() {
   return (
-    <section id="showcase" className="landing-section">
+    <section id="showcase" className="landing-section landing-section-alt">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+        <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-2xl">
             <p className="landing-eyebrow">Showcase</p>
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-black sm:text-4xl">
+            <h2 className="landing-section-title">
               What communities are voting on
             </h2>
-            <p className="mt-3 text-[var(--ink-muted)]">
+            <p className="mt-4 text-[var(--lp-text-muted)]">
               From treasury decisions to membership updates. Every proposal is
               an on-chain vote with transparent outcomes.
             </p>
@@ -46,13 +46,13 @@ export function ShowcaseSection() {
           </LinkButton>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {SHOWCASE_ITEMS.map((item) => (
             <article
               key={item.title}
-              className="landing-showcase-card neo-card overflow-hidden"
+              className="landing-showcase-card lp-card overflow-hidden"
             >
-              <figure className="landing-showcase-image">
+              <figure className="landing-showcase-image overflow-hidden">
                 <Image
                   src={item.image}
                   alt={item.imageAlt}
@@ -61,15 +61,13 @@ export function ShowcaseSection() {
                   className="h-full w-full object-cover"
                 />
               </figure>
-              <div className="p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent)]">
+              <div className="p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--lp-accent)]">
                   {item.category}
                 </p>
-                <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl font-black">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm">
-                  Status: <strong>{item.detail}</strong>
+                <h3 className="mt-2 text-xl">{item.title}</h3>
+                <p className="mt-2 text-sm text-[var(--lp-text-muted)]">
+                  {item.detail}
                 </p>
               </div>
             </article>

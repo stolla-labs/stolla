@@ -7,7 +7,7 @@ export default function LandingLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-[var(--paper)] text-[var(--ink)]">
+    <div className="landing-root min-h-screen">
       <LandingHeader />
       <main>{children}</main>
       <LandingFooter />

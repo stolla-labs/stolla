@@ -41,12 +41,12 @@ export function FeaturesSection() {
   return (
     <section id="features" className="landing-section">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-10 max-w-2xl">
+        <div className="mb-12 max-w-2xl">
           <p className="landing-eyebrow">Features</p>
-          <h2 className="font-[family-name:var(--font-display)] text-3xl font-black sm:text-4xl">
+          <h2 className="landing-section-title">
             Built for transparent community governance
           </h2>
-          <p className="mt-3 text-[var(--ink-muted)]">
+          <p className="mt-4 text-[var(--lp-text-muted)]">
             Stolla combines battle-tested contracts with a fast web experience on
             Stellar&apos;s low-fee ledger.
           </p>
@@ -56,15 +56,13 @@ export function FeaturesSection() {
           {FEATURES.map((feature) => (
             <article
               key={feature.title}
-              className="landing-feature-card neo-card p-5"
+              className="landing-feature-card lp-card p-6"
             >
               <span className="landing-feature-icon" aria-hidden="true">
                 {feature.icon}
               </span>
-              <h3 className="mt-4 font-[family-name:var(--font-display)] text-xl font-black">
-                {feature.title}
-              </h3>
-              <p className="mt-2 text-sm text-[var(--ink-muted)]">
+              <h3 className="mt-5 text-xl">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--lp-text-muted)]">
                 {feature.description}
               </p>
             </article>

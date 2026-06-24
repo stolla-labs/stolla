@@ -83,7 +83,7 @@ MVP proposals use empty targets (signaling votes only).
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Marketing landing (neo-brutalist; see `docs/landing-page.md`) |
+| `/` | Marketing landing (cosmic editorial; see `docs/landing-page.md`) |
 | `/community` | Collection info, mint form (IPFS URI) |
 | `/proposals` | Proposal list |
 | `/proposals/[id]` | Vote, delegate, proposal detail |

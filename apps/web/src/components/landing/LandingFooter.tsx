@@ -27,23 +27,23 @@ export function LandingFooter() {
 
   return (
     <footer className="landing-footer">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Link href="/" className="block text-left transition-opacity hover:opacity-85">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-muted)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--lp-accent)]">
                 Stolla
               </p>
-              <p className="mt-1 text-2xl font-black text-[var(--paper)]">
+              <p className="mt-1 font-[family-name:var(--lp-font-display)] text-2xl">
                 Community Governance
               </p>
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--paper-muted)]">
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--lp-text-muted)]">
               NFT-gated DAO voting for Stellar projects. Deploy membership
               collections, delegate voting power, and govern transparently on
               testnet.
             </p>
-            <div className="mt-5">
+            <div className="mt-6">
               <LinkButton href="/community">Launch app</LinkButton>
             </div>
           </div>
@@ -83,18 +83,18 @@ export function LandingFooter() {
                 </li>
               ))}
             </ul>
-            <div className="mt-6 border-2 border-[var(--paper-muted)] p-3 text-sm text-[var(--paper-muted)]">
-              <p className="font-bold text-[var(--paper)]">Stellar Testnet</p>
+            <div className="landing-footer-notice">
+              <p className="font-medium text-[var(--lp-text)]">Stellar Testnet</p>
               <p className="mt-1">Test XLM only. Signaling votes — no mainnet funds.</p>
             </div>
           </div>
         </div>
 
-        <div className="landing-footer-bottom mt-10 flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-[var(--paper-muted)]">
+        <div className="landing-footer-bottom mt-12 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[var(--lp-text-muted)]">
             © {year} Stolla. Open source under MIT.
           </p>
-          <p className="text-sm text-[var(--paper-muted)]">
+          <p className="text-sm text-[var(--lp-text-muted)]">
             Built with Soroban · OpenZeppelin · Next.js
           </p>
         </div>

@@ -4,11 +4,11 @@
 
 Before editing `/`, read **`docs/landing-page.md`**.
 
-The landing page uses a **neo-brutalist** design (same pattern as Licitor). It is separate from the app dashboard. Key rules:
+The landing page uses a **cosmic editorial** dark-glass design. It is separate from the app dashboard. Key rules:
 
 - Section order: Hero → Features → Showcase → How it works → Technology → FAQ → CTA
 - Landing header has section anchor nav + "Enter app", not app tabs
-- Use `landing.css` tokens and `.neo-*` classes — avoid generic dark-gradient SaaS heroes
+- Use `landing.css` tokens (`.lp-*`, `.landing-*`) under `.landing-root` — no neo-brutalist borders or hard shadows
 
 ## App routes
 

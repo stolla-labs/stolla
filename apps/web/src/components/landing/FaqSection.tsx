@@ -28,22 +28,20 @@ const FAQ = [
 
 export function FaqSection() {
   return (
-    <section id="faq" className="landing-section landing-section-alt">
+    <section id="faq" className="landing-section">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-10 max-w-2xl">
+        <div className="mb-12 max-w-2xl">
           <p className="landing-eyebrow">FAQ</p>
-          <h2 className="font-[family-name:var(--font-display)] text-3xl font-black sm:text-4xl">
-            Common questions
-          </h2>
-          <p className="mt-3 text-[var(--ink-muted)]">
+          <h2 className="landing-section-title">Common questions</h2>
+          <p className="mt-4 text-[var(--lp-text-muted)]">
             Quick answers before you jump into the app.
           </p>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
           {FAQ.map((item) => (
-            <details key={item.question} className="landing-faq-item neo-card group">
-              <summary className="cursor-pointer list-none p-4 font-bold marker:content-none sm:p-5">
+            <details key={item.question} className="landing-faq-item lp-card group">
+              <summary className="cursor-pointer list-none p-5 font-medium marker:content-none">
                 <span className="flex items-start justify-between gap-3">
                   {item.question}
                   <span className="landing-faq-chevron" aria-hidden="true">
@@ -51,7 +49,7 @@ export function FaqSection() {
                   </span>
                 </span>
               </summary>
-              <p className="border-t-2 border-[var(--border)] px-4 pb-4 text-sm text-[var(--ink-muted)] sm:px-5 sm:pb-5">
+              <p className="border-t border-[var(--lp-border)] px-5 pb-5 pt-4 text-sm leading-relaxed text-[var(--lp-text-muted)]">
                 {item.answer}
               </p>
             </details>
