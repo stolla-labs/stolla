@@ -1,0 +1,15 @@
+{
+  "name": "stolla",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=web",
+    "build": "npm run build --workspace=web",
+    "lint": "npm run lint --workspace=web",
+    "test:contracts": "cd contracts && cargo test",
+    "build:contracts": "cd contracts && CARGO_TARGET_DIR=target stellar contract build"
+  }
+}

@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# Rust
+contracts/target/
+**/*.rs.bk
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Test snapshots
+contracts/**/test_snapshots/
