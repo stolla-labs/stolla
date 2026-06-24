@@ -62,7 +62,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### 5. Deploy web app (Vercel)
 
-Import the repo on [Vercel](https://vercel.com/new) with **Root Directory** set to `apps/web`.
+Import the repo on [Vercel](https://vercel.com/new).
+
+**Option A (recommended):** set **Root Directory** to `apps/web`, then deploy with default settings.
+
+**Option B:** leave Root Directory empty; the repo root `vercel.json` runs install/build inside `apps/web`.
 
 Add these environment variables in the Vercel project settings:
 
