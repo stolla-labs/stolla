@@ -14,10 +14,10 @@ export function Header() {
   const { address, connect, disconnect, isConnecting } = useWallet();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#0b0f19]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:py-4">
         <div className="flex min-w-0 items-center gap-5 sm:gap-8">
-          <Link href="/" className="shrink-0 text-lg font-semibold text-zinc-900">
+          <Link href="/" className="shrink-0 text-lg font-semibold text-slate-100">
             Stolla
           </Link>
           <nav className="flex gap-1 sm:gap-2">
@@ -30,8 +30,8 @@ export function Header() {
                   href={item.href}
                   className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors sm:px-3 ${
                     isActive
-                      ? "bg-indigo-50 font-medium text-indigo-700"
-                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                      ? "bg-indigo-950 font-medium text-indigo-300"
+                      : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
                   }`}
                 >
                   {item.label}
@@ -44,13 +44,13 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {address ? (
             <>
-              <span className="hidden truncate text-xs text-zinc-500 sm:inline sm:max-w-[180px]">
+              <span className="hidden truncate text-xs text-slate-500 sm:inline sm:max-w-[180px]">
                 {address}
               </span>
               <button
                 type="button"
                 onClick={disconnect}
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800"
               >
                 Disconnect
               </button>
@@ -60,7 +60,7 @@ export function Header() {
               type="button"
               onClick={connect}
               disabled={isConnecting}
-              className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 sm:px-4"
+              className="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50 sm:px-4"
             >
               {isConnecting ? "Connecting..." : "Connect Wallet"}
             </button>

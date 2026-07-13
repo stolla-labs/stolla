@@ -99,13 +99,13 @@ export default function CommunityPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">Community NFT</h1>
-      <p className="mt-2 text-zinc-600">
+      <h1 className="text-2xl font-bold text-slate-100">Community NFT</h1>
+      <p className="mt-2 text-slate-400">
         Mint membership NFTs and delegate voting power on testnet.
       </p>
 
       {!contractsConfigured && (
-        <p className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <p className="mt-6 rounded-lg border border-amber-800/60 bg-amber-950/50 p-4 text-sm text-amber-200">
           Contract IDs are not set. Deploy contracts and configure{" "}
           <code className="font-mono">NEXT_PUBLIC_NFT_CONTRACT_ID</code> in{" "}
           <code className="font-mono">.env.local</code>.
@@ -114,23 +114,23 @@ export default function CommunityPage() {
 
       {contractsConfigured && (
         <div className="mt-6 space-y-6">
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 className="font-semibold">Collection</h2>
+          <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+            <h2 className="font-semibold text-slate-100">Collection</h2>
             <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-zinc-500">Name</dt>
+                <dt className="text-slate-500">Name</dt>
                 <dd>{name || "—"}</dd>
               </div>
               <div>
-                <dt className="text-zinc-500">Symbol</dt>
+                <dt className="text-slate-500">Symbol</dt>
                 <dd>{symbol || "—"}</dd>
               </div>
               <div>
-                <dt className="text-zinc-500">Your balance</dt>
+                <dt className="text-slate-500">Your balance</dt>
                 <dd>{balance ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-zinc-500">Your votes</dt>
+                <dt className="text-slate-500">Your votes</dt>
                 <dd>{votes ?? "—"}</dd>
               </div>
             </dl>
@@ -138,37 +138,37 @@ export default function CommunityPage() {
               type="button"
               onClick={handleDelegate}
               disabled={!address || loading}
-              className="mt-4 rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50 disabled:opacity-50"
+              className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
             >
               Delegate to self
             </button>
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 className="font-semibold">Mint NFT (owner only)</h2>
+          <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+            <h2 className="font-semibold text-slate-100">Mint NFT (owner only)</h2>
             <div className="mt-4 space-y-3">
               <label className="block text-sm">
-                <span className="text-zinc-600">Recipient address</span>
+                <span className="text-slate-400">Recipient address</span>
                 <input
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 font-mono text-sm text-slate-100 placeholder:text-slate-600"
                   placeholder="G..."
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-zinc-600">IPFS metadata URI</span>
+                <span className="text-slate-400">IPFS metadata URI</span>
                 <input
                   value={tokenUri}
                   onChange={(e) => setTokenUri(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm"
+                  className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 font-mono text-sm text-slate-100 placeholder:text-slate-600"
                 />
               </label>
               <button
                 type="button"
                 onClick={handleMint}
                 disabled={!address || loading}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-50"
               >
                 {loading ? "Submitting..." : "Mint NFT"}
               </button>
@@ -178,7 +178,7 @@ export default function CommunityPage() {
       )}
 
       {status && (
-        <p className="mt-4 rounded-lg border border-zinc-200 bg-white p-3 text-sm">
+        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200">
           {status}
         </p>
       )}

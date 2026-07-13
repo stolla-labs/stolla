@@ -98,33 +98,33 @@ export default function ProposalsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">Proposals</h1>
-      <p className="mt-2 text-zinc-600">
+      <h1 className="text-2xl font-bold text-slate-100">Proposals</h1>
+      <p className="mt-2 text-slate-400">
         Create and track DAO proposals. Voting power requires delegated NFTs.
       </p>
 
       {!contractsConfigured && (
-        <p className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <p className="mt-6 rounded-lg border border-amber-800/60 bg-amber-950/50 p-4 text-sm text-amber-200">
           Set <code className="font-mono">NEXT_PUBLIC_GOVERNOR_CONTRACT_ID</code>{" "}
           in <code className="font-mono">.env.local</code> after deployment.
         </p>
       )}
 
       {contractsConfigured && (
-        <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
-          <h2 className="font-semibold">Create proposal</h2>
+        <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+          <h2 className="font-semibold text-slate-100">Create proposal</h2>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="mt-3 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600"
             placeholder="Describe the community decision..."
           />
           <button
             type="button"
             onClick={handleCreateProposal}
             disabled={!address || loading}
-            className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+            className="mt-3 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-50"
           >
             {loading ? "Submitting..." : "Create proposal"}
           </button>
@@ -132,19 +132,19 @@ export default function ProposalsPage() {
       )}
 
       <section className="mt-6">
-        <h2 className="font-semibold">Your proposals</h2>
+        <h2 className="font-semibold text-slate-100">Your proposals</h2>
         {proposalIds.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-500">No proposals yet.</p>
+          <p className="mt-2 text-sm text-slate-500">No proposals yet.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {proposalIds.map((id) => (
               <li key={id}>
                 <Link
                   href={`/proposals/${id}`}
-                  className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm hover:bg-zinc-50"
+                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80"
                 >
                   <span className="truncate font-mono">{id}</span>
-                  <span className="ml-3 text-zinc-500">{states[id] ?? "..."}</span>
+                  <span className="ml-3 text-slate-500">{states[id] ?? "..."}</span>
                 </Link>
               </li>
             ))}
@@ -153,7 +153,7 @@ export default function ProposalsPage() {
       </section>
 
       {status && (
-        <p className="mt-4 rounded-lg border border-zinc-200 bg-white p-3 text-sm">
+        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200">
           {status}
         </p>
       )}

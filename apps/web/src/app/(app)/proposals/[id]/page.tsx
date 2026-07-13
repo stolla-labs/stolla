@@ -84,28 +84,28 @@ export default function ProposalDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">Proposal</h1>
-      <p className="mt-2 break-all font-mono text-sm text-zinc-600">
+      <h1 className="text-2xl font-bold text-slate-100">Proposal</h1>
+      <p className="mt-2 break-all font-mono text-sm text-slate-400">
         {proposalIdHex}
       </p>
 
-      <dl className="mt-6 grid gap-3 rounded-xl border border-zinc-200 bg-white p-5 text-sm sm:grid-cols-2">
+      <dl className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-zinc-500">State</dt>
-          <dd className="font-medium">{state}</dd>
+          <dt className="text-slate-500">State</dt>
+          <dd className="font-medium text-slate-100">{state}</dd>
         </div>
         <div>
-          <dt className="text-zinc-500">You voted</dt>
+          <dt className="text-slate-500">You voted</dt>
           <dd>{hasVoted === null ? "—" : hasVoted ? "Yes" : "No"}</dd>
         </div>
       </dl>
 
-      <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="font-semibold">Cast vote</h2>
+      <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+        <h2 className="font-semibold text-slate-100">Cast vote</h2>
         <input
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="mt-3 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className="mt-3 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600"
           placeholder="Reason (optional)"
         />
         <div className="mt-3 flex flex-wrap gap-2">
@@ -129,7 +129,7 @@ export default function ProposalDetailPage() {
             type="button"
             onClick={() => handleVote(2)}
             disabled={!address || loading}
-            className="rounded-lg bg-zinc-600 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-500 disabled:opacity-50"
+            className="rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white hover:bg-slate-500 disabled:opacity-50"
           >
             Abstain
           </button>
@@ -137,7 +137,7 @@ export default function ProposalDetailPage() {
       </section>
 
       {status && (
-        <p className="mt-4 rounded-lg border border-zinc-200 bg-white p-3 text-sm">
+        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200">
           {status}
         </p>
       )}

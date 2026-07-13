@@ -1,30 +1,31 @@
-/* Stolla landing: professional light */
+/* Stolla landing: professional dark (default) */
 
 .landing-root {
-  --lp-bg: #ffffff;
-  --lp-bg-subtle: #f8fafc;
-  --lp-bg-muted: #f1f5f9;
-  --lp-surface: #ffffff;
-  --lp-border: #e2e8f0;
-  --lp-border-strong: #cbd5e1;
-  --lp-text: #0f172a;
-  --lp-text-muted: #64748b;
-  --lp-text-subtle: #94a3b8;
-  --lp-accent: #4f46e5;
-  --lp-accent-hover: #4338ca;
-  --lp-accent-subtle: #eef2ff;
+  --lp-bg: #0b0f19;
+  --lp-bg-subtle: #111827;
+  --lp-bg-muted: #1e293b;
+  --lp-surface: #151b2b;
+  --lp-border: #243044;
+  --lp-border-strong: #334155;
+  --lp-text: #f1f5f9;
+  --lp-text-muted: #94a3b8;
+  --lp-text-subtle: #64748b;
+  --lp-accent: #818cf8;
+  --lp-accent-hover: #a5b4fc;
+  --lp-accent-subtle: #1e1b4b;
   --lp-accent-muted: #6366f1;
-  --lp-success-subtle: #ecfdf5;
-  --lp-success-text: #047857;
-  --lp-warning-subtle: #fffbeb;
-  --lp-warning-text: #b45309;
-  --lp-info-subtle: #eff6ff;
-  --lp-info-text: #1d4ed8;
+  --lp-success-subtle: #052e1c;
+  --lp-success-text: #34d399;
+  --lp-warning-subtle: #3b2a0a;
+  --lp-warning-text: #fbbf24;
+  --lp-info-subtle: #172554;
+  --lp-info-text: #60a5fa;
+  --lp-header-bg: rgba(11, 15, 25, 0.88);
   --lp-radius: 0.5rem;
   --lp-radius-lg: 0.75rem;
   --lp-font: var(--font-inter), system-ui, sans-serif;
-  --lp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --lp-shadow: 0 1px 3px rgba(15, 23, 42, 0.07), 0 8px 24px rgba(15, 23, 42, 0.05);
+  --lp-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --lp-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
   --lp-header-height: 4rem;
   --lp-container: 72rem;
 
@@ -33,6 +34,7 @@
   font-family: var(--lp-font);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   scroll-padding-top: var(--lp-header-height);
+  color-scheme: dark;
 }
 
 .landing-root h1,
@@ -136,7 +138,7 @@
   z-index: 50;
   height: var(--lp-header-height);
   border-bottom: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--lp-header-bg);
   backdrop-filter: blur(10px);
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
@@ -201,7 +203,7 @@
   top: var(--lp-header-height);
   z-index: 40;
   border: none;
-  background: rgba(15, 23, 42, 0.32);
+  background: rgba(0, 0, 0, 0.55);
   cursor: pointer;
 }
 

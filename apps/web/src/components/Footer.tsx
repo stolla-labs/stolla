@@ -26,27 +26,27 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 bg-white">
+    <footer className="border-t border-slate-800 bg-[#0b0f19]">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="text-lg font-bold text-zinc-900">
+            <Link href="/" className="text-lg font-bold text-slate-100">
               Stolla
             </Link>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-zinc-600">
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-400">
               NFT-gated community governance for Stellar projects. Launch
               membership collections and run transparent on-chain votes.
             </p>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900">Product</h3>
+            <h3 className="text-sm font-semibold text-slate-100">Product</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-zinc-600 transition-colors hover:text-indigo-600"
+                    className="text-sm text-slate-400 transition-colors hover:text-indigo-300"
                   >
                     {link.label}
                   </Link>
@@ -56,7 +56,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900">Resources</h3>
+            <h3 className="text-sm font-semibold text-slate-100">Resources</h3>
             <ul className="mt-4 space-y-2">
               {footerLinks.resources.map((link) => (
                 <li key={link.href}>
@@ -64,7 +64,7 @@ export function Footer() {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-zinc-600 transition-colors hover:text-indigo-600"
+                    className="text-sm text-slate-400 transition-colors hover:text-indigo-300"
                   >
                     {link.label}
                   </a>
@@ -74,20 +74,20 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900">Network</h3>
-            <p className="mt-4 text-sm text-zinc-600">
+            <h3 className="text-sm font-semibold text-slate-100">Network</h3>
+            <p className="mt-4 text-sm text-slate-400">
               Currently deployed on{" "}
-              <span className="font-medium text-indigo-600">Stellar Testnet</span>
+              <span className="font-medium text-indigo-300">Stellar Testnet</span>
               . Mainnet support planned after audit.
             </p>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-zinc-100 pt-8 sm:flex-row">
-          <p className="text-sm text-zinc-500">
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-slate-800 pt-8 sm:flex-row">
+          <p className="text-sm text-slate-500">
             © {new Date().getFullYear()} Stolla. Open source under MIT.
           </p>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-slate-600">
             Built with Soroban · OpenZeppelin · Next.js
           </p>
         </div>

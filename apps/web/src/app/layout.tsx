@@ -38,8 +38,9 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${syne.variable} ${ibmPlex.variable} ${inter.variable} h-full antialiased`}
+      style={{ colorScheme: "dark" }}
     >
-      <body className="flex min-h-full flex-col bg-white text-zinc-900">
+      <body className="flex min-h-full flex-col bg-[#0b0f19] text-slate-100">
         {children}
       </body>
     </html>
