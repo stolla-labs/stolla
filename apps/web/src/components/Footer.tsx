@@ -30,7 +30,16 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="text-lg font-bold text-slate-100">
+            <Link href="/" className="inline-flex items-center gap-2 text-lg font-bold text-slate-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/stolla-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 rounded-lg object-cover"
+                aria-hidden="true"
+              />
               Stolla
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-400">

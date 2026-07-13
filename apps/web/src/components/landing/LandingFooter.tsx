@@ -35,9 +35,15 @@ export function LandingFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="landing-logo-mark" aria-hidden="true">
-                S
-              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/stolla-logo.png"
+                alt=""
+                width={32}
+                height={32}
+                className="landing-logo-mark"
+                aria-hidden="true"
+              />
               <span>
                 <p className="text-sm font-semibold">Stolla</p>
                 <p className="text-xs text-[var(--lp-text-muted)]">

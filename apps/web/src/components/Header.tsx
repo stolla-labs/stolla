@@ -17,7 +17,19 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#0b0f19]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:py-4">
         <div className="flex min-w-0 items-center gap-5 sm:gap-8">
-          <Link href="/" className="shrink-0 text-lg font-semibold text-slate-100">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2 text-lg font-semibold text-slate-100"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/stolla-logo.png"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-lg object-cover"
+              aria-hidden="true"
+            />
             Stolla
           </Link>
           <nav className="flex gap-1 sm:gap-2">

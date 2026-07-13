@@ -25,6 +25,10 @@ export const metadata: Metadata = {
   title: "Stolla | Stellar Community Governance",
   description:
     "NFT-gated DAO voting for Stellar project communities on testnet.",
+  icons: {
+    icon: [{ url: "/stolla-logo.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

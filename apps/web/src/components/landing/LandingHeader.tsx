@@ -54,9 +54,15 @@ export function LandingHeader() {
           className="landing-header-brand"
           aria-label="Scroll to top"
         >
-          <span className="landing-logo-mark" aria-hidden="true">
-            S
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/stolla-logo.png"
+            alt=""
+            width={32}
+            height={32}
+            className="landing-logo-mark"
+            aria-hidden="true"
+          />
           <span>
             <p className="text-sm font-semibold leading-tight">Stolla</p>
             <p className="text-xs text-[var(--lp-text-muted)]">

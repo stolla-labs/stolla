@@ -171,17 +171,12 @@
 }
 
 .landing-logo-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 2rem;
   height: 2rem;
   border-radius: var(--lp-radius);
-  background: var(--lp-accent);
-  color: #ffffff;
-  font-size: 0.875rem;
-  font-weight: 700;
   flex-shrink: 0;
+  object-fit: cover;
 }
 
 .landing-menu-toggle {
