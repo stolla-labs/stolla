@@ -23,6 +23,9 @@ contracts/target/
 .idea/
 .vscode/
 
+# Local working notes
+.local/
+
 # Logs
 *.log
 
