@@ -10,27 +10,64 @@ NFT-gated DAO voting platform for Stellar project communities.
 
 ## Prerequisites
 
-- [Stellar CLI](https://developers.stellar.org/docs/tools/cli/install-cli)
-- Rust toolchain
 - Node.js 20+
-- Freighter wallet (testnet)
+- npm 11+
 
-## Quickstart
+To build and deploy the contracts, you will also need:
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Stellar CLI](https://developers.stellar.org/docs/tools/cli/install-cli)
+- A Stellar-compatible wallet such as [Freighter](https://www.freighter.app/)
+
+## Run locally
+
+All npm commands must be run from the repository root. This project uses a
+single root lockfile for the `apps/web` workspace.
 
 ### 1. Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
-### 2. Build and test contracts
+### 2. Configure the web app
+
+Create a local environment file:
+
+```bash
+cp apps/web/.env.example apps/web/.env.local
+```
+
+Set the contract IDs in `apps/web/.env.local`:
+
+```dotenv
+NEXT_PUBLIC_STELLAR_NETWORK=testnet
+NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_NFT_CONTRACT_ID=<community-nft-contract-id>
+NEXT_PUBLIC_GOVERNOR_CONTRACT_ID=<governor-contract-id>
+```
+
+You can use an existing deployment or deploy your own contracts using the
+instructions below.
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Contracts
+
+Build and test both Soroban contracts from the repository root:
 
 ```bash
 npm run build:contracts
 npm run test:contracts
 ```
 
-### 3. Deploy to testnet
+### Deploy contracts
 
 Create a deployer identity and fund it:
 
@@ -39,33 +76,32 @@ stellar keys generate deployer --network testnet
 ./scripts/fund-testnet.sh deployer
 ```
 
-Deploy contracts and write env vars:
+Deploy both contracts:
 
 ```bash
 ./scripts/deploy-testnet.sh deployer
 ```
 
-Copy generated values to `apps/web/.env.local`:
+The deploy script builds the contracts, deploys them, and writes the resulting
+contract IDs to `apps/web/.env.local`. Restart the development server after
+deploying so Next.js picks up the new values.
 
-```bash
-cp apps/web/.env.example apps/web/.env.local
-# Or run ./scripts/deploy-testnet.sh deployer — it writes .env.local automatically
-```
-
-### 4. Run the web app locally
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### 5. Deploy web app (Vercel)
+## Deploy the web app
 
 Import the repo on [Vercel](https://vercel.com/new).
 
-Keep **Root Directory** at the repository root. The root `vercel.json` installs
-the workspace from the single root lockfile and builds `apps/web`.
+Use the following project settings:
+
+| Setting | Value |
+|---------|-------|
+| Framework Preset | Next.js |
+| Root Directory | `.` (repository root) |
+| Install Command | `npm ci` |
+| Build Command | `npm run build` |
+| Output Directory | `apps/web/.next` |
+
+These commands are already defined in the root `vercel.json`, so Vercel should
+detect them automatically.
 
 Do not configure `apps/web` as a separate Vercel root. Dependencies and the
 lockfile are managed from the monorepo root so local development, CI, and
@@ -80,11 +116,18 @@ Add these environment variables in the Vercel project settings:
 | `NEXT_PUBLIC_NFT_CONTRACT_ID` | From deploy script output |
 | `NEXT_PUBLIC_GOVERNOR_CONTRACT_ID` | From deploy script output |
 
-Current testnet deployment (2026-06-24):
+After the first production deployment, Vercel will redeploy automatically when
+new commits are pushed to the production branch.
 
-- NFT: `CDEBV3G52J3H2HBSORUTWFNLSSL57X75UAPKYAQBHFSFOIHF46A7UCFK`
-- Governor: `CAHM2MNNRYMS4AMFLDBQYJKPAYQZS24JT2HZRP4NBGFODQ2DPXRYEUOE`
-- Deployer: `GCA6ODTDT6MYMO4HHW7EP25KCQFK2OCN3S3ETO4WSGVBMBY3DYBSPIDR`
+## Useful commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the Next.js development server |
+| `npm run build` | Create a production web build |
+| `npm run lint` | Run frontend linting |
+| `npm run build:contracts` | Build the Soroban contracts |
+| `npm run test:contracts` | Run the contract test suite |
 
 ## End-to-end flow
 
