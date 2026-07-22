@@ -4,7 +4,7 @@ import { LinkButton } from "@/components/ui/Button";
 import { LANDING_IMAGES } from "@/lib/landingImages";
 
 const TRUST_ITEMS = [
-  "Stellar Testnet",
+  "Stellar",
   "SEP-0050",
   "OpenZeppelin Governor",
   "Soroban",
@@ -58,8 +58,8 @@ export function HeroSection() {
           </div>
           <dl className="landing-stats-row">
             <div className="landing-stat">
-              <dt className="landing-stat-label">Network</dt>
-              <dd className="landing-stat-value">Testnet</dd>
+              <dt className="landing-stat-label">Membership</dt>
+              <dd className="landing-stat-value">NFT-gated</dd>
             </div>
             <div className="landing-stat">
               <dt className="landing-stat-label">Voting</dt>
@@ -87,7 +87,7 @@ export function HeroSection() {
             <div className="landing-preview-header">
               <p className="landing-preview-header-title">Governance activity</p>
               <span className="landing-live-dot" aria-hidden="true" />
-              <p className="landing-preview-header-meta">Live from RPC</p>
+              <p className="landing-preview-header-meta">Product preview</p>
             </div>
             <div className="landing-preview-body">
               {PREVIEW_ITEMS.map((item) => (

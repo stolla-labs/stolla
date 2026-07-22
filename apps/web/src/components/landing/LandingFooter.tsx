@@ -54,7 +54,7 @@ export function LandingFooter() {
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--lp-text-muted)]">
               NFT-gated DAO voting for Stellar projects. Deploy membership
               collections, delegate voting power, and govern transparently on
-              testnet.
+              chain.
             </p>
             <div className="mt-5">
               <LinkButton href="/community">Launch app</LinkButton>
@@ -101,9 +101,10 @@ export function LandingFooter() {
               ))}
             </ul>
             <div className="landing-footer-notice">
-              <p className="font-medium text-[var(--lp-text)]">Stellar Testnet</p>
+              <p className="font-medium text-[var(--lp-text)]">Open governance</p>
               <p className="mt-0.5">
-                Test XLM only. Signaling votes only. No mainnet funds.
+                Membership, proposals, and votes remain transparent and
+                verifiable.
               </p>
             </div>
           </div>

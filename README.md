@@ -64,9 +64,12 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Import the repo on [Vercel](https://vercel.com/new).
 
-**Option A (recommended):** set **Root Directory** to `apps/web`, then deploy with default settings.
+Keep **Root Directory** at the repository root. The root `vercel.json` installs
+the workspace from the single root lockfile and builds `apps/web`.
 
-**Option B:** leave Root Directory empty; the repo root `vercel.json` runs install/build inside `apps/web`.
+Do not configure `apps/web` as a separate Vercel root. Dependencies and the
+lockfile are managed from the monorepo root so local development, CI, and
+deployment use the same dependency graph.
 
 Add these environment variables in the Vercel project settings:
 

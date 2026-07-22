@@ -57,7 +57,7 @@ Utility classes: `.lp-card`, `.lp-btn`, `.lp-btn-ghost`, `.landing-section`, `.l
 5. **Technology**: stacked tech bands (`#technology`)
 6. **FAQ**: accordion (`#faq`)
 7. **CTA**: split card with quick facts
-8. **Footer**: product links, resources, testnet notice
+8. **Footer**: product links, resources, governance value statement
 
 ## Header (landing only)
 
@@ -90,6 +90,6 @@ When building or updating the landing page:
 
 1. Follow the section order above
 2. Reuse `.lp-*` and `.landing-*` classes scoped under `.landing-root`. Keep the professional light tone.
-3. Keep copy aligned with `docs/prd.md` (NFT membership + Governor voting on testnet)
+3. Keep copy focused on the product: NFT membership, transparent proposals, and Governor voting. Do not foreground deployment environments on the marketing page.
 4. Preserve information density and the governance preview panel in the hero (widget-style, clickable rows)
 5. Do not use em dashes in user-facing landing copy

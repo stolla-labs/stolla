@@ -3,8 +3,8 @@ import { LandingSectionHeader } from "@/components/landing/LandingSectionHeader"
 const STACK = [
   {
     label: "Blockchain",
-    value: "Stellar Testnet",
-    detail: "Fast finality, low fees, ideal for iterative governance testing.",
+    value: "Stellar",
+    detail: "Fast settlement and predictable fees for community participation.",
   },
   {
     label: "Smart contracts",

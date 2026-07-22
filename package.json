@@ -2,11 +2,15 @@
   "name": "stolla",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.6.2",
   "workspaces": [
     "apps/web"
   ],
   "scripts": {
+    "check:workspace": "node scripts/check-workspace-layout.mjs",
+    "predev": "npm run check:workspace",
     "dev": "npm run dev --workspace=web",
+    "prebuild": "npm run check:workspace",
     "build": "npm run build --workspace=web",
     "lint": "npm run lint --workspace=web",
     "test:contracts": "cd contracts && cargo test",

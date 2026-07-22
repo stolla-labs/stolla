@@ -19,7 +19,7 @@ const FEATURES = [
   {
     title: "Full transparency",
     description:
-      "Every mint, delegation, and vote is verifiable on Stellar testnet. No off-chain trust required.",
+      "Every mint, delegation, and vote is verifiable on Stellar. No off-chain trust required.",
   },
   {
     title: "IPFS metadata",

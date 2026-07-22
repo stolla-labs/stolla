@@ -8,12 +8,12 @@ const FAQ = [
   {
     question: "Do I need an account to use Stolla?",
     answer:
-      "No. You only need a Stellar wallet like Freighter connected to testnet. Your wallet address is your identity on the platform.",
+      "No. Connect a Stellar wallet such as Freighter. Your wallet address is your identity in the community.",
   },
   {
-    question: "Is this mainnet or testnet?",
+    question: "Who can create proposals?",
     answer:
-      "Stolla currently runs on Stellar testnet. Use testnet XLM from a faucet. Do not send real funds expecting mainnet value.",
+      "Members with enough delegated voting power can create proposals. Each community defines the threshold through its Governor settings.",
   },
   {
     question: "How does voting power work?",

@@ -3,7 +3,7 @@ import { LinkButton } from "@/components/ui/Button";
 const HIGHLIGHTS = [
   { label: "Deploy", value: "Soroban" },
   { label: "Vote", value: "On-chain" },
-  { label: "Cost", value: "Testnet" },
+  { label: "Access", value: "Wallet" },
 ] as const;
 
 export function CtaSection() {
@@ -17,8 +17,8 @@ export function CtaSection() {
               Ready to launch your community?
             </h2>
             <p className="landing-cta-desc">
-              Connect Freighter and run your first governance vote on Stellar
-              testnet today.
+              Connect your wallet, bring members together, and run your first
+              governance vote with Stolla.
             </p>
             <div className="landing-hero-actions">
               <LinkButton href="/community">Get started</LinkButton>

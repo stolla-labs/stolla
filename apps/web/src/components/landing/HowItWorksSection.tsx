@@ -7,7 +7,7 @@ const STEPS = [
     step: "1",
     title: "Launch collection",
     description:
-      "Deploy a community NFT contract with name, symbol, and metadata on Stellar testnet via Soroban.",
+      "Create a community NFT collection with its own name, symbol, and membership metadata.",
     image: LANDING_IMAGES.steps.deploy,
     imageAlt: "Rocket launching from a smart contract cube",
   },
