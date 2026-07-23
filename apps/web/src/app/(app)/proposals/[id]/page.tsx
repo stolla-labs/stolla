@@ -7,6 +7,7 @@ import { useWallet } from "@/context/WalletProvider";
 import { createGovernorClient } from "@/lib/contracts";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { contractIds } from "@/lib/stellar";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const stateLabels: Record<ProposalState, string> = {
   [ProposalState.Pending]: "Pending",
@@ -28,25 +29,34 @@ export default function ProposalDetailPage() {
   const [reason, setReason] = useState("Support");
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!contractIds.governor || !proposalIdHex) return;
-    const client = createGovernorClient({
-      publicKey: address ?? "",
-      signTransaction,
-    });
-    const proposalId = Buffer.from(proposalIdHex, "hex");
+    if (!contractIds.governor || !proposalIdHex) {
+      setInitialLoading(false);
+      return;
+    }
 
-    const [stateTx, votedTx] = await Promise.all([
-      client.proposal_state({ proposal_id: proposalId }),
-      address
-        ? client.has_voted({ proposal_id: proposalId, account: address })
-        : Promise.resolve(null),
-    ]);
+    try {
+      const client = createGovernorClient({
+        publicKey: address ?? "",
+        signTransaction,
+      });
+      const proposalId = Buffer.from(proposalIdHex, "hex");
 
-    setState(stateLabels[stateTx.result ?? ProposalState.Pending]);
-    if (votedTx) {
-      setHasVoted(Boolean(votedTx.result));
+      const [stateTx, votedTx] = await Promise.all([
+        client.proposal_state({ proposal_id: proposalId }),
+        address
+          ? client.has_voted({ proposal_id: proposalId, account: address })
+          : Promise.resolve(null),
+      ]);
+
+      setState(stateLabels[stateTx.result ?? ProposalState.Pending]);
+      if (votedTx) {
+        setHasVoted(Boolean(votedTx.result));
+      }
+    } finally {
+      setInitialLoading(false);
     }
   }, [address, proposalIdHex, signTransaction]);
 
@@ -89,16 +99,29 @@ export default function ProposalDetailPage() {
         {proposalIdHex}
       </p>
 
-      <dl className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-slate-500">State</dt>
-          <dd className="font-medium text-slate-100">{state}</dd>
+      {initialLoading ? (
+        <div className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-slate-500">State</dt>
+            <dd><Skeleton className="mt-0.5 h-5 w-24" /></dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">You voted</dt>
+            <dd><Skeleton className="mt-0.5 h-5 w-16" /></dd>
+          </div>
         </div>
-        <div>
-          <dt className="text-slate-500">You voted</dt>
-          <dd>{hasVoted === null ? "—" : hasVoted ? "Yes" : "No"}</dd>
-        </div>
-      </dl>
+      ) : (
+        <dl className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-slate-500">State</dt>
+            <dd className="font-medium text-slate-100">{state}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">You voted</dt>
+            <dd>{hasVoted === null ? "—" : hasVoted ? "Yes" : "No"}</dd>
+          </div>
+        </dl>
+      )}
 
       <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
         <h2 className="font-semibold text-slate-100">Cast vote</h2>
