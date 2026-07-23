@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated Soroban TypeScript bindings (stellar contract bindings).
+    // These emit `any`, declaration merging, and suppression comments that are
+    // not meant to follow app lint rules; keep handwritten `src/` code covered.
+    "src/lib/bindings/community-nft/**",
+    "src/lib/bindings/community-governor/**",
   ]),
 ]);
 
