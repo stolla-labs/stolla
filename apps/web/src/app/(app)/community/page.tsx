@@ -7,6 +7,7 @@ import {
   createReadOnlyNftClient,
 } from "@/lib/contracts";
 import { contractIds } from "@/lib/stellar";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function CommunityPage() {
   const { address, signTransaction } = useWallet();
@@ -18,27 +19,36 @@ export default function CommunityPage() {
   const [tokenUri, setTokenUri] = useState("ipfs://");
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const contractsConfigured = Boolean(contractIds.nft);
 
   const refresh = useCallback(async () => {
-    if (!contractsConfigured) return;
-    const client = createReadOnlyNftClient();
-    const [collectionName, collectionSymbol] = await Promise.all([
-      client.name(),
-      client.symbol(),
-    ]);
-    setName(collectionName.result ?? "");
-    setSymbol(collectionSymbol.result ?? "");
+    if (!contractsConfigured) {
+      setInitialLoading(false);
+      return;
+    }
 
-    if (address) {
-      const userClient = createNftClient({ publicKey: address, signTransaction });
-      const [bal, votePower] = await Promise.all([
-        userClient.balance({ account: address }),
-        userClient.get_votes({ account: address }),
+    try {
+      const client = createReadOnlyNftClient();
+      const [collectionName, collectionSymbol] = await Promise.all([
+        client.name(),
+        client.symbol(),
       ]);
-      setBalance(Number(bal.result ?? 0));
-      setVotes(String(votePower.result ?? 0));
+      setName(collectionName.result ?? "");
+      setSymbol(collectionSymbol.result ?? "");
+
+      if (address) {
+        const userClient = createNftClient({ publicKey: address, signTransaction });
+        const [bal, votePower] = await Promise.all([
+          userClient.balance({ account: address }),
+          userClient.get_votes({ account: address }),
+        ]);
+        setBalance(Number(bal.result ?? 0));
+        setVotes(String(votePower.result ?? 0));
+      }
+    } finally {
+      setInitialLoading(false);
     }
   }, [address, contractsConfigured, signTransaction]);
 
@@ -114,35 +124,60 @@ export default function CommunityPage() {
 
       {contractsConfigured && (
         <div className="mt-6 space-y-6">
-          <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
-            <h2 className="font-semibold text-slate-100">Collection</h2>
-            <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-slate-500">Name</dt>
-                <dd>{name || "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Symbol</dt>
-                <dd>{symbol || "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Your balance</dt>
-                <dd>{balance ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Your votes</dt>
-                <dd>{votes ?? "—"}</dd>
-              </div>
-            </dl>
-            <button
-              type="button"
-              onClick={handleDelegate}
-              disabled={!address || loading}
-              className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
-            >
-              Delegate to self
-            </button>
-          </section>
+          {initialLoading ? (
+            <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+              <h2 className="font-semibold text-slate-100">Collection</h2>
+              <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500">Name</dt>
+                  <dd><Skeleton className="mt-0.5 h-5 w-32" /></dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Symbol</dt>
+                  <dd><Skeleton className="mt-0.5 h-5 w-20" /></dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Your balance</dt>
+                  <dd><Skeleton className="mt-0.5 h-5 w-16" /></dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Your votes</dt>
+                  <dd><Skeleton className="mt-0.5 h-5 w-24" /></dd>
+                </div>
+              </dl>
+              <Skeleton className="mt-4 h-9 w-36 rounded-lg" />
+            </section>
+          ) : (
+            <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+              <h2 className="font-semibold text-slate-100">Collection</h2>
+              <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500">Name</dt>
+                  <dd>{name || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Symbol</dt>
+                  <dd>{symbol || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Your balance</dt>
+                  <dd>{balance ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Your votes</dt>
+                  <dd>{votes ?? "—"}</dd>
+                </div>
+              </dl>
+              <button
+                type="button"
+                onClick={handleDelegate}
+                disabled={!address || loading}
+                className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+              >
+                Delegate to self
+              </button>
+            </section>
+          )}
 
           <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
             <h2 className="font-semibold text-slate-100">Mint NFT (owner only)</h2>
