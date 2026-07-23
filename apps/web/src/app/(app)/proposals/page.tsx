@@ -11,6 +11,7 @@ import {
 } from "@/lib/contracts";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { contractIds } from "@/lib/stellar";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const stateLabels: Record<ProposalState, string> = {
   [ProposalState.Pending]: "Pending",
@@ -30,31 +31,34 @@ export default function ProposalsPage() {
   const [states, setStates] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const contractsConfigured = Boolean(contractIds.governor);
 
   const loadProposals = useCallback(async () => {
     const ids = getStoredProposalIds();
     setProposalIds(ids);
-    if (!contractsConfigured || ids.length === 0) return;
 
-    const client = createGovernorClient({
-      publicKey: address ?? "",
-      signTransaction,
-    });
+    if (contractsConfigured && ids.length > 0) {
+      const client = createGovernorClient({
+        publicKey: address ?? "",
+        signTransaction,
+      });
 
-    const nextStates: Record<string, string> = {};
-    for (const idHex of ids) {
-      try {
-        const tx = await client.proposal_state({
-          proposal_id: Buffer.from(idHex, "hex"),
-        });
-        nextStates[idHex] = stateLabels[tx.result ?? ProposalState.Pending];
-      } catch {
-        nextStates[idHex] = "Unknown";
+      const nextStates: Record<string, string> = {};
+      for (const idHex of ids) {
+        try {
+          const tx = await client.proposal_state({
+            proposal_id: Buffer.from(idHex, "hex"),
+          });
+          nextStates[idHex] = stateLabels[tx.result ?? ProposalState.Pending];
+        } catch {
+          nextStates[idHex] = "Unknown";
+        }
       }
+      setStates(nextStates);
     }
-    setStates(nextStates);
+    setInitialLoading(false);
   }, [address, contractsConfigured, signTransaction]);
 
   useEffect(() => {
@@ -133,7 +137,20 @@ export default function ProposalsPage() {
 
       <section className="mt-6">
         <h2 className="font-semibold text-slate-100">Your proposals</h2>
-        {proposalIds.length === 0 ? (
+        {initialLoading ? (
+          <ul className="mt-3 space-y-2">
+            {Array.from({ length: Math.max(proposalIds.length || 3, 1) }).map(
+              (_, i) => (
+                <li key={i}>
+                  <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                </li>
+              ),
+            )}
+          </ul>
+        ) : proposalIds.length === 0 ? (
           <p className="mt-2 text-sm text-slate-500">No proposals yet.</p>
         ) : (
           <ul className="mt-3 space-y-2">
