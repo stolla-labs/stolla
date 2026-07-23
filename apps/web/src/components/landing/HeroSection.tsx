@@ -86,14 +86,16 @@ export function HeroSection() {
           <div className="landing-preview-panel">
             <div className="landing-preview-header">
               <p className="landing-preview-header-title">Governance activity</p>
-              <span className="landing-live-dot" aria-hidden="true" />
-              <p className="landing-preview-header-meta">Product preview</p>
+              <p className="landing-preview-header-meta">Demo data</p>
             </div>
             <div className="landing-preview-body">
               {PREVIEW_ITEMS.map((item) => (
                 <PreviewRow key={item.title} {...item} />
               ))}
             </div>
+            <p className="landing-preview-demo-note">
+              Illustrative proposals — not live on-chain data.
+            </p>
             <Link
               href="/proposals"
               className="landing-preview-footer landing-preview-footer-link"
