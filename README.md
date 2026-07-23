@@ -58,6 +58,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Reset Next.js / Turbopack caches
+
+If `next dev` fails with intermittent Client Manifest or stale Turbopack errors
+after dependency or config changes, clear only the web workspace generated
+cache directories (not source, `.env*`, `node_modules`, or lockfiles):
+
+```bash
+npm run clean:web
+npm run dev
+```
+
+This removes `apps/web/.next`, `apps/web/.turbo` (if present), and
+`apps/web/node_modules/.cache` (if present). It is safe to run when those
+paths do not exist.
+
 ## Contracts
 
 Build and test both Soroban contracts from the repository root:
