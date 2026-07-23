@@ -23,30 +23,79 @@ export default function CommunityPage() {
 
   const refresh = useCallback(async () => {
     if (!contractsConfigured) return;
-    const client = createReadOnlyNftClient();
-    const [collectionName, collectionSymbol] = await Promise.all([
-      client.name(),
-      client.symbol(),
-    ]);
-    setName(collectionName.result ?? "");
-    setSymbol(collectionSymbol.result ?? "");
-
-    if (address) {
-      const userClient = createNftClient({ publicKey: address, signTransaction });
-      const [bal, votePower] = await Promise.all([
-        userClient.balance({ account: address }),
-        userClient.get_votes({ account: address }),
+    try {
+      const client = createReadOnlyNftClient();
+      const [collectionName, collectionSymbol] = await Promise.all([
+        client.name(),
+        client.symbol(),
       ]);
-      setBalance(Number(bal.result ?? 0));
-      setVotes(String(votePower.result ?? 0));
+      setName(collectionName.result ?? "");
+      setSymbol(collectionSymbol.result ?? "");
+
+      if (address) {
+        const userClient = createNftClient({ publicKey: address, signTransaction });
+        const [bal, votePower] = await Promise.all([
+          userClient.balance({ account: address }),
+          userClient.get_votes({ account: address }),
+        ]);
+        setBalance(Number(bal.result ?? 0));
+        setVotes(String(votePower.result ?? 0));
+      } else {
+        setBalance(null);
+        setVotes(null);
+      }
+    } catch (error: unknown) {
+      setStatus(
+        error instanceof Error ? error.message : "Failed to load NFT data"
+      );
     }
   }, [address, contractsConfigured, signTransaction]);
 
   useEffect(() => {
-    refresh().catch((error: unknown) => {
-      setStatus(error instanceof Error ? error.message : "Failed to load NFT data");
-    });
-  }, [refresh]);
+    if (!contractsConfigured) return;
+    let ignore = false;
+
+    const loadData = async () => {
+      try {
+        const client = createReadOnlyNftClient();
+        const [collectionName, collectionSymbol] = await Promise.all([
+          client.name(),
+          client.symbol(),
+        ]);
+
+        let balResult: number | null = null;
+        let votesResult: string | null = null;
+
+        if (address) {
+          const userClient = createNftClient({ publicKey: address, signTransaction });
+          const [bal, votePower] = await Promise.all([
+            userClient.balance({ account: address }),
+            userClient.get_votes({ account: address }),
+          ]);
+          balResult = Number(bal.result ?? 0);
+          votesResult = String(votePower.result ?? 0);
+        }
+
+        if (ignore) return;
+
+        setName(collectionName.result ?? "");
+        setSymbol(collectionSymbol.result ?? "");
+        setBalance(balResult);
+        setVotes(votesResult);
+      } catch (error: unknown) {
+        if (ignore) return;
+        setStatus(
+          error instanceof Error ? error.message : "Failed to load NFT data"
+        );
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [address, contractsConfigured, signTransaction]);
 
   async function handleMint() {
     if (!address) {
