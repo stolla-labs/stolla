@@ -13,6 +13,7 @@
     "prebuild": "npm run check:workspace",
     "build": "npm run build --workspace=web",
     "lint": "npm run lint --workspace=web",
+    "typecheck": "npm run typecheck --workspace=web",
     "test:contracts": "cd contracts && cargo test",
     "build:contracts": "cd contracts && CARGO_TARGET_DIR=target stellar contract build"
   }
