@@ -85,9 +85,22 @@ export default function ProposalDetailPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-bold text-slate-100">Proposal</h1>
-      <p className="mt-2 break-all font-mono text-sm text-slate-400">
-        {proposalIdHex}
-      </p>
+      <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-slate-800/80 bg-[#111726] px-3 py-2.5 min-w-0">
+        <p className="break-all font-mono text-xs sm:text-sm text-slate-400 min-w-0 flex-1" title={proposalIdHex}>
+          {proposalIdHex}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (proposalIdHex) navigator.clipboard.writeText(proposalIdHex);
+          }}
+          title="Copy proposal ID"
+          aria-label="Copy proposal ID"
+          className="shrink-0 rounded bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          Copy
+        </button>
+      </div>
 
       <dl className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
         <div>
@@ -137,7 +150,7 @@ export default function ProposalDetailPage() {
       </section>
 
       {status && (
-        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200">
+        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200 break-all font-mono">
           {status}
         </p>
       )}

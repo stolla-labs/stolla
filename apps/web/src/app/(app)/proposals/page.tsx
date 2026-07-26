@@ -141,10 +141,11 @@ export default function ProposalsPage() {
               <li key={id}>
                 <Link
                   href={`/proposals/${id}`}
-                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80"
+                  title={`Proposal ID: ${id}`}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80 min-w-0"
                 >
-                  <span className="truncate font-mono">{id}</span>
-                  <span className="ml-3 text-slate-500">{states[id] ?? "..."}</span>
+                  <span className="truncate font-mono min-w-0 flex-1" title={id}>{id}</span>
+                  <span className="shrink-0 text-slate-500">{states[id] ?? "..."}</span>
                 </Link>
               </li>
             ))}
@@ -153,7 +154,7 @@ export default function ProposalsPage() {
       </section>
 
       {status && (
-        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200">
+        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200 break-all font-mono">
           {status}
         </p>
       )}

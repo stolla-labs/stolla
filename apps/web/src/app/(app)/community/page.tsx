@@ -178,7 +178,7 @@ export default function CommunityPage() {
       )}
 
       {status && (
-        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200">
+        <p className="mt-4 rounded-lg border border-slate-800 bg-[#151b2b] p-3 text-sm text-slate-200 break-all font-mono">
           {status}
         </p>
       )}

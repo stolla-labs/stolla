@@ -56,13 +56,17 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {address ? (
             <>
-              <span className="hidden truncate text-xs text-slate-500 sm:inline sm:max-w-[180px]">
+              <span 
+                className="max-w-[100px] sm:max-w-[180px] truncate font-mono text-xs text-slate-400 inline-block"
+                title={address}
+                aria-label={`Connected wallet address: ${address}`}
+              >
                 {address}
               </span>
               <button
                 type="button"
                 onClick={disconnect}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800"
+                className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs sm:text-sm text-slate-300 transition hover:bg-slate-800 shrink-0"
               >
                 Disconnect
               </button>
