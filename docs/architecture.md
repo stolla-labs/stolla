@@ -145,12 +145,9 @@ complete NFT/Governor inventory, renewal window, and intentional expiry rules.
 
 ## Future Extensions
 
-<<<<<<< HEAD
-- A reviewed creator-policy upgrade for permissionless community creation
-=======
 - `CommunityFactory` and registry for multi-community deployment
   ([ADR-005](adr/005-community-factory-registry.md))
->>>>>>> origin/main
+- A reviewed creator-policy upgrade for permissionless community creation
 - Timelock + on-chain execution
 - Public proposal discovery from Stellar RPC events
 - Persistent event indexer for long-lived proposal history

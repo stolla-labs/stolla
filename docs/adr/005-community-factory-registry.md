@@ -86,20 +86,10 @@ The implementation will expose this conceptual interface:
 
 ```text
 __constructor(owner, nft_wasm_hash, governor_wasm_hash)
-<<<<<<< HEAD
-create_community(creator, {
-    community_owner, external_key,
-    metadata: { schema_version, collection_uri, name, symbol,
-                metadata_uri, metadata_hash },
-    governance: { voting_delay, voting_period,
-                  proposal_threshold, quorum }
-}) -> CommunityRecord
-=======
 create_community(creator, community_owner, external_key,
                  collection_uri, name, symbol,
                  voting_delay, voting_period,
                  proposal_threshold, quorum) -> CommunityRecord
->>>>>>> origin/main
 get_community(community_id) -> Option<CommunityRecord>
 list_communities(cursor: Option<u32>, limit: u32)
     -> { records: Vec<CommunityRecord>, next_cursor: Option<u32> }
@@ -114,13 +104,10 @@ Governance parameters remain authoritative in the Governor. The registry
 duplicates only discovery and provenance fields and must not become a second
 mutable governance configuration source.
 
-<<<<<<< HEAD
 Field types, bounds, update policy, deterministic serialization, and the
 versioned off-chain document are specified in the
 [community metadata and governance schema](../community-metadata-governance-schema.md).
 
-=======
->>>>>>> origin/main
 ### Registry storage and pagination
 
 | Key | Storage | Value |
