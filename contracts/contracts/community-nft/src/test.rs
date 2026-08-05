@@ -218,3 +218,62 @@ fn transfers_and_redelegation_move_voting_power_without_changing_supply() {
     assert_eq!(client.balance(&undelegated_recipient), 1);
     assert_eq!(votes.get_total_supply(), 3);
 }
+
+#[test]
+fn mint_with_empty_uri_panics_and_does_not_consume_token_id() {
+    let e = Env::default();
+    let (owner, member, client) = setup(&e);
+    let empty_uri = String::from_str(&e, "");
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        client.mint(&member, &empty_uri);
+    }));
+    assert!(result.is_err());
+    assert_eq!(client.balance(&member), 0);
+
+    // Verify that a subsequent valid mint still gets token ID 0
+    let valid_uri = String::from_str(&e, "ipfs://valid/metadata.json");
+    let valid_id = mint_with_owner_auth(&e, &client, &owner, &member, &valid_uri);
+    assert_eq!(valid_id, 0);
+    assert_eq!(client.custom_token_uri(&valid_id), valid_uri);
+}
+
+#[test]
+fn mint_with_whitespace_only_uri_panics_and_preserves_id_counter() {
+    let e = Env::default();
+    let (owner, member, client) = setup(&e);
+    let whitespace_uri = String::from_str(&e, "   \t\n   ");
+
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        client.mint(&member, &whitespace_uri);
+    }));
+    assert!(result.is_err());
+    assert_eq!(client.balance(&member), 0);
+
+    let valid_uri = String::from_str(&e, "ipfs://after-whitespace.json");
+    let valid_id = mint_with_owner_auth(&e, &client, &owner, &member, &valid_uri);
+    assert_eq!(valid_id, 0);
+}
+
+#[test]
+fn mint_with_whitespace_padded_uri_trims_and_stores_clean_value() {
+    let e = Env::default();
+    let (owner, member, client) = setup(&e);
+    let padded_uri = String::from_str(&e, "  ipfs://QmPadded/metadata.json  ");
+
+    let token_id = mint_with_owner_auth(&e, &client, &owner, &member, &padded_uri);
+    let expected_uri = String::from_str(&e, "ipfs://QmPadded/metadata.json");
+    assert_eq!(client.custom_token_uri(&token_id), expected_uri);
+}
+
+#[test]
+fn mint_with_valid_uri_works() {
+    let e = Env::default();
+    let (owner, member, client) = setup(&e);
+    let uri = String::from_str(&e, "ipfs://QmValid/metadata.json");
+
+    let token_id = mint_with_owner_auth(&e, &client, &owner, &member, &uri);
+    assert_eq!(token_id, 0);
+    assert_eq!(client.custom_token_uri(&token_id), uri);
+    assert_eq!(client.balance(&member), 1);
+}
