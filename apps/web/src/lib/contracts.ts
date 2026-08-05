@@ -42,7 +42,7 @@ export function createNftClient({
   const nft = contractId ?? requireContractIds().nft;
   return new NftClient({
     contractId: nft,
-    networkPassphrase: config.passphrase,
+    networkPassphrase: config.networkPassphrase,
     rpcUrl: config.rpcUrl,
     publicKey,
     signTransaction,
@@ -59,7 +59,7 @@ export function createGovernorClient({
   if (mocked) return mocked as unknown as GovernorClient;
   return new GovernorClient({
     contractId: governor,
-    networkPassphrase: config.passphrase,
+    networkPassphrase: config.networkPassphrase,
     rpcUrl: config.rpcUrl,
     publicKey,
     signTransaction,
@@ -70,7 +70,7 @@ export function createReadOnlyNftClient(contractId?: string) {
   const nft = contractId ?? requireContractIds().nft;
   return new NftClient({
     contractId: nft,
-    networkPassphrase: config.passphrase,
+    networkPassphrase: config.networkPassphrase,
     rpcUrl: config.rpcUrl,
   });
 }
@@ -81,7 +81,7 @@ export function createReadOnlyGovernorClient(contractId?: string) {
   if (mocked) return mocked as unknown as GovernorClient;
   return new GovernorClient({
     contractId: governor,
-    networkPassphrase: config.passphrase,
+    networkPassphrase: config.networkPassphrase,
     rpcUrl: config.rpcUrl,
   });
 }
