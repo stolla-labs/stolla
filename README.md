@@ -212,3 +212,10 @@ stolla/
 ## License
 
 MIT
+
+
+---
+
+## 📚 Documentation & CI
+
+> Automated doc/CI boost — ensuring reliable builds and up-to-date docs.
