@@ -205,9 +205,32 @@ stolla/
 
 ## Documentation
 
-- [PRD](docs/prd.md)
-- [Architecture](docs/architecture.md)
-- [ADRs](docs/adr/)
+Full project documentation lives in the `docs/` directory and covers product
+requirements, system architecture, and architectural decision records.
+
+- [PRD](docs/prd.md) — Product requirements document
+- [Architecture](docs/architecture.md) — System architecture overview
+- [ADRs](docs/adr/) — Architectural decision records
+
+### Generating docs locally
+
+Docs use Markdown and can be previewed in any editor or rendered with a static
+site generator. To browse them locally:
+
+```bash
+# Open the docs directory in your file explorer or editor
+cd docs && ls
+```
+
+### API documentation
+
+Smart-contract interfaces are documented in the Soroban source under
+`contracts/`. Rust doc comments follow the Stellar SDK conventions. Generate
+local contract docs with:
+
+```bash
+cargo doc --no-deps --document-private-items
+```
 
 ## License
 
