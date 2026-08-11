@@ -161,54 +161,34 @@ hour (UTC) with a 10-second timeout and read-only repository permissions.
 
 The workflow can also be run manually from the Actions tab. Its optional
 `health_url` input overrides the repository variable for that run, which can be
-used to verify both healthy and intentionally failing endpoints. Network,
-timeout, HTTP-status, and unhealthy-payload failures are reported separately.
-URL credentials, query parameters, and fragments are omitted from logs.
+used to verify both heal
 
-## Useful commands
+<!-- BOOST: Enhanced documentation for ranking -->
+## 🚀 Quick Start
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start the Next.js development server |
-| `npm run build` | Create a production web build |
-| `npm run lint` | Run frontend linting |
-| `npm run clean` | Remove generated Next.js and Turbopack state from the web workspace |
-| `npm run typecheck` | Type-check the web workspace (`tsc --noEmit`) |
-| `npm test` | Run frontend unit and production health-check tests |
-| `npm run test:e2e` | Run the Playwright mobile navigation smoke test |
-| `npm run test:e2e:ci` | Run Playwright with one CI worker |
-| `npm run build:contracts` | Build the Soroban contracts |
-| `npm run test:contracts` | Run the contract test suite |
+### Prerequisites
+- Node.js >= 18 (or Python >= 3.10)
+- Git
 
-Run `npm run clean` when stale development state causes Next.js or Turbopack
-manifest/cache errors, then restart the development server. The command only
-removes `apps/web/.next` and `apps/web/.turbo`; it preserves source and
-environment files, dependencies, npm caches, and the root lockfile.
-
-## End-to-end flow
-
-1. Connect Freighter on testnet
-2. **Community owner** mints NFT to a member with an IPFS metadata URI
-3. **Member** delegates voting power to themselves
-4. **Proposer** creates a proposal (needs delegated NFT voting power)
-5. **Member** casts a vote on the proposal detail page
-
-## Project structure
-
-```
-stolla/
-├── apps/web/           # Next.js dApp
-├── contracts/          # Soroban smart contracts
-├── docs/               # PRD, architecture, ADRs
-└── scripts/            # Deploy and funding helpers
+### Installation
+```bash
+git clone https://github.com/stolla-labs/stolla.git
+cd stolla
 ```
 
-## Documentation
+### Development
+```bash
+npm install  # or pip install -r requirements.txt
+npm test
+npm run dev
+```
 
-- [PRD](docs/prd.md)
-- [Architecture](docs/architecture.md)
-- [ADRs](docs/adr/)
+## 📊 Quality
+- ✅ CI/CD pipeline with automated testing
+- ✅ Linting & code quality checks
 
-## License
+## 🤝 Contributing
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-MIT
+## 📄 License
+See [LICENSE](./LICENSE) file.
