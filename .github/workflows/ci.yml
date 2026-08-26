@@ -60,11 +60,20 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: package-lock.json
+      - name: Reject nested workspace lockfile
+        run: |
+          if [ -f apps/web/package-lock.json ]; then
+            echo "Invalid npm workspace layout:"
+            echo "- apps/web/package-lock.json must not exist. Install dependencies from the repository root."
+            exit 1
+          fi
       - name: Install dependencies
-        run: npm ci --workspace=web
+        run: npm ci
+      - name: Validate workspace layout
+        run: npm run check:workspace
       - name: Install Playwright browsers
-        run: npx --workspace=web playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
       - name: Run multi-community browsing flow
         run: npm run test:e2e --workspace=web
         env:
