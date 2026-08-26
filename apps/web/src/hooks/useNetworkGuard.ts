@@ -13,7 +13,7 @@ import { activeNetwork } from "@/lib/stellar";
 export function useNetworkGuard(): NetworkComparison {
   const { walletNetwork } = useWallet();
   return useMemo(
-    () => compareNetworks(activeNetwork, walletNetwork),
+    () => compareNetworks(activeNetwork, (walletNetwork as any) || null),
     [walletNetwork],
   );
 }
