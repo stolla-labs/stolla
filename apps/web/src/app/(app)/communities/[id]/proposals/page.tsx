@@ -5,6 +5,7 @@ import { Buffer } from "buffer";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
+import { DiscoveryFreshnessBanner } from "@/components/DiscoveryFreshnessBanner";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
@@ -22,8 +23,14 @@ const ALL_STATES = "all";
 
 function ScopedProposalHistory({ community }: { community: CommunityView }) {
   const governorContract = community.record.governorContract;
-  const { proposals: discovered, loading, error, empty, refresh } =
-    useProposalDiscovery(governorContract);
+  const {
+    proposals: discovered,
+    loading,
+    error,
+    empty,
+    freshness,
+    refresh,
+  } = useProposalDiscovery(governorContract);
   const proposals = useMemo(
     () =>
       Array.from(
@@ -179,6 +186,13 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
               Retry proposal history
             </button>
           </div>
+        )}
+
+        {!loading && proposals.length > 0 && (
+          <DiscoveryFreshnessBanner
+            freshness={freshness}
+            onRetry={() => void refresh()}
+          />
         )}
 
         {!loading && !error && empty && (
