@@ -48,7 +48,7 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
     status: isReady ? "ok" : "degraded",
     network: {
       selected,
-      passphraseConfigured,
+      networkPassphraseConfigured: passphraseConfigured,
     },
     rpc: {
       configured: rpcConfigured,

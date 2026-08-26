@@ -1,5 +1,5 @@
 import { NETWORKS } from "./network";
-import { type NetworkCapabilities, type CapabilityError } from "./capabilities";
+import { type NetworkCapabilities, CapabilityError } from "./capabilities";
 
 const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? "testnet";
 export const stellarNetwork = network === "mainnet" ? "mainnet" : "testnet";
@@ -35,12 +35,12 @@ const legacyContractsCapability: NetworkCapabilities["legacyContracts"] = nft &&
   ? { available: true, nft, governor }
   : { available: false, reason: "Legacy contracts (NFT and/or Governor) are not configured." };
 
-let proposalDiscoveryCapability;
+let proposalDiscoveryCapability: NetworkCapabilities["proposalDiscovery"];
 try {
   const startLedger = parseGovernorStartLedger(process.env.NEXT_PUBLIC_GOVERNOR_START_LEDGER);
-  proposalDiscoveryCapability = { available: true, startLedger };
+  proposalDiscoveryCapability = { available: true as const, startLedger };
 } catch (e) {
-  proposalDiscoveryCapability = { available: false, reason: e.message };
+  proposalDiscoveryCapability = { available: false as const, reason: e instanceof Error ? e.message : String(e) };
 }
 
 export const capabilities: NetworkCapabilities = {
