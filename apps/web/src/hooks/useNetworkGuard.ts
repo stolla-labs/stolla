@@ -2,7 +2,11 @@
 
 import { useMemo } from "react";
 import { useWallet } from "@/context/WalletProvider";
-import { compareNetworks, type NetworkComparison } from "@/lib/network";
+import {
+  compareNetworks,
+  describeNetwork,
+  type NetworkComparison,
+} from "@/lib/network";
 import { activeNetwork } from "@/lib/stellar";
 
 /**
@@ -11,9 +15,11 @@ import { activeNetwork } from "@/lib/stellar";
  * network directly, so mismatch handling stays in one place.
  */
 export function useNetworkGuard(): NetworkComparison {
-  const { walletNetwork } = useWallet();
-  return useMemo(
-    () => compareNetworks(activeNetwork, walletNetwork),
-    [walletNetwork],
-  );
+  const { walletNetwork, walletNetworkPassphrase } = useWallet();
+  return useMemo(() => {
+    const detected = walletNetworkPassphrase
+      ? describeNetwork(walletNetworkPassphrase, walletNetwork ?? undefined)
+      : null;
+    return compareNetworks(activeNetwork, detected);
+  }, [walletNetwork, walletNetworkPassphrase]);
 }

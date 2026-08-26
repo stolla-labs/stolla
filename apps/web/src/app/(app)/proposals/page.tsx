@@ -146,7 +146,8 @@ export default function ProposalsPage() {
   );
 
   useEffect(() => {
-    void loadStates();
+    const timeout = window.setTimeout(() => void loadStates(), 0);
+    return () => window.clearTimeout(timeout);
   }, [loadStates]);
 
   const availableStates = useMemo(
@@ -173,7 +174,8 @@ export default function ProposalsPage() {
 
   useEffect(() => {
     if (stateFilter !== ALL_FILTER && !availableStates.includes(stateFilter)) {
-      setStateFilter(ALL_FILTER);
+      const timeout = window.setTimeout(() => setStateFilter(ALL_FILTER), 0);
+      return () => window.clearTimeout(timeout);
     }
   }, [availableStates, stateFilter]);
 

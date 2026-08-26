@@ -74,6 +74,13 @@ export type CommunityDeploymentAdapter = {
   verifyRegistry(
     expected: CommunityRegistryRecord,
   ): Promise<"verified" | "missing" | "mismatch" | "rpc-error">;
+  /**
+   * Reads the CommunityFactory owner so the UI can gate deployment before any
+   * simulation or signature. Resolves to the owner address string on success;
+   * throws on a transient read failure so callers can retry rather than treat
+   * the result as an authorization verdict.
+   */
+  readFactoryOwner(factoryId: string, publicKey: string): Promise<string>;
 };
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -348,6 +355,29 @@ export const defaultCommunityDeploymentAdapter: CommunityDeploymentAdapter = {
     } catch {
       return "rpc-error";
     }
+  },
+
+  /**
+   * Reads `owner()` off the factory as a read-only simulation. Any throw is a
+   * transient read failure that the UI reports as retryable, never as
+   * "unauthorized".
+   */
+  async readFactoryOwner(factoryId, publicKey) {
+    const transaction = await AssembledTransaction.build<string>({
+      contractId: factoryId,
+      method: "owner",
+      args: [],
+      networkPassphrase: config.networkPassphrase,
+      rpcUrl: config.rpcUrl,
+      publicKey,
+      timeoutInSeconds: COMMUNITY_DEPLOYMENT_TIMEOUT_SECONDS,
+      parseResultXdr: (value) => scValToNative(value) as string,
+    });
+    const owner = transaction.result;
+    if (typeof owner !== "string" || owner.trim() === "") {
+      throw new Error("The CommunityFactory owner read did not return an address.");
+    }
+    return owner;
   },
 };
 

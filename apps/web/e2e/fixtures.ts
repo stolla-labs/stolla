@@ -135,6 +135,9 @@ export async function installCreationFixtures(
           async verifyRegistry() {
             return "verified";
           },
+          async readFactoryOwner() {
+            return wallet;
+          },
         },
       };
     },
