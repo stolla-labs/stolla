@@ -17,7 +17,12 @@ import { NETWORKS, compareNetworks, describeNetwork } from "./network";
 const DRAFT: CommunityDraft = {
   name: "Stolla Builders",
   symbol: "STBL",
+  description: "A community for builders",
+  collectionUri: "ipfs://QmCollection",
   metadataUri: "ipfs://QmCollection",
+  logo: "",
+  externalLinkLabel: "",
+  externalLinkUrl: "",
   votingDelay: "1",
   votingPeriod: "10000",
   proposalThreshold: "1",

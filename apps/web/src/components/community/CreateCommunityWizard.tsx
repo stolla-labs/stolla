@@ -13,6 +13,7 @@ import {
 import { useWallet } from "@/context/WalletProvider";
 import { useNetworkGuard } from "@/hooks/useNetworkGuard";
 import { NetworkMismatchNotice } from "@/components/NetworkMismatchNotice";
+import { CommunityMetadataPreview } from "./CommunityMetadataPreview";
 import {
   CREATION_STEPS,
   CREATION_DRAFT_STORAGE_KEY,
@@ -73,6 +74,11 @@ const STEP_LABELS: Record<CreationStep, string> = {
 const METADATA_FIELDS = [
   { key: "name", label: "Community name", placeholder: "Stolla Builders" },
   { key: "symbol", label: "Token symbol", placeholder: "STBL" },
+  { key: "description", label: "Description", placeholder: "A community for builders" },
+  { key: "collectionUri", label: "Collection URI", placeholder: "ipfs://Qm..." },
+  { key: "logo", label: "Logo URI", placeholder: "ipfs://Qm..." },
+  { key: "externalLinkLabel", label: "Link Label", placeholder: "Website" },
+  { key: "externalLinkUrl", label: "Link URL", placeholder: "https://stolla.org" },
   { key: "metadataUri", label: "IPFS metadata URI", placeholder: "ipfs://Qm..." },
 ] as const;
 
@@ -358,7 +364,17 @@ export function CreateCommunityWizard({
               </div>
             ))}
           </dl>
-          <NetworkFacts comparison={comparison} address={address} />
+          
+          <div className="mt-6 border-t border-slate-800 pt-6">
+            <h3 className="mb-4 text-sm font-medium text-slate-300">
+              Community Metadata
+            </h3>
+            <CommunityMetadataPreview draft={state.draft} />
+          </div>
+
+          <div className="mt-6 border-t border-slate-800 pt-6">
+            <NetworkFacts comparison={comparison} address={address} />
+          </div>
         </Panel>
       )}
 

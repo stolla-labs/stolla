@@ -12,7 +12,12 @@ export type CreationStep = (typeof CREATION_STEPS)[number];
 export type CommunityDraft = {
   name: string;
   symbol: string;
+  description: string;
+  collectionUri: string;
   metadataUri: string;
+  logo: string;
+  externalLinkLabel: string;
+  externalLinkUrl: string;
   votingDelay: string;
   votingPeriod: string;
   proposalThreshold: string;
@@ -67,7 +72,12 @@ export type CreationState = {
 export const DEFAULT_DRAFT: CommunityDraft = {
   name: "",
   symbol: "",
+  description: "",
+  collectionUri: "",
   metadataUri: "",
+  logo: "",
+  externalLinkLabel: "",
+  externalLinkUrl: "",
   votingDelay: "1",
   votingPeriod: "10000",
   proposalThreshold: "1",

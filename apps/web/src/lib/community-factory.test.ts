@@ -11,7 +11,12 @@ import type { CommunitySimulation, CommunityDraft } from "./community-creation";
 const DRAFT: CommunityDraft = {
   name: "Stolla Builders",
   symbol: "STBL",
+  description: "A community for builders",
+  collectionUri: "ipfs://QmCollection",
   metadataUri: "ipfs://QmCollection",
+  logo: "",
+  externalLinkLabel: "",
+  externalLinkUrl: "",
   votingDelay: "1",
   votingPeriod: "10000",
   proposalThreshold: "1",
