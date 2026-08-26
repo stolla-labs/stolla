@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { CommunityAvatar } from "@/components/CommunityAvatar";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import type { CommunityView } from "@/lib/community/types";
 import { truncateMiddle } from "@/lib/truncate";
 
@@ -75,13 +75,14 @@ export function CommunityCard({ community }: { community: CommunityView }) {
         </div>
       </dl>
 
-      <Link
+      <AppLinkButton
         href={`/communities/${record.id}`}
         aria-label={`View ${name} community details`}
-        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 sm:self-start"
+        tone="primary"
+        className="mt-5 sm:self-start"
       >
         View community
-      </Link>
+      </AppLinkButton>
     </article>
   );
 }

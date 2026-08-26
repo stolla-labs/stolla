@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
+import { AppButton } from "@/components/ui/AppButton";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { useWallet } from "@/context/WalletProvider";
 import {
@@ -402,8 +403,8 @@ export function CommunityDeploymentPanel({
             {simulation ? "Rebuild simulation" : "Simulate deployment"}
           </button>
           {simulation && (
-            <button
-              type="button"
+            <AppButton
+              tone="primary"
               onClick={() => void submit()}
               disabled={
                 busy ||
@@ -412,10 +413,9 @@ export function CommunityDeploymentPanel({
                 walletNetworkUnknown ||
                 stage === "awaiting_approval"
               }
-              className="min-h-11 rounded-lg bg-indigo-500 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve and deploy
-            </button>
+            </AppButton>
           )}
         </div>
       )}
@@ -431,13 +431,12 @@ export function CommunityDeploymentPanel({
             Retry transaction and registry status
           </button>
           {knownTransactionStatus === "failed" && (
-            <button
-              type="button"
+            <AppButton
+              tone="danger"
               onClick={clearFailedRecovery}
-              className="min-h-11 rounded-lg border border-rose-700 px-4 py-2 text-sm text-rose-200"
             >
               Acknowledge failure and rebuild
-            </button>
+            </AppButton>
           )}
           {txExplorer && (
             <a
@@ -495,18 +494,18 @@ export function CommunityDeploymentPanel({
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link
+            <AppLinkButton
               href={`/communities/${expected.id}`}
-              className="inline-flex min-h-11 items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+              tone="success"
             >
               View community
-            </Link>
-            <Link
+            </AppLinkButton>
+            <AppLinkButton
               href={`/communities/${expected.id}/proposals`}
-              className="inline-flex min-h-11 items-center rounded-lg border border-emerald-700 px-4 py-2 text-sm text-emerald-100"
+              tone="secondary"
             >
               Browse community proposals
-            </Link>
+            </AppLinkButton>
           </div>
         </section>
       )}

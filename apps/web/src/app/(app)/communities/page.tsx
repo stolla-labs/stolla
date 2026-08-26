@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CommunityCard } from "@/components/CommunityCard";
+import { AppButton } from "@/components/ui/AppButton";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { listCommunities } from "@/lib/community/registry";
@@ -197,12 +198,13 @@ export default function CommunitiesPage() {
             wallet connection is required.
           </p>
         </div>
-        <Link
+        <AppLinkButton
           href="/communities/create"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
+          tone="primary"
+          className="shrink-0"
         >
           Create a community
-        </Link>
+        </AppLinkButton>
       </div>
 
       <div className="mt-6 max-w-xl">
@@ -220,13 +222,13 @@ export default function CommunitiesPage() {
             className="min-h-11 min-w-0 flex-1 rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           />
           {query && (
-            <button
-              type="button"
+            <AppButton
+              tone="secondary"
               onClick={() => updateQuery("")}
-              className="min-h-11 shrink-0 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              className="shrink-0"
             >
               Clear
-            </button>
+            </AppButton>
           )}
         </div>
       </div>
@@ -290,14 +292,14 @@ export default function CommunitiesPage() {
           <p className="mt-2 break-words text-sm text-rose-200 [overflow-wrap:anywhere]">
             {error}
           </p>
-          <button
-            type="button"
+          <AppButton
+            tone="danger"
             onClick={() => void loadPage(communities.length === 0)}
             disabled={loading}
-            className="mt-4 min-h-11 rounded-lg border border-rose-700 px-4 py-2 text-sm font-medium text-rose-100 hover:bg-rose-900/60 disabled:opacity-50"
+            className="mt-4"
           >
             {loading ? "Retrying…" : "Retry registry request"}
-          </button>
+          </AppButton>
         </section>
       )}
 
@@ -318,13 +320,13 @@ export default function CommunitiesPage() {
         visibleCommunities.length === 0 && (
           <LiveStatus className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
             No communities match “{query.trim()}”.
-            <button
-              type="button"
+            <AppButton
+              tone="secondary"
               onClick={() => updateQuery("")}
-              className="ml-2 min-h-11 rounded-lg px-3 py-2 text-indigo-300 hover:bg-slate-800"
+              className="ml-2"
             >
               Clear search
-            </button>
+            </AppButton>
           </LiveStatus>
         )}
 
@@ -340,14 +342,14 @@ export default function CommunitiesPage() {
 
       {nextCursor !== null && !error && (
         <div className="mt-6 flex justify-center">
-          <button
-            type="button"
+          <AppButton
+            tone="secondary"
             onClick={() => void loadPage(false)}
             disabled={loading}
-            className="min-h-11 w-full rounded-lg border border-slate-700 bg-[#151b2b] px-5 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800/80 disabled:opacity-50 sm:w-auto"
+            className="w-full sm:w-auto"
           >
             {loading ? "Loading more…" : "Load more communities"}
-          </button>
+          </AppButton>
         </div>
       )}
     </div>

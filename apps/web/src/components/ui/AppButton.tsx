@@ -39,10 +39,12 @@ export function AppButton({
   tone = "primary",
   size = "md",
   className = "",
+  type = "button",
   ...props
 }: AppButtonProps) {
   return (
     <button
+      type={type}
       className={`${appButtonBaseClass} ${appButtonToneClass[tone]} ${appButtonSizeClass[size]} ${className}`}
       {...props}
     />

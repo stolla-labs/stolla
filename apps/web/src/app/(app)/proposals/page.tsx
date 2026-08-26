@@ -13,6 +13,7 @@ import {
 import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
+import { AppButton } from "@/components/ui/AppButton";
 import { truncateEnd } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
@@ -306,16 +307,16 @@ export default function ProposalsPage() {
               {descriptionError}
             </p>
           )}
-          <button
-            type="button"
+          <AppButton
+            tone="primary"
             onClick={() => void handleCreateProposal()}
             disabled={!address || proposeLifecycle.isInFlight}
-            className="mt-3 min-h-11 w-full touch-manipulation rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-50 sm:w-auto"
+            className="mt-3 w-full sm:w-auto"
           >
             {proposeLifecycle.isInFlight
               ? "Creating proposal…"
               : "Create proposal"}
-          </button>
+          </AppButton>
           <TransactionLifecycleStatus
             stage={proposeLifecycle.stage}
             operationLabel="Propose"
@@ -430,13 +431,13 @@ export default function ProposalsPage() {
                 : "Proposal history is temporarily unavailable."}
             </p>
             <p className="mt-1 text-sm text-rose-300/80">{error}</p>
-            <button
-              type="button"
+            <AppButton
+              tone="danger"
               onClick={() => void refresh()}
-              className="mt-3 min-h-11 touch-manipulation rounded-lg border border-rose-600 px-3 py-2 text-sm font-medium text-rose-100 hover:bg-rose-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300"
+              className="mt-3"
             >
               Retry loading proposals
-            </button>
+            </AppButton>
           </div>
         )}
 
@@ -500,15 +501,15 @@ export default function ProposalsPage() {
               })}
             </ul>
             {canLoadMore && (
-              <button
-                type="button"
+              <AppButton
+                tone="secondary"
                 onClick={() =>
                   setVisibleCount((count) => count + LOAD_MORE_PAGE_SIZE)
                 }
-                className="mt-4 min-h-11 w-full touch-manipulation rounded-lg border border-slate-700 bg-[#151b2b] px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800/80 sm:w-auto"
+                className="mt-4 w-full sm:w-auto"
               >
                 Load more
-              </button>
+              </AppButton>
             )}
           </>
         )}

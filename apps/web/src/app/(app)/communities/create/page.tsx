@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { CommunityDeploymentPanel } from "@/components/CommunityDeploymentPanel";
+import { AppButton } from "@/components/ui/AppButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { useWallet } from "@/context/WalletProvider";
 import {
@@ -272,13 +273,9 @@ export default function CreateCommunityPage() {
           ← Communities
         </Link>
         {!hasSubmittedRecovery && (
-          <button
-            type="button"
-            onClick={discardDraft}
-            className="min-h-11 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-          >
+          <AppButton tone="secondary" onClick={discardDraft}>
             {dirty ? "Discard draft" : "Restart wizard"}
-          </button>
+          </AppButton>
         )}
       </div>
 
@@ -465,14 +462,14 @@ export default function CreateCommunityPage() {
           {!address && (
             <div className="rounded-lg border border-amber-800/70 bg-amber-950/30 p-4 text-sm text-amber-200">
               Connect the wallet that will create this community.
-              <button
-                type="button"
+              <AppButton
+                tone="primary"
                 onClick={() => void connect()}
                 disabled={isConnecting}
-                className="mt-3 block min-h-11 rounded-lg border border-amber-700 px-4 py-2 font-medium hover:bg-amber-900/50 disabled:opacity-50"
+                className="mt-3 block"
               >
                 {isConnecting ? "Connecting…" : "Connect wallet"}
-              </button>
+              </AppButton>
             </div>
           )}
           {!contractIds.communityFactory && (
@@ -496,13 +493,12 @@ export default function CreateCommunityPage() {
           </label>
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-            <button
-              type="button"
+            <AppButton
+              tone="secondary"
               onClick={() => setStep(2)}
-              className="min-h-11 rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
             >
               Back to governance
-            </button>
+            </AppButton>
           </div>
           <CommunityDeploymentPanel
             metadata={draft}
@@ -589,19 +585,15 @@ export default function CreateCommunityPage() {
             ))}
           </div>
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-            <button
-              type="button"
+            <AppButton
+              tone="secondary"
               onClick={() => setStep(1)}
-              className="min-h-11 rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
             >
               Back to metadata
-            </button>
-            <button
-              type="submit"
-              className="min-h-11 rounded-lg bg-indigo-500 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-            >
+            </AppButton>
+            <AppButton type="submit" tone="primary">
               Review community
-            </button>
+            </AppButton>
           </div>
         </form>
       ) : (
@@ -875,12 +867,13 @@ export default function CreateCommunityPage() {
             logo, and links are public and committed by the immutable hash.
           </aside>
 
-          <button
+          <AppButton
             type="submit"
-            className="min-h-11 w-full rounded-lg bg-indigo-500 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-400 sm:w-auto"
+            tone="primary"
+            className="w-full sm:w-auto"
           >
             Continue to governance
-          </button>
+          </AppButton>
         </form>
       )}
     </div>

@@ -5,6 +5,8 @@ import { Buffer } from "buffer";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
+import { AppButton } from "@/components/ui/AppButton";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
@@ -236,13 +238,13 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
         )}
 
         {visibleCount < filtered.length && (
-          <button
-            type="button"
+          <AppButton
+            tone="secondary"
             onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-            className="mt-4 min-h-11 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-100 hover:bg-slate-800"
+            className="mt-4"
           >
             Load more proposals
-          </button>
+          </AppButton>
         )}
       </section>
     </div>
@@ -301,12 +303,13 @@ export default function CommunityProposalHistoryPage() {
               ? "The route community is malformed or is not registered."
               : "The canonical community record could not be loaded."}
           </p>
-          <Link
+          <AppLinkButton
             href="/communities"
-            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-indigo-500 px-4 py-2 text-sm text-white"
+            tone="primary"
+            className="mt-4"
           >
             Browse communities
-          </Link>
+          </AppLinkButton>
         </section>
       )}
     </div>

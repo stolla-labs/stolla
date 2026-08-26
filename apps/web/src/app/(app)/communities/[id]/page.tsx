@@ -171,12 +171,12 @@ export default function CommunityDetailPage() {
             >
               Retry community request
             </AppButton>
-            <Link
+            <AppLinkButton
               href="/communities"
-              className="inline-flex min-h-11 items-center rounded-lg px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              tone="secondary"
             >
               Back to communities
-            </Link>
+            </AppLinkButton>
           </div>
         </section>
       </div>
@@ -255,22 +255,20 @@ export default function CommunityDetailPage() {
             {record.id}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
+            <AppButton
+              tone="secondary"
               onClick={() => void copyValue("Community ID", record.id)}
-              className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
               aria-label="Copy full community ID"
             >
               Copy ID
-            </button>
-            <button
-              type="button"
+            </AppButton>
+            <AppButton
+              tone="secondary"
               onClick={() => void shareCommunity(name, record.id)}
-              className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
               aria-label={`Share ${name} community page`}
             >
               Share page
-            </button>
+            </AppButton>
           </div>
         </div>
       </header>
@@ -301,15 +299,15 @@ export default function CommunityDetailPage() {
       {metadata && metadata.externalLinks.length > 0 && (
         <nav aria-label="Community links" className="mt-5 flex flex-wrap gap-2">
           {metadata.externalLinks.map((link) => (
-            <a
+            <AppLinkButton
               key={`${link.label}:${link.url}`}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              tone="secondary"
             >
               {link.label}
-            </a>
+            </AppLinkButton>
           ))}
         </nav>
       )}

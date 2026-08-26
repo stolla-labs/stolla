@@ -8,8 +8,15 @@ import { AppLinkButton } from "./AppLinkButton";
 
 const tones: AppButtonTone[] = ["primary", "secondary", "danger", "success"];
 
+const toneClassExpectations: Record<AppButtonTone, string> = {
+  primary: "bg-indigo-500",
+  secondary: "border-slate-700",
+  danger: "border-rose-700",
+  success: "bg-emerald-600",
+};
+
 describe("AppButton", () => {
-  it("renders every tone", () => {
+  it("renders every tone with the expected tone class", () => {
     render(
       <div>
         {tones.map((tone) => (
@@ -21,8 +28,27 @@ describe("AppButton", () => {
     );
 
     for (const tone of tones) {
-      expect(screen.getByRole("button", { name: tone })).toBeInTheDocument();
+      const button = screen.getByRole("button", { name: tone });
+      expect(button).toBeInTheDocument();
+      expect(button.className).toContain(toneClassExpectations[tone]);
     }
+  });
+
+  it("defaults to type=button and preserves an explicit type", () => {
+    render(
+      <div>
+        <AppButton>Default</AppButton>
+        <AppButton type="submit">Submit</AppButton>
+      </div>,
+    );
+    expect(screen.getByRole("button", { name: "Default" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: "Submit" })).toHaveAttribute(
+      "type",
+      "submit",
+    );
   });
 
   it("renders both sizes", () => {

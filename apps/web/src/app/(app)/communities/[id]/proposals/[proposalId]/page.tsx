@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import ProposalDetailPage from "@/app/(app)/proposals/[id]/page";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { getCommunity } from "@/lib/community/registry";
 import type { CommunityView } from "@/lib/community/types";
@@ -90,18 +91,19 @@ export default function CommunityProposalDetailPage() {
                   ? "The proposal identifier is malformed."
                   : "The canonical community record could not be loaded."}
           </p>
-          <Link
+          <AppLinkButton
             href={
               status === "community-not-found"
                 ? "/communities"
                 : `/communities/${id}/proposals`
             }
-            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-indigo-500 px-4 py-2 text-sm text-white"
+            tone="primary"
+            className="mt-4"
           >
             {status === "community-not-found"
               ? "Browse communities"
               : "Back to community proposals"}
-          </Link>
+          </AppLinkButton>
         </section>
       )}
     </div>
