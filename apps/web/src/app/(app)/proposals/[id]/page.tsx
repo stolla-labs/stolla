@@ -15,6 +15,7 @@ import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { PROPOSAL_STATE_LABELS } from "@/lib/proposalState";
 import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { FreshnessNotice } from "@/components/FreshnessNotice";
 import { parseProposalId } from "@/lib/proposals";
 import { useTransactionLifecycle } from "@/hooks/useTransactionLifecycle";
 import { TransactionLifecycleDisplay } from "@/components/TransactionLifecycleDisplay";
@@ -69,6 +70,7 @@ export default function ProposalDetailPage({
   const [quorum, setQuorum] = useState<bigint | null>(null);
   const [totalsError, setTotalsError] = useState<string | null>(null);
   const [totalsIncomplete, setTotalsIncomplete] = useState(false);
+  const [totalsFreshness, setTotalsFreshness] = useState<"Current" | "Delayed" | "Stale" | "Unavailable">("Current");
   const [snapshotLedger, setSnapshotLedger] = useState<number | null>(null);
   const [deadlineLedger, setDeadlineLedger] = useState<number | null>(null);
   const [snapshotStatus, setSnapshotStatus] = useState<
@@ -119,12 +121,14 @@ export default function ProposalDetailPage({
           error instanceof Error
             ? error.message
             : "Vote history could not be loaded.",
+        freshness: "Unavailable" as const,
       })),
     ]);
 
     setTotals(voteResult.totals);
     setTotalsIncomplete(voteResult.incomplete);
     setTotalsError(voteResult.error ?? null);
+    setTotalsFreshness(voteResult.freshness ?? "Current");
 
     const snapshotValue = snapshotTx?.result;
     if (snapshotValue !== undefined && snapshotValue !== null) {
@@ -563,17 +567,19 @@ export default function ProposalDetailPage({
                 </dd>
               </div>
             </dl>
-            {totalsIncomplete && (
-              <p className="text-xs text-amber-500">
-                Event history may be incomplete — totals shown are a lower
-                bound.
-              </p>
+            {totalsFreshness !== "Current" && (
+              <FreshnessNotice state={totalsFreshness} onRetry={() => window.location.reload()} />
             )}
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">
-            Vote totals unavailable{totalsError ? `: ${totalsError}` : ""}
-          </p>
+          <div className="mt-3">
+            <p className="text-sm text-slate-400">
+              Vote totals unavailable{totalsError ? `: ${totalsError}` : ""}
+            </p>
+            {totalsFreshness !== "Current" && (
+              <FreshnessNotice state={totalsFreshness} onRetry={() => window.location.reload()} />
+            )}
+          </div>
         )}
       </section>
 

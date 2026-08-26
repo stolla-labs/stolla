@@ -16,6 +16,7 @@ export interface VoteAggregationResult {
   incomplete: boolean;
   /** Human-readable error if the query failed entirely */
   error?: string;
+  freshness: "Current" | "Delayed" | "Stale" | "Unavailable";
 }
 
 /**
@@ -39,6 +40,7 @@ export async function fetchVoteTotals(
         total: BigInt(0),
       },
       incomplete: false,
+      freshness: "Current",
     };
   }
   if (!governorContractId) {
@@ -46,6 +48,7 @@ export async function fetchVoteTotals(
       totals: { for: BigInt(0), against: BigInt(0), abstain: BigInt(0), total: BigInt(0) },
       incomplete: true,
       error: "Governor contract ID not configured",
+      freshness: "Unavailable",
     };
   }
 
@@ -57,6 +60,8 @@ export async function fetchVoteTotals(
   const seenEventIds = new Set<string>();
   let incomplete = false;
   let cursor: string | undefined;
+  let hasMalformedMetadata = false;
+  let hasData = false;
 
   // Testnet RPC rejects startLedger=1 and OZ topic filters currently return
   // empty sets; scan by contract and match vote_cast + proposal id locally.
@@ -73,6 +78,10 @@ export async function fetchVoteTotals(
         ? await server.getEvents({ filters, cursor, limit: 100 })
         : await server.getEvents({ filters, startLedger, limit: 100 });
 
+      if (response.latestLedger === undefined || response.latestLedger === null) {
+        hasMalformedMetadata = true;
+      }
+
       if (!response.events || response.events.length === 0) {
         break;
       }
@@ -80,6 +89,7 @@ export async function fetchVoteTotals(
       for (const event of response.events) {
         if (seenEventIds.has(event.id)) continue;
         seenEventIds.add(event.id);
+        hasData = true;
 
         try {
           if (event.topic.length < 3) continue;
@@ -131,9 +141,19 @@ export async function fetchVoteTotals(
   } catch (err: unknown) {
     const message =
       err instanceof Error ? err.message : "Failed to fetch vote events";
-    return { totals, incomplete: true, error: message };
+    return { 
+      totals, 
+      incomplete: true, 
+      error: message, 
+      freshness: hasData ? "Stale" : "Unavailable" 
+    };
   }
 
   totals.total = totals.for + totals.against + totals.abstain;
-  return { totals, incomplete };
+  
+  let freshness: "Current" | "Delayed" | "Stale" | "Unavailable" = "Current";
+  if (incomplete) freshness = "Stale";
+  else if (hasMalformedMetadata) freshness = "Delayed";
+  
+  return { totals, incomplete, freshness };
 }

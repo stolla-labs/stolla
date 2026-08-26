@@ -13,6 +13,7 @@ import {
 import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
+import { FreshnessNotice } from "@/components/FreshnessNotice";
 import { truncateEnd } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
@@ -46,6 +47,7 @@ export default function ProposalsPage() {
     loading,
     error,
     empty,
+    freshness,
     refresh,
   } =
     useProposalDiscovery();
@@ -419,27 +421,10 @@ export default function ProposalsPage() {
           </>
         )}
 
-        {!loading && error && (
-          <div
-            className="mt-3 rounded-lg border border-rose-800/70 bg-rose-950/40 p-4"
-            role="alert"
-          >
-            <p className="font-medium text-rose-200">
-              {uniqueProposalIds.length > 0
-                ? "More proposal history could not be loaded."
-                : "Proposal history is temporarily unavailable."}
-            </p>
-            <p className="mt-1 text-sm text-rose-300/80">{error}</p>
-            <button
-              type="button"
-              onClick={() => void refresh()}
-              className="mt-3 min-h-11 touch-manipulation rounded-lg border border-rose-600 px-3 py-2 text-sm font-medium text-rose-100 hover:bg-rose-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300"
-            >
-              Retry loading proposals
-            </button>
-          </div>
+        {!loading && (
+          <FreshnessNotice state={freshness} onRetry={() => void refresh()} />
         )}
-
+        
         {!loading && !error && empty && (
           <LiveStatus className="mt-3 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-400">
             No public proposals have been discovered yet.

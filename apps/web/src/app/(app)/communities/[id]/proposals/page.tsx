@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { FreshnessNotice } from "@/components/FreshnessNotice";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { getCommunity } from "@/lib/community/registry";
 import type { CommunityView } from "@/lib/community/types";
@@ -22,7 +23,7 @@ const ALL_STATES = "all";
 
 function ScopedProposalHistory({ community }: { community: CommunityView }) {
   const governorContract = community.record.governorContract;
-  const { proposals: discovered, loading, error, empty, refresh } =
+  const { proposals: discovered, loading, error, empty, freshness, refresh } =
     useProposalDiscovery(governorContract);
   const proposals = useMemo(
     () =>
@@ -45,7 +46,7 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
       try {
         const client = createReadOnlyGovernorClient(governorContract);
         const transaction = await client.proposal_state({
-          proposal_id: Uint8Array.from(Buffer.from(proposalId, "hex")),
+          proposal_id: Buffer.from(proposalId, "hex"),
         });
         setStates((current) => ({
           ...current,
@@ -160,25 +161,8 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
           </>
         )}
 
-        {error && (
-          <div
-            role="alert"
-            className="mt-3 rounded-lg border border-rose-800/70 bg-rose-950/40 p-4 text-sm text-rose-200"
-          >
-            <p>
-              {proposals.length
-                ? "More proposal history could not be loaded."
-                : "Proposal history is temporarily unavailable."}
-            </p>
-            <p className="mt-1 text-rose-300">{error}</p>
-            <button
-              type="button"
-              onClick={() => void refresh()}
-              className="mt-3 min-h-11 rounded-lg border border-rose-700 px-3 py-2"
-            >
-              Retry proposal history
-            </button>
-          </div>
+        {!loading && (
+          <FreshnessNotice state={freshness} onRetry={() => void refresh()} />
         )}
 
         {!loading && !error && empty && (

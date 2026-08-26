@@ -42,6 +42,7 @@ export function useProposalDiscovery(governorContractId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [empty, setEmpty] = useState(false);
+  const [freshness, setFreshness] = useState<"Current" | "Delayed" | "Stale" | "Unavailable">("Current");
 
   const discover = useCallback(async () => {
     const governor = governorContractId ?? requireContractIds().governor;
@@ -57,14 +58,14 @@ export function useProposalDiscovery(governorContractId?: string) {
       if (mocked) {
         setProposals(mocked);
         setEmpty(mocked.length === 0);
+        setFreshness("Current");
         return true;
       }
       const discovered: DiscoveredProposal[] = [];
       let cursor: string | undefined = undefined;
+      let hasMalformedMetadata = false;
 
       for (;;) {
-        // Topic filters against current testnet RPC return empty for OZ
-        // contract-event symbols; fetch by contract id and filter client-side.
         const request:
           | {
               filters: { contractIds: string[] }[];
@@ -90,6 +91,10 @@ export function useProposalDiscovery(governorContractId?: string) {
             };
 
         const response = await server.getEvents(request);
+        
+        if (response.latestLedger === undefined || response.latestLedger === null) {
+          hasMalformedMetadata = true;
+        }
 
         for (const event of response.events) {
           if (event.topic.length < 2) continue;
@@ -118,14 +123,16 @@ export function useProposalDiscovery(governorContractId?: string) {
       discovered.reverse();
       setProposals(discovered);
       setEmpty(discovered.length === 0);
+      setFreshness(hasMalformedMetadata ? "Delayed" : "Current");
       return true;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Discovery failed");
+      setFreshness(proposals.length > 0 ? "Stale" : "Unavailable");
       return false;
     } finally {
       setLoading(false);
     }
-  }, [governorContractId]);
+  }, [governorContractId, proposals.length]);
 
   useEffect(() => {
     const timeout = window.setTimeout(
@@ -143,6 +150,7 @@ export function useProposalDiscovery(governorContractId?: string) {
     loading,
     error,
     empty,
+    freshness,
     refresh: discover,
   };
 }
