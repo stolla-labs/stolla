@@ -187,9 +187,15 @@ export async function verifyCommunityRegistry({
   const entry = value ? scValToNative(value) : null;
   const nftContractId = entry?.nft;
   const governorContractId = entry?.governor;
+  const communityIdBytes = entry?.community_id;
 
-  if (!nftContractId || !governorContractId) {
+  if (!nftContractId || !governorContractId || !(communityIdBytes instanceof Uint8Array)) {
     throw new Error("The community is not visible in the factory registry yet.");
   }
-  return { nftContractId, governorContractId };
+
+  const id = Array.from(communityIdBytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return { id, nftContractId, governorContractId };
 }

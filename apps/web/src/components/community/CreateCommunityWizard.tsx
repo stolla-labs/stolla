@@ -629,36 +629,114 @@ function CommunityCreated({ registry }: { registry: CommunityRegistryEntry }) {
     { label: "Community NFT", id: registry.nftContractId },
     { label: "Governor", id: registry.governorContractId },
   ];
+  
+  const [copyState, setCopyState] = useState("");
+  const communityUrl = typeof window !== "undefined" ? `${window.location.origin}/communities/${registry.id}` : "";
+
+  const handleShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join our Community",
+          url: communityUrl,
+        });
+        setCopyState("Shared");
+        setTimeout(() => setCopyState(""), 2000);
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") {
+          fallbackCopy();
+        }
+      }
+    } else {
+      fallbackCopy();
+    }
+  };
+
+  const fallbackCopy = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(communityUrl)
+        .then(() => {
+          setCopyState("Copied");
+          setTimeout(() => setCopyState(""), 2000);
+        })
+        .catch(() => setCopyState("Failed to copy"));
+    }
+  };
 
   return (
-    <div
-      data-testid="community-created"
-      className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 p-4"
-    >
-      <p className="font-semibold text-emerald-200">Community created</p>
-      <p className="mt-1 text-sm text-emerald-100/80">
-        The factory registry lists both contracts for this community.
-      </p>
-      <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-        {contracts.map((contract) => {
-          const link = contractUrl(activeNetwork, contract.id);
+    <div data-testid="community-created" className="space-y-6">
+      <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 p-5">
+        <h3 className="font-semibold text-emerald-200">Deployment successful</h3>
+        <p className="mt-1 text-sm text-emerald-100/80">
+          Your community is now registered on chain. Share the link below to invite members.
+        </p>
 
-          return (
-            <div key={contract.label}>
-              <dt className="text-emerald-300/70">{contract.label}</dt>
-              <dd className="break-all font-mono text-emerald-50">
-                {link ? (
-                  <a href={link} target="_blank" rel="noreferrer" className="hover:underline">
-                    {contract.id}
-                  </a>
-                ) : (
-                  contract.id
-                )}
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
+        <div className="mt-5 flex flex-col sm:flex-row gap-3">
+          <a
+            href={`/communities/${registry.id}`}
+            className="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500"
+          >
+            Go to community
+          </a>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex flex-1 items-center justify-center rounded-lg border border-emerald-700/50 bg-emerald-900/30 px-4 py-2 text-sm font-medium text-emerald-100 transition hover:bg-emerald-800/50"
+          >
+            {copyState || "Copy invite link"}
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-[#0b0f19] p-5">
+        <h4 className="font-medium text-slate-200">Onboarding checklist</h4>
+        <ul className="mt-4 space-y-3 text-sm text-slate-400">
+          <li className="flex items-start gap-3">
+            <span className="mt-0.5 text-slate-600">○</span>
+            <span>Verify your community metadata on the detail page</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="mt-0.5 text-slate-600">○</span>
+            <span>Invite early members by sharing the community URL</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="mt-0.5 text-slate-600">○</span>
+            <span>Mint NFT memberships for your members</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="mt-0.5 text-slate-600">○</span>
+            <span>Have members delegate their voting power</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="mt-0.5 text-slate-600">○</span>
+            <span>Create the first governance proposal</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-[#0b0f19] p-5">
+        <h4 className="font-medium text-slate-200">Contract details</h4>
+        <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+          {contracts.map((contract) => {
+            const link = contractUrl(activeNetwork, contract.id);
+
+            return (
+              <div key={contract.label}>
+                <dt className="text-slate-500">{contract.label}</dt>
+                <dd className="mt-1 break-all font-mono text-slate-300">
+                  {link ? (
+                    <a href={link} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">
+                      {contract.id}
+                    </a>
+                  ) : (
+                    contract.id
+                  )}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </div>
     </div>
   );
 }

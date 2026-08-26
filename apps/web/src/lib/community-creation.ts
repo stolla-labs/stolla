@@ -33,6 +33,7 @@ export type CommunitySimulation = {
 export type SubmissionStatus = "pending" | "confirmed" | "failed";
 
 export type CommunityRegistryEntry = {
+  id: string;
   nftContractId: string;
   governorContractId: string;
 };
