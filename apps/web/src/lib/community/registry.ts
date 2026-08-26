@@ -320,3 +320,16 @@ export async function getCommunity(
 
   return { status: "found", community: await hydrateRecord(record) };
 }
+
+export async function checkRegistryReadable(): Promise<boolean> {
+  try {
+    const factoryId = requireCommunityFactoryId();
+    await readContract(factoryId, "list_communities", [
+      xdr.ScVal.scvVoid(),
+      nativeToScVal(1, { type: "u32" }),
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+}

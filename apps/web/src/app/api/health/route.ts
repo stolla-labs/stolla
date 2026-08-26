@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { config, contractIds, stellarConfig } from "@/lib/stellar";
+import { checkRegistryReadable } from "@/lib/community/registry";
+import { rpc } from "@stellar/stellar-sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -7,12 +9,20 @@ type HealthStatus = "ok" | "degraded";
 
 type HealthResponse = {
   status: HealthStatus;
+  healthy: boolean;
   network: {
     selected: "testnet" | "mainnet";
     passphraseConfigured: boolean;
   };
   rpc: {
     configured: boolean;
+    reachable: boolean;
+  };
+  factory: {
+    configured: boolean;
+  };
+  registry: {
+    readable: boolean;
   };
   contracts: {
     nftConfigured: boolean;
@@ -21,7 +31,7 @@ type HealthResponse = {
   };
 };
 
-function buildResponse(): { response: HealthResponse; statusCode: number } {
+async function buildResponse(): Promise<{ response: HealthResponse; statusCode: number }> {
   const selected =
     process.env.NEXT_PUBLIC_STELLAR_NETWORK === "mainnet"
       ? "mainnet"
@@ -36,6 +46,10 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
     contractIds.governor && contractIds.governor.trim() !== "",
   );
   const allContractsConfigured = nftConfigured && governorConfigured;
+  
+  const factoryConfigured = Boolean(
+    contractIds.communityFactory && contractIds.communityFactory.trim() !== "",
+  );
 
   const passphraseConfigured = Boolean(config.networkPassphrase);
 
@@ -43,17 +57,41 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
     selected === "mainnet"
       ? rpcConfigured
       : rpcConfigured || Boolean(stellarConfig.testnet.rpcUrl);
+      
+  let rpcReachable = false;
+  if (rpcOk && config.rpcUrl) {
+    try {
+      const server = new rpc.Server(config.rpcUrl);
+      const health = await server.getHealth();
+      rpcReachable = health.status === "healthy";
+    } catch {
+      rpcReachable = false;
+    }
+  }
 
-  const isReady = rpcOk && allContractsConfigured && passphraseConfigured;
+  const registryReadable = await checkRegistryReadable();
+
+  // A healthy response proves that at least the registry interface is readable.
+  // We still require passphrase and RPC to be ok, and factory configured.
+  // The legacy contracts are no longer mandatory for "healthy" status if factory is present.
+  const isHealthy = rpcOk && passphraseConfigured && factoryConfigured && registryReadable;
 
   const response: HealthResponse = {
-    status: isReady ? "ok" : "degraded",
+    status: isHealthy ? "ok" : "degraded",
+    healthy: isHealthy,
     network: {
       selected,
       passphraseConfigured,
     },
     rpc: {
       configured: rpcConfigured,
+      reachable: rpcReachable,
+    },
+    factory: {
+      configured: factoryConfigured,
+    },
+    registry: {
+      readable: registryReadable,
     },
     contracts: {
       nftConfigured,
@@ -64,12 +102,12 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
 
   return {
     response,
-    statusCode: isReady ? 200 : 503,
+    statusCode: isHealthy ? 200 : 503,
   };
 }
 
 export async function GET() {
-  const { response, statusCode } = buildResponse();
+  const { response, statusCode } = await buildResponse();
 
   return NextResponse.json(response, {
     status: statusCode,
