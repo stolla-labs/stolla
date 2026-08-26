@@ -1,71 +1,96 @@
 import { NETWORKS } from "./network";
-import { Networks } from "@stellar/stellar-sdk";
+import { type NetworkCapabilities, type CapabilityError } from "./capabilities";
 
 const network = process.env.NEXT_PUBLIC_STELLAR_NETWORK ?? "testnet";
-
 export const stellarNetwork = network === "mainnet" ? "mainnet" : "testnet";
-
-/** Configured deployment network used by wizard and network-guard UI. */
 export const activeNetwork = NETWORKS[stellarNetwork];
 
-export const stellarConfig = {
-  testnet: {
-    rpcUrl:
-      process.env.NEXT_PUBLIC_STELLAR_RPC_URL ??
-      "https://soroban-testnet.stellar.org",
-    horizonUrl: "https://horizon-testnet.stellar.org",
-    networkPassphrase: Networks.TESTNET,
-    friendbotUrl: "https://friendbot.stellar.org",
-  },
-  mainnet: {
-    rpcUrl: process.env.NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL ?? "",
-    horizonUrl: "https://horizon.stellar.org",
-    networkPassphrase: Networks.PUBLIC,
-    friendbotUrl: null,
-  },
-} as const;
+function requireEnv(name: string): string | undefined {
+  const value = process.env[name];
+  return value && value.trim() !== "" ? value.trim() : undefined;
+}
 
-export const config =
-  network === "mainnet" ? stellarConfig.mainnet : stellarConfig.testnet;
+const rpcUrl = requireEnv(stellarNetwork === "mainnet" ? "NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL" : "NEXT_PUBLIC_STELLAR_RPC_URL") 
+  ?? (stellarNetwork === "testnet" ? "https://soroban-testnet.stellar.org" : undefined);
+  
+const friendbotUrl = stellarNetwork === "testnet" ? "https://friendbot.stellar.org" : null;
 
-export const contractIds = {
-  nft: process.env.NEXT_PUBLIC_NFT_CONTRACT_ID ?? "",
-  governor: process.env.NEXT_PUBLIC_GOVERNOR_CONTRACT_ID ?? "",
-  communityFactory:
-    process.env.NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID ?? "",
-  /** Alias used by assignee community-creation wizard modules. */
-  factory: process.env.NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID ?? "",
+const rpcCapability: NetworkCapabilities["rpc"] = rpcUrl 
+  ? { available: true, url: rpcUrl, friendbotUrl }
+  : { available: false, reason: "RPC URL is not configured." };
+
+const explorerSegment = activeNetwork.explorerSegment;
+const explorerCapability: NetworkCapabilities["explorer"] = explorerSegment
+  ? { available: true, segment: explorerSegment }
+  : { available: false, reason: "Network is not indexed by an explorer." };
+
+const communityFactory = requireEnv("NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID");
+const communityFactoryCapability: NetworkCapabilities["communityFactory"] = communityFactory
+  ? { available: true, contractId: communityFactory }
+  : { available: false, reason: "CommunityFactory contract ID is not configured." };
+
+const nft = requireEnv("NEXT_PUBLIC_NFT_CONTRACT_ID");
+const governor = requireEnv("NEXT_PUBLIC_GOVERNOR_CONTRACT_ID");
+const legacyContractsCapability: NetworkCapabilities["legacyContracts"] = nft && governor
+  ? { available: true, nft, governor }
+  : { available: false, reason: "Legacy contracts (NFT and/or Governor) are not configured." };
+
+let proposalDiscoveryCapability;
+try {
+  const startLedger = parseGovernorStartLedger(process.env.NEXT_PUBLIC_GOVERNOR_START_LEDGER);
+  proposalDiscoveryCapability = { available: true, startLedger };
+} catch (e) {
+  proposalDiscoveryCapability = { available: false, reason: e.message };
+}
+
+export const capabilities: NetworkCapabilities = {
+  activeNetwork,
+  rpc: rpcCapability,
+  explorer: explorerCapability,
+  communityFactory: communityFactoryCapability,
+  legacyContracts: legacyContractsCapability,
+  proposalDiscovery: proposalDiscoveryCapability,
 };
 
-export function requireContractIds(): { nft: string; governor: string } {
-  if (!contractIds.nft || !contractIds.governor) {
-    throw new Error(
-      "Contract IDs are not configured. Set NEXT_PUBLIC_NFT_CONTRACT_ID and NEXT_PUBLIC_GOVERNOR_CONTRACT_ID.",
-    );
+// Aliasing config for migration
+export const config = {
+  rpcUrl: rpcCapability.available ? rpcCapability.url : "",
+  networkPassphrase: activeNetwork.networkPassphrase,
+};
+
+export const contractIds = { communityFactory: communityFactoryCapability.available ? communityFactoryCapability.contractId : "",
+  nft: legacyContractsCapability.available ? legacyContractsCapability.nft : "",
+  governor: legacyContractsCapability.available ? legacyContractsCapability.governor : "",
+  factory: communityFactoryCapability.available ? communityFactoryCapability.contractId : "",
+};
+
+export function requireContractIds() {
+  if (!legacyContractsCapability.available) {
+    throw new CapabilityError("legacyContracts", legacyContractsCapability.reason);
   }
-  return { nft: contractIds.nft, governor: contractIds.governor };
+  return { nft: legacyContractsCapability.nft, governor: legacyContractsCapability.governor };
 }
 
 export function requireCommunityFactoryId(): string {
-  if (!contractIds.communityFactory) {
-    throw new Error(
-      "Community registry is not configured. Set NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID.",
-    );
+  if (!communityFactoryCapability.available) {
+    throw new CapabilityError("communityFactory", communityFactoryCapability.reason);
   }
-  return contractIds.communityFactory;
+  return communityFactoryCapability.contractId;
 }
 
 export function requireCommunityFactoryContractId(): string {
   return requireCommunityFactoryId();
 }
 
-/**
- * Parse and validate the Governor discovery start ledger.
- *
- * Accepts only positive safe integers. Missing, blank, non-integer, negative,
- * and zero values fail with an actionable error so misconfigured environments
- * cannot silently scan from ledger 0 or an invalid boundary.
- */
+export function requireGovernorStartLedger(): number {
+  if (!proposalDiscoveryCapability.available) {
+    throw new CapabilityError("proposalDiscovery", proposalDiscoveryCapability.reason);
+  }
+  return proposalDiscoveryCapability.startLedger;
+}
+
+export { CapabilityError } from "./capabilities";
+
 export function parseGovernorStartLedger(
   rawValue: string | undefined = process.env.NEXT_PUBLIC_GOVERNOR_START_LEDGER,
 ): number {
@@ -90,9 +115,4 @@ export function parseGovernorStartLedger(
   }
 
   return ledger;
-}
-
-/** Typed start ledger for proposal discovery RPC queries. */
-export function requireGovernorStartLedger(): number {
-  return parseGovernorStartLedger();
 }

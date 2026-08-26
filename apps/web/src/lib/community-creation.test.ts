@@ -24,9 +24,9 @@ const DRAFT: CommunityDraft = {
   quorum: "1",
 };
 
-function simulationOn(passphrase: string): CommunitySimulation {
+function simulationOn(networkPassphrase: string): CommunitySimulation {
   return {
-    networkPassphrase: passphrase,
+    networkPassphrase: networkPassphrase,
     factoryAddress: "CFACTORY",
     transactionXdr: "AAAA",
     minResourceFee: "1000",
@@ -57,7 +57,7 @@ beforeEach(() => {
   onTestnet = apply(
     INITIAL_CREATION_STATE,
     { type: "draft-changed", changes: DRAFT },
-    { type: "network-detected", passphrase: Networks.TESTNET },
+    { type: "network-detected", networkPassphrase: Networks.TESTNET },
     { type: "simulation-succeeded", simulation: simulationOn(Networks.TESTNET) },
   );
 });
@@ -96,7 +96,7 @@ describe("mid-flow network switch", () => {
   it("discards the simulation and keeps draft values", () => {
     const switched = creationReducer(onTestnet, {
       type: "network-detected",
-      passphrase: Networks.PUBLIC,
+      networkPassphrase: Networks.PUBLIC,
     });
 
     expect(switched.simulation).toBeNull();
@@ -107,7 +107,7 @@ describe("mid-flow network switch", () => {
     const signing = creationReducer(onTestnet, { type: "signing-started" });
     const switched = creationReducer(signing, {
       type: "network-detected",
-      passphrase: Networks.PUBLIC,
+      networkPassphrase: Networks.PUBLIC,
     });
 
     expect(switched.signing).toBe(false);
@@ -116,7 +116,7 @@ describe("mid-flow network switch", () => {
   it("blocks deployment once the wallet has moved", () => {
     const switched = creationReducer(onTestnet, {
       type: "network-detected",
-      passphrase: Networks.PUBLIC,
+      networkPassphrase: Networks.PUBLIC,
     });
 
     expect(deploymentBlocker(switched, contextFor(Networks.PUBLIC))).toBe(
@@ -127,7 +127,7 @@ describe("mid-flow network switch", () => {
   it("ignores a repeated report of the same network", () => {
     const same = creationReducer(onTestnet, {
       type: "network-detected",
-      passphrase: Networks.TESTNET,
+      networkPassphrase: Networks.TESTNET,
     });
 
     expect(same).toBe(onTestnet);
@@ -137,7 +137,7 @@ describe("mid-flow network switch", () => {
   it("drops a simulation that resolves after the wallet moved", () => {
     const switched = creationReducer(onTestnet, {
       type: "network-detected",
-      passphrase: Networks.PUBLIC,
+      networkPassphrase: Networks.PUBLIC,
     });
     const late = creationReducer(switched, {
       type: "simulation-succeeded",
@@ -152,8 +152,8 @@ describe("recovery to the expected network", () => {
   it("requires a fresh simulation and preserves governance values", () => {
     const recovered = apply(
       onTestnet,
-      { type: "network-detected", passphrase: Networks.PUBLIC },
-      { type: "network-detected", passphrase: Networks.TESTNET },
+      { type: "network-detected", networkPassphrase: Networks.PUBLIC },
+      { type: "network-detected", networkPassphrase: Networks.TESTNET },
     );
     const context = contextFor(Networks.TESTNET);
 
@@ -166,8 +166,8 @@ describe("recovery to the expected network", () => {
   it("allows deployment again once a new simulation exists", () => {
     const resimulated = apply(
       onTestnet,
-      { type: "network-detected", passphrase: Networks.PUBLIC },
-      { type: "network-detected", passphrase: Networks.TESTNET },
+      { type: "network-detected", networkPassphrase: Networks.PUBLIC },
+      { type: "network-detected", networkPassphrase: Networks.TESTNET },
       {
         type: "simulation-succeeded",
         simulation: simulationOn(Networks.TESTNET),
@@ -208,7 +208,7 @@ describe("post-submission network changes", () => {
   it("keeps the transaction and the network it was submitted to", () => {
     const switched = creationReducer(submitted(), {
       type: "network-detected",
-      passphrase: Networks.PUBLIC,
+      networkPassphrase: Networks.PUBLIC,
     });
 
     expect(switched.submission).toEqual({
@@ -222,8 +222,8 @@ describe("post-submission network changes", () => {
   it("does not allow a second submission after switching back", () => {
     const returned = apply(
       submitted(),
-      { type: "network-detected", passphrase: Networks.PUBLIC },
-      { type: "network-detected", passphrase: Networks.TESTNET },
+      { type: "network-detected", networkPassphrase: Networks.PUBLIC },
+      { type: "network-detected", networkPassphrase: Networks.TESTNET },
     );
 
     expect(deploymentBlocker(returned, contextFor(Networks.TESTNET))).toBe(
@@ -237,7 +237,7 @@ describe("post-submission network changes", () => {
   it("still records confirmation after a switch", () => {
     const confirmed = apply(
       submitted(),
-      { type: "network-detected", passphrase: Networks.PUBLIC },
+      { type: "network-detected", networkPassphrase: Networks.PUBLIC },
       { type: "submission-settled", status: "confirmed" },
     );
 
@@ -309,7 +309,7 @@ describe("blocker precedence", () => {
     };
     const empty = apply(INITIAL_CREATION_STATE, {
       type: "network-detected",
-      passphrase: Networks.PUBLIC,
+      networkPassphrase: Networks.PUBLIC,
     });
 
     expect(simulationBlocker(empty, context)).toBe("network-mismatch");

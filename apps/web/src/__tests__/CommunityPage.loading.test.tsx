@@ -18,7 +18,7 @@ vi.mock("@/lib/contracts", () => ({
 }));
 
 vi.mock("@/lib/stellar", () => ({
-  contractIds: { nft: "CNFT", governor: "CGOV" },
+  capabilities: { legacyContracts: { available: true, nft: "CNFT", governor: "CGOV" }, activeNetwork: { explorerSegment: "testnet" } },
 }));
 
 vi.mock("@/app/(app)/community/community-data.mjs", async (importOriginal) => {

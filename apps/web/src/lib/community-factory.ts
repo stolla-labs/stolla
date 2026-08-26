@@ -68,7 +68,7 @@ export async function simulateCommunityDeployment({
 
   const transaction = new TransactionBuilder(source, {
     fee: BASE_FEE,
-    networkPassphrase: network.passphrase,
+    networkPassphrase: network.networkPassphrase,
   })
     .addOperation(operation)
     .setTimeout(TRANSACTION_TIMEOUT_SECONDS)
@@ -80,7 +80,7 @@ export async function simulateCommunityDeployment({
   }
 
   return {
-    networkPassphrase: network.passphrase,
+    networkPassphrase: network.networkPassphrase,
     factoryAddress,
     transactionXdr: rpc
       .assembleTransaction(transaction, simulation)
@@ -108,12 +108,12 @@ export async function submitCommunityDeployment({
    * under any other passphrase keeps a transaction from a previous network out
    * of the signing path entirely.
    */
-  if (simulation.networkPassphrase !== network.passphrase) {
+  if (simulation.networkPassphrase !== network.networkPassphrase) {
     throw new NetworkMismatchError(network, null);
   }
 
   const { signedTxXdr } = await signTransaction(simulation.transactionXdr);
-  const signed = TransactionBuilder.fromXDR(signedTxXdr, network.passphrase);
+  const signed = TransactionBuilder.fromXDR(signedTxXdr, network.networkPassphrase);
   const response = await new rpc.Server(rpcUrl).sendTransaction(signed);
 
   if (response.status === "ERROR" || response.status === "DUPLICATE") {
@@ -167,7 +167,7 @@ export async function verifyCommunityRegistry({
   const source = await server.getAccount(admin);
   const transaction = new TransactionBuilder(source, {
     fee: BASE_FEE,
-    networkPassphrase: network.passphrase,
+    networkPassphrase: network.networkPassphrase,
   })
     .addOperation(
       new Contract(factoryAddress).call(

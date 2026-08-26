@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { config, contractIds, stellarConfig } from "@/lib/stellar";
+import { config, contractIds } from "@/lib/stellar";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,7 @@ type HealthResponse = {
   status: HealthStatus;
   network: {
     selected: "testnet" | "mainnet";
-    passphraseConfigured: boolean;
+    networkPassphraseConfigured: boolean;
   };
   rpc: {
     configured: boolean;
@@ -40,9 +40,7 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
   const passphraseConfigured = Boolean(config.networkPassphrase);
 
   const rpcOk =
-    selected === "mainnet"
-      ? rpcConfigured
-      : rpcConfigured || Boolean(stellarConfig.testnet.rpcUrl);
+    rpcConfigured;
 
   const isReady = rpcOk && allContractsConfigured && passphraseConfigured;
 

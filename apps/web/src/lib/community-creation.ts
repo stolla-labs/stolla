@@ -92,7 +92,7 @@ export type CreationAction =
       submission: CommunitySubmission | null;
     }
   | { type: "draft-discarded" }
-  | { type: "network-detected"; passphrase: string | null }
+  | { type: "network-detected"; networkPassphrase: string | null }
   | { type: "simulation-succeeded"; simulation: CommunitySimulation }
   | { type: "signing-started" }
   | { type: "signing-ended" }
@@ -134,10 +134,10 @@ export function creationReducer(
      * requires a fresh one.
      */
     case "network-detected": {
-      if (state.detectedPassphrase === action.passphrase) return state;
+      if (state.detectedPassphrase === action.networkPassphrase) return state;
       return {
         ...state,
-        detectedPassphrase: action.passphrase,
+        detectedPassphrase: action.networkPassphrase,
         simulation: null,
         signing: false,
       };
@@ -294,7 +294,7 @@ function isSimulationStale(
 ): boolean {
   return (
     state.simulation !== null &&
-    state.simulation.networkPassphrase !== context.comparison.expected.passphrase
+    state.simulation.networkPassphrase !== context.comparison.expected.networkPassphrase
   );
 }
 

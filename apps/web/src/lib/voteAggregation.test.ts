@@ -24,6 +24,7 @@ vi.mock("@stellar/stellar-sdk", async (importOriginal) => {
 
 vi.mock("./stellar", () => ({
   config: { rpcUrl: "https://soroban-testnet.stellar.org" },
+  requireGovernorStartLedger: () => 1,
   contractIds: {
     governor: "CDJZ4QTYXZ5YKHRXRBCOXQDZI5TUE5QLODC5IJFYDXQMQJFP5PFRMPHY",
   },
@@ -41,7 +42,11 @@ function makeEvent(id: string): Record<string, unknown> {
     ledger: 100,
     ledgerClosedAt: "2024-01-01T00:00:00Z",
     contractId: "CDJZ4QTYXZ5YKHRXRBCOXQDZI5TUE5QLODC5IJFYDXQMQJFP5PFRMPHY",
-    topic: [],
+    topic: [
+      { switch: () => ({ name: "scvSymbol" }), sym: () => "vote_cast" },
+      {}, // unused
+      { switch: () => ({ name: "scvBytes" }), bytes: () => Buffer.from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "hex") }
+    ],
     value: xdr.ScVal.scvVoid(),
     inSuccessfulContractCall: true,
   };

@@ -127,10 +127,10 @@ export function CreateCommunityWizard({
   const hydratedRef = useRef(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
-  const detectedPassphrase = comparison.detected?.passphrase ?? null;
+  const detectedPassphrase = comparison.detected?.networkPassphrase ?? null;
 
   useEffect(() => {
-    dispatch({ type: "network-detected", passphrase: detectedPassphrase });
+    dispatch({ type: "network-detected", networkPassphrase: detectedPassphrase });
   }, [detectedPassphrase]);
 
   useEffect(() => {

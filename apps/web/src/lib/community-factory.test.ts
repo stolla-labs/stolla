@@ -18,9 +18,9 @@ const DRAFT: CommunityDraft = {
   quorum: "1",
 };
 
-function simulationOn(passphrase: string): CommunitySimulation {
+function simulationOn(networkPassphrase: string): CommunitySimulation {
   return {
-    networkPassphrase: passphrase,
+    networkPassphrase: networkPassphrase,
     factoryAddress: "CFACTORY",
     transactionXdr: "not-a-real-xdr",
     minResourceFee: "1000",

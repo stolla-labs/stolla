@@ -1,4 +1,4 @@
-import { rpc, xdr, scValToNative } from "@stellar/stellar-sdk";
+import { rpc, scValToNative } from "@stellar/stellar-sdk";
 import { Buffer } from "buffer";
 import { config, contractIds, requireGovernorStartLedger } from "./stellar";
 import { getE2EBridge } from "./e2eMock";

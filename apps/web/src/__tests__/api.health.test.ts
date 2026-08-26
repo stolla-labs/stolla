@@ -48,7 +48,7 @@ describe("GET /api/health", () => {
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(body).toEqual({
       status: "ok",
-      network: { selected: "testnet", passphraseConfigured: true },
+      network: { selected: "testnet", networkPassphraseConfigured: true },
       rpc: { configured: true },
       contracts: {
         nftConfigured: true,
@@ -70,7 +70,7 @@ describe("GET /api/health", () => {
     expect(body.status).toBe("degraded");
     expect(body.contracts).toEqual({
       nftConfigured: false,
-      governorConfigured: true,
+      governorConfigured: false,
       allConfigured: false,
     });
   });

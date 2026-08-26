@@ -5,7 +5,7 @@ export type NetworkId = "testnet" | "mainnet" | "futurenet";
 export type StellarNetwork = {
   id: NetworkId;
   label: string;
-  passphrase: string;
+  networkPassphrase: string;
   /** Path segment used by stellar.expert, or null when the network is not indexed. */
   explorerSegment: string | null;
 };
@@ -14,19 +14,19 @@ export const NETWORKS: Record<NetworkId, StellarNetwork> = {
   testnet: {
     id: "testnet",
     label: "Testnet",
-    passphrase: Networks.TESTNET,
+    networkPassphrase: Networks.TESTNET,
     explorerSegment: "testnet",
   },
   mainnet: {
     id: "mainnet",
     label: "Mainnet",
-    passphrase: Networks.PUBLIC,
+    networkPassphrase: Networks.PUBLIC,
     explorerSegment: "public",
   },
   futurenet: {
     id: "futurenet",
     label: "Futurenet",
-    passphrase: Networks.FUTURENET,
+    networkPassphrase: Networks.FUTURENET,
     explorerSegment: null,
   },
 };
@@ -38,31 +38,31 @@ export const NETWORKS: Record<NetworkId, StellarNetwork> = {
 export type DetectedNetwork = {
   id: NetworkId | null;
   label: string;
-  passphrase: string;
+  networkPassphrase: string;
 };
 
 export function findNetworkByPassphrase(
-  passphrase: string,
+  networkPassphrase: string,
 ): StellarNetwork | null {
   return (
     Object.values(NETWORKS).find(
-      (network) => network.passphrase === passphrase,
+      (network) => network.networkPassphrase === networkPassphrase,
     ) ?? null
   );
 }
 
 export function describeNetwork(
-  passphrase: string,
+  networkPassphrase: string,
   reportedName?: string,
 ): DetectedNetwork {
-  const known = findNetworkByPassphrase(passphrase);
+  const known = findNetworkByPassphrase(networkPassphrase);
   if (known) {
-    return { id: known.id, label: known.label, passphrase };
+    return { id: known.id, label: known.label, networkPassphrase };
   }
   return {
     id: null,
     label: reportedName?.trim() || "Unrecognized network",
-    passphrase,
+    networkPassphrase,
   };
 }
 
@@ -79,7 +79,7 @@ export function compareNetworks(
     return { status: "unknown", expected, detected: null };
   }
   const status =
-    detected.passphrase === expected.passphrase ? "match" : "mismatch";
+    detected.networkPassphrase === expected.networkPassphrase ? "match" : "mismatch";
   return { status, expected, detected };
 }
 

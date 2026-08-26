@@ -79,12 +79,12 @@ export async function installCreationFixtures(
   scenario: "success" | "wallet-rejection" | "simulation-failure" = "success",
 ) {
   await page.addInitScript(
-    ({ scenario, passphrase, wallet, expectedRecord }) => {
+    ({ scenario, networkPassphrase, wallet, expectedRecord }) => {
       const hash = "ab".repeat(32);
       window.__STOLLA_E2E__ = {
         wallet: {
           address: wallet,
-          networkPassphrase: passphrase,
+          networkPassphrase: networkPassphrase,
           rejected: scenario === "wallet-rejection",
         },
         communities: [],
@@ -140,7 +140,7 @@ export async function installCreationFixtures(
     },
     {
       scenario,
-      passphrase: TESTNET_PASSPHRASE,
+      networkPassphrase: TESTNET_PASSPHRASE,
       wallet: WALLET_ADDRESS,
       expectedRecord: community(
         "cc".repeat(32),

@@ -22,5 +22,8 @@
     "test:contracts": "cd contracts && cargo test",
     "build:contracts": "cd contracts && CARGO_TARGET_DIR=target stellar contract build",
     "smoke": "node scripts/smoke-dev-server.mjs"
+  },
+  "devDependencies": {
+    "ts-morph": "^28.0.0"
   }
 }

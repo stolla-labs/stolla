@@ -15,7 +15,7 @@ describe("describeNetwork", () => {
     expect(describeNetwork(Networks.TESTNET)).toEqual({
       id: "testnet",
       label: "Testnet",
-      passphrase: Networks.TESTNET,
+      networkPassphrase: Networks.TESTNET,
     });
   });
 
@@ -23,7 +23,7 @@ describe("describeNetwork", () => {
     expect(describeNetwork("Custom Network ; 2026", "Local")).toEqual({
       id: null,
       label: "Local",
-      passphrase: "Custom Network ; 2026",
+      networkPassphrase: "Custom Network ; 2026",
     });
   });
 

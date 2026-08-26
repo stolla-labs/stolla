@@ -27,7 +27,7 @@ const stageLabels: Record<DeploymentStage, string> = {
 };
 
 export function useCommunityDeployment() {
-  const { address, networkPassphrase, signTransaction } = useWallet();
+  const { address, walletNetworkPassphrase: networkPassphrase, signTransaction } = useWallet();
   const activeSubmissionRef = useRef(false);
   const [stage, setStage] = useState<DeploymentStage>("idle");
   const [error, setError] = useState<string | null>(null);
