@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { getCommunityById } from "@/lib/communities/registry";
 import type { CommunityRecord, CommunityMetadata } from "@/lib/communities/types";
 import { useCommunityMetadata } from "@/lib/communities/useCommunityMetadata";
@@ -83,12 +83,13 @@ function CommunityDetailPanel({
         </div>
       </dl>
 
-      <Link
+      <AppLinkButton
         href={`/community/${community.id}/proposals`}
-        className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+        tone="primary"
+        className="mt-6"
       >
         View proposals
-      </Link>
+      </AppLinkButton>
     </div>
   );
 }

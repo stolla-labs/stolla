@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CommunityAvatar } from "@/components/CommunityAvatar";
+import { AppButton } from "@/components/ui/AppButton";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getCommunity } from "@/lib/community/registry";
@@ -162,13 +164,13 @@ export default function CommunityDetailPage() {
             {error}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
+            <AppButton
               type="button"
+              tone="danger"
               onClick={() => void load()}
-              className="min-h-11 rounded-lg border border-rose-700 px-4 py-2 text-sm font-medium text-rose-100 hover:bg-rose-900/60"
             >
               Retry community request
-            </button>
+            </AppButton>
             <Link
               href="/communities"
               className="inline-flex min-h-11 items-center rounded-lg px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
@@ -191,12 +193,13 @@ export default function CommunityDetailPage() {
           <p className="mt-2 text-sm text-slate-400">
             This ID is malformed or is not present in the canonical registry.
           </p>
-          <Link
+          <AppLinkButton
             href="/communities"
-            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+            tone="primary"
+            className="mt-4"
           >
             Browse communities
-          </Link>
+          </AppLinkButton>
         </section>
       </div>
     );
@@ -312,18 +315,18 @@ export default function CommunityDetailPage() {
       )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Link
+        <AppLinkButton
           href={`/communities/${record.id}/proposals`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+          tone="primary"
         >
           View community proposals
-        </Link>
-        <Link
+        </AppLinkButton>
+        <AppLinkButton
           href={`/community?community=${record.id}`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+          tone="secondary"
         >
           Membership actions
-        </Link>
+        </AppLinkButton>
       </div>
 
       <section

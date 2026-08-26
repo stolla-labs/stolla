@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 
 export function CommunityNotFound({ communityId }: { communityId: string }) {
   return (
@@ -23,12 +24,13 @@ export function CommunityNotFound({ communityId }: { communityId: string }) {
         No community is registered for{" "}
         <code className="font-mono text-slate-300">{communityId}</code>.
       </p>
-      <Link
+      <AppLinkButton
         href="/community"
-        className="mt-6 inline-block rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+        tone="secondary"
+        className="mt-6"
       >
         Back to communities
-      </Link>
+      </AppLinkButton>
     </div>
   );
 }
