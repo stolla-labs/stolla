@@ -1,10 +1,20 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+
+let ciYaml = "";
+if (existsSync(".github/workflows/ci.yml")) {
+  ciYaml = readFileSync(".github/workflows/ci.yml", "utf8");
+}
 
 const checks = [
   {
     invalid: existsSync("apps/web/package-lock.json"),
     message:
       "apps/web/package-lock.json must not exist. Install dependencies from the repository root.",
+  },
+  {
+    invalid: ciYaml.includes("apps/web/package-lock.json"),
+    message:
+      "CI workflow contains references to 'apps/web/package-lock.json'. Update .github/workflows/ci.yml to use the root lockfile.",
   },
   {
     invalid: !existsSync("node_modules/next/package.json"),
