@@ -67,25 +67,30 @@ export function requireCommunityFactoryContractId(): string {
  * cannot silently scan from ledger 0 or an invalid boundary.
  */
 export function parseGovernorStartLedger(
-  rawValue: string | undefined = process.env.NEXT_PUBLIC_GOVERNOR_START_LEDGER,
+  rawValue?: string,
 ): number {
-  if (rawValue === undefined || rawValue.trim() === "") {
+  const candidate =
+    arguments.length === 0
+      ? process.env.NEXT_PUBLIC_GOVERNOR_START_LEDGER
+      : rawValue;
+
+  if (candidate === undefined || candidate.trim() === "") {
     throw new Error(
       "Governor start ledger is not configured. Set NEXT_PUBLIC_GOVERNOR_START_LEDGER to the positive integer ledger where the Governor was deployed (see README).",
     );
   }
 
-  const trimmed = rawValue.trim();
+  const trimmed = candidate.trim();
   if (!/^\d+$/.test(trimmed)) {
     throw new Error(
-      `Invalid NEXT_PUBLIC_GOVERNOR_START_LEDGER: expected a positive integer, got "${rawValue}".`,
+      `Invalid NEXT_PUBLIC_GOVERNOR_START_LEDGER: expected a positive integer, got "${candidate}".`,
     );
   }
 
   const ledger = Number(trimmed);
   if (!Number.isSafeInteger(ledger) || ledger <= 0) {
     throw new Error(
-      `Invalid NEXT_PUBLIC_GOVERNOR_START_LEDGER: expected a positive integer, got "${rawValue}".`,
+      `Invalid NEXT_PUBLIC_GOVERNOR_START_LEDGER: expected a positive integer, got "${candidate}".`,
     );
   }
 

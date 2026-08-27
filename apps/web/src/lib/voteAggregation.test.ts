@@ -27,6 +27,7 @@ vi.mock("./stellar", () => ({
   contractIds: {
     governor: "CDJZ4QTYXZ5YKHRXRBCOXQDZI5TUE5QLODC5IJFYDXQMQJFP5PFRMPHY",
   },
+  requireGovernorStartLedger: () => 1000,
 }));
 
 // ---------------------------------------------------------------------------
@@ -34,14 +35,21 @@ vi.mock("./stellar", () => ({
 // ---------------------------------------------------------------------------
 
 /** Create a minimal mock event matching the shape the code expects. */
-function makeEvent(id: string): Record<string, unknown> {
+function makeEvent(
+  id: string,
+  proposalHex = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+): Record<string, unknown> {
   return {
     id,
     type: "contract",
     ledger: 100,
     ledgerClosedAt: "2024-01-01T00:00:00Z",
     contractId: "CDJZ4QTYXZ5YKHRXRBCOXQDZI5TUE5QLODC5IJFYDXQMQJFP5PFRMPHY",
-    topic: [],
+    topic: [
+      xdr.ScVal.scvSymbol("vote_cast"),
+      xdr.ScVal.scvVoid(),
+      xdr.ScVal.scvBytes(Buffer.from(proposalHex, "hex")),
+    ],
     value: xdr.ScVal.scvVoid(),
     inSuccessfulContractCall: true,
   };

@@ -66,19 +66,38 @@ function mockVoteTotals() {
   });
 }
 
+let currentReadOnly: Record<string, unknown> = {};
+
 function mockReadOnly(overrides: Record<string, unknown> = {}) {
-  mocks.createReadOnlyGovernorClient.mockReturnValue({
+  currentReadOnly = {
+    proposal_state: vi.fn().mockResolvedValue({ result: ProposalState.Active }),
+    proposal_snapshot: vi.fn().mockResolvedValue({ result: 1_500_000 }),
     proposal_proposer: vi.fn().mockResolvedValue({ result: "GPROPOSER" }),
     proposal_deadline: vi.fn().mockResolvedValue({ result: 2_000_000 }),
+    ...currentReadOnly,
     ...overrides,
-  });
+  };
+  mocks.createReadOnlyGovernorClient.mockReturnValue(currentReadOnly);
+  return currentReadOnly;
 }
 
 function mockGovernor(overrides: Record<string, unknown> = {}) {
+  const state = overrides.proposal_state ?? currentReadOnly.proposal_state ?? vi.fn().mockResolvedValue({ result: ProposalState.Active });
+  const snapshot = overrides.proposal_snapshot ?? currentReadOnly.proposal_snapshot ?? vi.fn().mockResolvedValue({ result: 1_500_000 });
+  const deadline = overrides.proposal_deadline ?? currentReadOnly.proposal_deadline ?? vi.fn().mockResolvedValue({ result: 2_000_000 });
+  const proposer = overrides.proposal_proposer ?? currentReadOnly.proposal_proposer ?? vi.fn().mockResolvedValue({ result: "GPROPOSER" });
+
+  mockReadOnly({
+    proposal_state: state,
+    proposal_snapshot: snapshot,
+    proposal_deadline: deadline,
+    proposal_proposer: proposer,
+  });
+
   mocks.createGovernorClient.mockReturnValue({
-    proposal_state: vi.fn().mockResolvedValue({ result: ProposalState.Active }),
+    proposal_state: state,
     has_voted: vi.fn().mockResolvedValue({ result: false }),
-    proposal_snapshot: vi.fn().mockResolvedValue({ result: 1_500_000 }),
+    proposal_snapshot: snapshot,
     quorum: vi.fn().mockResolvedValue({ result: BigInt(100) }),
     cast_vote: vi.fn().mockResolvedValue({
       signAndSend: vi.fn().mockResolvedValue(undefined),
@@ -106,6 +125,7 @@ function mockConnectedWallet(address = "GWALLET") {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  currentReadOnly = {};
   mockWallet();
   mockVoteTotals();
   mockReadOnly();
