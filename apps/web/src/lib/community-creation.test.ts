@@ -246,7 +246,7 @@ describe("post-submission network changes", () => {
 });
 
 describe("deployment stage", () => {
-  const REGISTRY = { nftContractId: "CNFT", governorContractId: "CGOV" };
+  const REGISTRY = { id: "0000000000000000000000000000000000000000000000000000000000000000", nftContractId: "CNFT", governorContractId: "CGOV" };
 
   const submittedState = () =>
     creationReducer(onTestnet, {

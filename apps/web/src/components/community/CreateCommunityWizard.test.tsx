@@ -27,7 +27,7 @@ vi.mock("@/context/WalletProvider", () => ({
 }));
 
 const TRANSACTION_HASH = "b7f1c0";
-const REGISTRY = { nftContractId: "CNFT", governorContractId: "CGOV" };
+const REGISTRY = { id: "0000000000000000000000000000000000000000000000000000000000000000", nftContractId: "CNFT", governorContractId: "CGOV" };
 
 function createPort(): CommunityDeploymentPort {
   return {
