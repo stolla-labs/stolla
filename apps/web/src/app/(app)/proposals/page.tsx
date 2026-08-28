@@ -146,6 +146,7 @@ export default function ProposalsPage() {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadStates();
   }, [loadStates]);
 
@@ -173,6 +174,7 @@ export default function ProposalsPage() {
 
   useEffect(() => {
     if (stateFilter !== ALL_FILTER && !availableStates.includes(stateFilter)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStateFilter(ALL_FILTER);
     }
   }, [availableStates, stateFilter]);

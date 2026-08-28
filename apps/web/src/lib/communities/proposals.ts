@@ -22,6 +22,7 @@ export type ProposalEntry =
 
 export type ProposalListResolution =
   | { status: "loading" }
+  | { status: "error"; error: string }
   | { status: "ready"; entries: ProposalEntry[] };
 
 export function useCommunityProposals(
@@ -33,6 +34,7 @@ export function useCommunityProposals(
   const scopeKey = `${governorContractId}|${idsKey}`;
 
   const [entries, setEntries] = useState<ProposalEntry[] | null>(null);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
   const [trackedScopeKey, setTrackedScopeKey] = useState(scopeKey);
 
   // Reset synchronously during render (not in an effect) so switching
@@ -40,6 +42,7 @@ export function useCommunityProposals(
   if (trackedScopeKey !== scopeKey) {
     setTrackedScopeKey(scopeKey);
     setEntries(null);
+    setDiscoveryError(null);
   }
 
   const fetchIdRef = useRef(0);
@@ -47,7 +50,19 @@ export function useCommunityProposals(
   useEffect(() => {
     const fetchId = ++fetchIdRef.current;
     let cancelled = false;
-    const reader = getReader(governorContractId);
+    let reader: ProposalReader;
+    try {
+      reader = getReader(governorContractId);
+    } catch (error: unknown) {
+      // This is an asynchronous dependency failure, not render-derived state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDiscoveryError(
+        error instanceof Error ? error.message : "Proposal discovery unavailable",
+      );
+      return () => {
+        cancelled = true;
+      };
+    }
     const ids = idsKey ? idsKey.split(",") : [];
 
     Promise.all(
@@ -68,6 +83,7 @@ export function useCommunityProposals(
     ).then((results) => {
       if (cancelled || fetchIdRef.current !== fetchId) return;
       setEntries(results);
+      setDiscoveryError(null);
     });
 
     return () => {
@@ -75,8 +91,12 @@ export function useCommunityProposals(
     };
   }, [governorContractId, idsKey, getReader]);
 
-  if (!entries) return { status: "loading" };
-  return { status: "ready", entries };
+  if (!entries) return discoveryError
+    ? { status: "error", error: discoveryError }
+    : { status: "loading" };
+  return discoveryError
+    ? { status: "error", error: discoveryError }
+    : { status: "ready", entries };
 }
 
 export type ProposalResolution =

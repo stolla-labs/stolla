@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { mapTransactionError } from "@/lib/transactionErrors";
 
 /**
@@ -30,6 +30,7 @@ export type TransactionLifecycleState = {
   isTerminal: boolean;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TERMINAL_STAGES: TransactionStage[] = [
   "confirmed",
   "wallet_rejected",
@@ -73,7 +74,9 @@ export function useTransactionLifecycle(options?: UseTransactionLifecycleOptions
   });
   const inFlightRef = useRef(false);
   const onConfirmedRef = useRef(options?.onConfirmed);
-  onConfirmedRef.current = options?.onConfirmed;
+  useEffect(() => {
+    onConfirmedRef.current = options?.onConfirmed;
+  }, [options?.onConfirmed]);
 
   const reset = useCallback(() => {
     if (inFlightRef.current) return;
