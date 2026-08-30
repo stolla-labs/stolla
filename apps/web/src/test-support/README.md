@@ -5,9 +5,9 @@ network request, and nothing here requires a wallet extension.
 
 ## Stellar RPC and contract mocks
 
-`stellar/` provides configurable mocks for the community NFT and Governor
-clients, plus transaction fixtures for simulation, signing, successful
-submission and failure.
+`stellar/` is the canonical API for network, wallet, community registry,
+Governor/NFT, RPC event, and transaction fixtures. Its default URLs use the
+reserved `.test` suffix, and Vitest rejects unmocked `fetch` calls.
 
 ```ts
 import {
@@ -41,6 +41,29 @@ const args = governor.cast_vote.lastArgs();
 // Restore every mock between tests
 resetAllStellarMocks();
 ```
+
+### Network, wallet, registry, and events
+
+```ts
+const network = createNetworkFixture({ governorStartLedger: 1_500_000 });
+const wallet = createWalletMock({ address: MOCK_ACCOUNT_ALICE });
+const registry = createCommunityRegistry(atlasCommunity, beaconCommunity);
+
+const eventsRpc = createEventsRpcMock(
+  createEventPage([
+    createVoteEvent({
+      proposalId: MOCK_PROPOSAL_ID,
+      voteType: 1,
+      weight: BigInt(5),
+    }),
+  ]),
+);
+```
+
+Community component tests use `createGovernorReaderFactory` for per-contract
+proposal state. Deployment workflow tests use
+`createCommunityDeploymentFixture`, which records deployment arguments, stages,
+wallet submission, and stored hashes.
 
 ### Transaction outcomes
 

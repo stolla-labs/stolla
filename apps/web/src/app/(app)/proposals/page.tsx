@@ -146,8 +146,47 @@ export default function ProposalsPage() {
   );
 
   useEffect(() => {
-    void loadStates();
-  }, [loadStates]);
+    let cancelled = false;
+
+    void (async () => {
+      if (!contractsConfigured || uniqueProposalIds.length === 0) {
+        if (!cancelled) {
+          setStates({});
+          setFailedProposalIds([]);
+        }
+        return;
+      }
+
+      let client: ReturnType<typeof createGovernorClient> | undefined;
+      const nextStates: Record<string, ProposalState | "unknown"> = {};
+      const failedIds: string[] = [];
+
+      for (const idHex of uniqueProposalIds) {
+        try {
+          client ??= createGovernorClient({
+            publicKey: address ?? "",
+            signTransaction,
+          });
+          const tx = await client.proposal_state({
+            proposal_id: Buffer.from(idHex, "hex"),
+          });
+          nextStates[idHex] = tx.result ?? ProposalState.Pending;
+        } catch {
+          nextStates[idHex] = "unknown";
+          failedIds.push(idHex);
+        }
+      }
+
+      if (!cancelled) {
+        setStates(nextStates);
+        setFailedProposalIds(failedIds);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, contractsConfigured, signTransaction, uniqueProposalIds]);
 
   const availableStates = useMemo(
     () =>
@@ -157,12 +196,19 @@ export default function ProposalsPage() {
     [states],
   );
 
+  const activeStateFilter = useMemo(() => {
+    if (stateFilter !== ALL_FILTER && !availableStates.includes(stateFilter)) {
+      return ALL_FILTER;
+    }
+    return stateFilter;
+  }, [availableStates, stateFilter]);
+
   const filteredIds = useMemo(
     () =>
-      stateFilter === ALL_FILTER
+      activeStateFilter === ALL_FILTER
         ? uniqueProposalIds
-        : uniqueProposalIds.filter((id) => states[id] === stateFilter),
-    [stateFilter, states, uniqueProposalIds],
+        : uniqueProposalIds.filter((id) => states[id] === activeStateFilter),
+    [activeStateFilter, states, uniqueProposalIds],
   );
 
   const visibleIds = useMemo(
@@ -170,13 +216,6 @@ export default function ProposalsPage() {
     [filteredIds, visibleCount],
   );
   const canLoadMore = visibleCount < filteredIds.length;
-
-  useEffect(() => {
-    if (stateFilter !== ALL_FILTER && !availableStates.includes(stateFilter)) {
-      setStateFilter(ALL_FILTER);
-    }
-  }, [availableStates, stateFilter]);
-
 
   async function handleCreateProposal() {
     if (!address) {

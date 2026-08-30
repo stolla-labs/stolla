@@ -224,3 +224,11 @@ Use `proposal_created` as the discovery anchor, treat `proposal_state` and
 `has_voted` as read-derived enrichments, and keep `vote_cast` as optional
 history/detail data until the app introduces typed event decoding and paginated
 public proposal discovery.
+
+## Frontend module
+
+Typed decode, pagination, mapping, deduplication, vote aggregation, and
+client Freshness State stubs live under
+`apps/web/src/lib/proposal-events/` (public barrel: `@/lib/proposal-events`).
+Global and Community surfaces must import that pipeline rather than
+parallel governor/proposal event helpers.

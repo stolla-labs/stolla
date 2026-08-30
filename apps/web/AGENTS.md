@@ -22,7 +22,10 @@ The landing page uses a **professional light** enterprise SaaS design. It is sep
 | `/community/[communityId]/proposals/[proposalId]` | Single scoped proposal detail |
 | `/proposals` | Proposal list and voting |
 
-Multi-community registry is env-driven (`NEXT_PUBLIC_COMMUNITIES_JSON`, see `lib/communities/registry.ts`). Every hook/component under `lib/communities/` and `components/community/` takes its registry, metadata fetcher, and Governor reader as optional parameters, defaulting to production wiring — this is what makes them testable with the fixtures in `src/test/fixtures/communities.ts` and mocks in `src/test/mocks/governor.ts` without hitting the network.
+Multi-community discovery uses the typed `CommunityRegistry` adapter in
+`lib/community/types.ts`. Production uses the CommunityFactory-backed adapter
+from `lib/community/registry.ts`; tests inject deterministic adapters through
+`CommunityRegistryProvider` or component props so they never need RPC access.
 
 ## Stack
 

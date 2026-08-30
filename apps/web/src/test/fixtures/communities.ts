@@ -1,68 +1,108 @@
-import type { CommunityRecord, CommunityMetadata } from "@/lib/communities/types";
+import type {
+  Community,
+  CommunityRegistry,
+} from "@/lib/community/types";
 
-/**
- * Reusable multi-community fixture set for navigation/routing tests.
- *
- * - `atlas` and `beacon` are two fully independent communities (distinct
- *   Governor + NFT contract ids) used to prove route-context scoping and
- *   that switching communities never leaks state between them.
- * - `driftwood` has no `metadataUri`, so its off-chain description always
- *   fails to resolve while its on-chain identifiers must still render.
- */
-export const atlasCommunity: CommunityRecord = {
-  id: "atlas-collective",
-  name: "Atlas Collective",
-  symbol: "ATLAS",
-  governorContractId: "CGOVERNORATLAS00000000000000000000000000000000000000001",
-  nftContractId: "CNFTATLAS000000000000000000000000000000000000000000001",
-  metadataUri: "https://metadata.example/atlas.json",
-};
+const OWNER = `G${"A".repeat(55)}`;
 
-export const beaconCommunity: CommunityRecord = {
-  id: "beacon-guild",
-  name: "Beacon Guild",
-  symbol: "BEACON",
-  governorContractId: "CGOVERNORBEACON0000000000000000000000000000000000000002",
-  nftContractId: "CNFTBEACON00000000000000000000000000000000000000000002",
-  metadataUri: "https://metadata.example/beacon.json",
-};
+function community(
+  idByte: string,
+  name: string,
+  governorContract: string,
+  nftContract: string,
+  description: string,
+): Community {
+  const id = idByte.repeat(64);
+  return {
+    record: {
+      id,
+      nftContract,
+      governorContract,
+      creator: OWNER,
+      communityOwner: OWNER,
+      createdAtLedger: 100,
+      creationIndex: 0,
+      metadataUri: `https://metadata.example/${id}.json`,
+      metadataHash: "ab".repeat(32),
+      metadataSchemaVersion: 1,
+    },
+    metadata: {
+      schemaVersion: 1,
+      name,
+      description,
+      externalLinks: [],
+    },
+    metadataError: null,
+    governance: {
+      votingDelay: 1,
+      votingPeriod: 100,
+      proposalThreshold: "1",
+      quorum: "1",
+      unavailableFields: [],
+    },
+  };
+}
 
-export const driftwoodCommunity: CommunityRecord = {
-  id: "driftwood-cooperative",
-  name: "Driftwood Cooperative",
-  symbol: "DRIFT",
-  governorContractId: "CGOVERNORDRIFTWOOD000000000000000000000000000000000003",
-  nftContractId: "CNFTDRIFTWOOD0000000000000000000000000000000000000000003",
-  // Intentionally no metadataUri: models a community missing off-chain metadata.
-};
+export const atlasCommunity = community(
+  "a",
+  "Atlas Collective",
+  "CGOVERNORATLAS00000000000000000000000000000000000000001",
+  "CNFTATLAS000000000000000000000000000000000000000000001",
+  "Funding public goods across the Atlas ecosystem.",
+);
 
-export const multiCommunityRegistry: CommunityRecord[] = [
+export const beaconCommunity = community(
+  "b",
+  "Beacon Guild",
+  "CGOVERNORBEACON0000000000000000000000000000000000000002",
+  "CNFTBEACON00000000000000000000000000000000000000000002",
+  "Coordinating grants for the Beacon Guild.",
+);
+
+export const driftwoodCommunity = community(
+  "c",
+  "Driftwood Cooperative",
+  "CGOVERNORDRIFTWOOD000000000000000000000000000000000003",
+  "CNFTDRIFTWOOD0000000000000000000000000000000000000000003",
+  "Unavailable metadata fixture.",
+);
+driftwoodCommunity.metadata = null;
+driftwoodCommunity.metadataError = "Metadata request failed.";
+
+export const multiCommunityFixtures: Community[] = [
   atlasCommunity,
   beaconCommunity,
   driftwoodCommunity,
 ];
 
-export const atlasMetadata: CommunityMetadata = {
-  description: "Funding public goods across the Atlas ecosystem.",
-  logoUri: "https://metadata.example/atlas-logo.png",
-};
-
-export const beaconMetadata: CommunityMetadata = {
-  description: "Coordinating grants for the Beacon Guild.",
-  logoUri: "https://metadata.example/beacon-logo.png",
-};
-
-export function createFetchMetadata(
-  byUri: Record<string, CommunityMetadata | Error>,
-) {
-  return async (uri: string): Promise<CommunityMetadata> => {
-    const outcome = byUri[uri];
-    if (outcome === undefined) {
-      throw new Error(`No fixture metadata for ${uri}`);
-    }
-    if (outcome instanceof Error) {
-      throw outcome;
-    }
-    return outcome;
+export function createFixtureCommunityRegistry(
+  communities: Community[],
+): CommunityRegistry {
+  return {
+    async list(cursor, limit) {
+      const start = cursor ?? 0;
+      const page = communities.slice(start, start + limit);
+      return {
+        communities: page,
+        nextCursor:
+          start + page.length < communities.length
+            ? start + page.length
+            : null,
+        malformedRecords: 0,
+      };
+    },
+    async get(communityId) {
+      const match = communities.find(
+        (candidate) =>
+          candidate.record.id.toLowerCase() === communityId.toLowerCase(),
+      );
+      return match
+        ? { status: "found" as const, community: match }
+        : { status: "not-found" as const };
+    },
   };
 }
+
+export const multiCommunityRegistry = createFixtureCommunityRegistry(
+  multiCommunityFixtures,
+);

@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   serializeCommunityFactoryArgs,
   type CommunityWizardState,
@@ -25,47 +24,42 @@ describe("serializeCommunityFactoryArgs", () => {
   it("preserves metadata and governance units for the factory", () => {
     const args = serializeCommunityFactoryArgs(validState, "GCREATOR");
 
-    assert.deepEqual(args.metadata, {
+    expect(args.metadata).toEqual({
       name: "Stolla Labs",
       symbol: "STLA",
       base_uri: "ipfs://QmCommunity",
       description: "A testnet community",
       external_url: "https://stolla.example",
     });
-    assert.equal(args.governance.voting_delay, 1);
-    assert.equal(args.governance.voting_period, 17280);
-    assert.equal(args.governance.proposal_threshold, 900719925474099312345n);
-    assert.equal(
-      args.governance.quorum,
+    expect(args.governance.voting_delay).toBe(1);
+    expect(args.governance.voting_period).toBe(17280);
+    expect(args.governance.proposal_threshold).toBe(900719925474099312345n);
+    expect(args.governance.quorum).toBe(
       340282366920938463463374607431768211455n,
     );
   });
 
   it("rejects lossy decimal inputs", () => {
-    assert.throws(
-      () =>
-        serializeCommunityFactoryArgs(
-          {
-            ...validState,
-            governance: { ...validState.governance, quorum: "1.5" },
-          },
-          "GCREATOR",
-        ),
-      /Quorum must be a whole number/,
-    );
+    expect(() =>
+      serializeCommunityFactoryArgs(
+        {
+          ...validState,
+          governance: { ...validState.governance, quorum: "1.5" },
+        },
+        "GCREATOR",
+      ),
+    ).toThrow(/Quorum must be a whole number/);
   });
 
   it("rejects u32 values outside the contract range", () => {
-    assert.throws(
-      () =>
-        serializeCommunityFactoryArgs(
-          {
-            ...validState,
-            governance: { ...validState.governance, votingDelay: "4294967296" },
-          },
-          "GCREATOR",
-        ),
-      /Voting delay must fit in u32/,
-    );
+    expect(() =>
+      serializeCommunityFactoryArgs(
+        {
+          ...validState,
+          governance: { ...validState.governance, votingDelay: "4294967296" },
+        },
+        "GCREATOR",
+      ),
+    ).toThrow(/Voting delay must fit in u32/);
   });
 });

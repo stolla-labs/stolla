@@ -2,20 +2,25 @@ import { describe, expect, it } from "vitest";
 import { Networks } from "@stellar/stellar-sdk";
 import {
   NETWORKS,
+  NetworkCapabilityError,
   NetworkMismatchError,
+  buildNetworkCapabilities,
   compareNetworks,
   contractUrl,
   describeNetwork,
   findNetworkByPassphrase,
+  listUnavailableCapabilities,
+  requireNetworkCapability,
   transactionUrl,
 } from "./network";
+import { createNetworkCapabilitiesFixture } from "@/test-support/stellar/capabilities";
 
 describe("describeNetwork", () => {
   it("recognizes registered networks by passphrase", () => {
     expect(describeNetwork(Networks.TESTNET)).toEqual({
       id: "testnet",
       label: "Testnet",
-      passphrase: Networks.TESTNET,
+      networkPassphrase: Networks.TESTNET,
     });
   });
 
@@ -23,7 +28,7 @@ describe("describeNetwork", () => {
     expect(describeNetwork("Custom Network ; 2026", "Local")).toEqual({
       id: null,
       label: "Local",
-      passphrase: "Custom Network ; 2026",
+      networkPassphrase: "Custom Network ; 2026",
     });
   });
 
@@ -100,5 +105,43 @@ describe("NetworkMismatchError", () => {
   it("explains an unreadable wallet network", () => {
     const error = new NetworkMismatchError(NETWORKS.testnet, null);
     expect(error.message).toContain("Could not read the wallet network");
+  });
+});
+
+describe("network capability matrix", () => {
+  it("builds complete testnet fixtures through the production builder", () => {
+    const capabilities = createNetworkCapabilitiesFixture("testnet");
+    expect(capabilities.network.networkPassphrase).toBe(Networks.TESTNET);
+    expect(listUnavailableCapabilities(capabilities)).toEqual([]);
+  });
+
+  it("names missing factory and discovery capabilities", () => {
+    const capabilities = buildNetworkCapabilities("mainnet", {
+      NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL: "https://rpc.example",
+    });
+    expect(listUnavailableCapabilities(capabilities)).toEqual([
+      "communityFactory",
+      "legacyContracts",
+      "proposalDiscovery",
+    ]);
+    expect(() =>
+      requireNetworkCapability(capabilities, "communityFactory"),
+    ).toThrowError(NetworkCapabilityError);
+    try {
+      requireNetworkCapability(capabilities, "proposalDiscovery");
+    } catch (error) {
+      expect(error).toMatchObject({
+        name: "NetworkCapabilityError",
+        capability: "proposalDiscovery",
+        networkId: "mainnet",
+      });
+    }
+  });
+
+  it("keeps invalid discovery ledgers unavailable", () => {
+    const capabilities = createNetworkCapabilitiesFixture("testnet", {
+      NEXT_PUBLIC_GOVERNOR_START_LEDGER: "0",
+    });
+    expect(capabilities.proposalDiscovery.available).toBe(false);
   });
 });
