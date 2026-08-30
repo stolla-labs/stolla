@@ -9,6 +9,11 @@ vi.mock("@/hooks/useProposalDiscovery", () => ({
     loading: false,
     error: null,
     empty: false,
+    freshness: {
+      state: "current",
+      explanation: "Proposal history is up to date.",
+      ledgerGap: 0,
+    },
     refresh: vi.fn(),
   })),
 }));

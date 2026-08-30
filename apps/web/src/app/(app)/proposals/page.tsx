@@ -13,6 +13,7 @@ import {
 import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
+import { DiscoveryFreshnessBanner } from "@/components/DiscoveryFreshnessBanner";
 import { truncateEnd } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
@@ -46,6 +47,7 @@ export default function ProposalsPage() {
     loading,
     error,
     empty,
+    freshness,
     refresh,
   } =
     useProposalDiscovery();
@@ -477,6 +479,13 @@ export default function ProposalsPage() {
               Retry loading proposals
             </button>
           </div>
+        )}
+
+        {!loading && uniqueProposalIds.length > 0 && (
+          <DiscoveryFreshnessBanner
+            freshness={freshness}
+            onRetry={() => void refresh()}
+          />
         )}
 
         {!loading && !error && empty && (
