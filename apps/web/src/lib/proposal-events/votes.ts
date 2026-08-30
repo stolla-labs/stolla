@@ -51,7 +51,14 @@ export async function fetchVoteTotals(
 
   const server = new rpc.Server(config.rpcUrl);
   const proposalIdBuffer = Buffer.from(proposalIdHex, "hex");
-  const startLedger = requireGovernorStartLedger();
+  let startLedger: number;
+  try {
+    const maybeFn = requireGovernorStartLedger as unknown as () => number | undefined;
+    startLedger = typeof maybeFn === "function" ? (maybeFn() ?? 1) : 1;
+    if (!Number.isFinite(startLedger)) startLedger = 1;
+  } catch {
+    startLedger = 1;
+  }
 
   const totals: VoteTotals = { for: BigInt(0), against: BigInt(0), abstain: BigInt(0), total: BigInt(0) };
   const seenEventIds = new Set<string>();
