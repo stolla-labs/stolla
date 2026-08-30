@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@/context/WalletProvider";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { VoteActions } from "@/components/VoteActions";
 import type { VoteType } from "@/components/voteOptions.mjs";
 import {
@@ -37,9 +38,6 @@ type ProposalResult = {
   state: string;
   hasVoted: boolean | null;
 };
-
-const backLinkClassName =
-  "mt-4 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400";
 
 export default function ProposalDetailPage({
   proposalId,
@@ -318,9 +316,9 @@ export default function ProposalDetailPage({
           <code className="font-mono">{proposalIdHex}</code> is not a valid
           32-byte proposal identifier.
         </LiveStatus>
-        <Link href={backHref} className={backLinkClassName}>
+        <AppLinkButton href={backHref} tone="primary" className="mt-4">
           Back to proposals
-        </Link>
+        </AppLinkButton>
       </div>
     );
   }
@@ -336,9 +334,9 @@ export default function ProposalDetailPage({
           <code className="font-mono">{proposalIdHex}</code>. It may not exist,
           or the network may be temporarily unavailable.
         </LiveStatus>
-        <Link href={backHref} className={backLinkClassName}>
+        <AppLinkButton href={backHref} tone="primary" className="mt-4">
           Back to proposals
-        </Link>
+        </AppLinkButton>
       </div>
     );
   }

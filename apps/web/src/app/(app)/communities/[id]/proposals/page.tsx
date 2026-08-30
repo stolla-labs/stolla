@@ -5,7 +5,8 @@ import { Buffer } from "buffer";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
-import { DiscoveryFreshnessBanner } from "@/components/DiscoveryFreshnessBanner";
+import { AppButton } from "@/components/ui/AppButton";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
@@ -23,14 +24,8 @@ const ALL_STATES = "all";
 
 function ScopedProposalHistory({ community }: { community: CommunityView }) {
   const governorContract = community.record.governorContract;
-  const {
-    proposals: discovered,
-    loading,
-    error,
-    empty,
-    freshness,
-    refresh,
-  } = useProposalDiscovery(governorContract);
+  const { proposals: discovered, loading, error, empty, refresh } =
+    useProposalDiscovery(governorContract);
   const proposals = useMemo(
     () =>
       Array.from(
@@ -188,13 +183,6 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
           </div>
         )}
 
-        {!loading && proposals.length > 0 && (
-          <DiscoveryFreshnessBanner
-            freshness={freshness}
-            onRetry={() => void refresh()}
-          />
-        )}
-
         {!loading && !error && empty && (
           <LiveStatus className="mt-3 rounded-lg border border-dashed border-slate-700 p-5 text-sm text-slate-400">
             This community has no public proposals yet.
@@ -250,13 +238,13 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
         )}
 
         {visibleCount < filtered.length && (
-          <button
-            type="button"
+          <AppButton
+            tone="secondary"
             onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-            className="mt-4 min-h-11 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-100 hover:bg-slate-800"
+            className="mt-4"
           >
             Load more proposals
-          </button>
+          </AppButton>
         )}
       </section>
     </div>
@@ -315,12 +303,13 @@ export default function CommunityProposalHistoryPage() {
               ? "The route community is malformed or is not registered."
               : "The canonical community record could not be loaded."}
           </p>
-          <Link
+          <AppLinkButton
             href="/communities"
-            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-indigo-500 px-4 py-2 text-sm text-white"
+            tone="primary"
+            className="mt-4"
           >
             Browse communities
-          </Link>
+          </AppLinkButton>
         </section>
       )}
     </div>

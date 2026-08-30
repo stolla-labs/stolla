@@ -4,15 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CommunityAvatar } from "@/components/CommunityAvatar";
-import { ProposalActivity } from "@/components/community/ProposalActivity";
+import { AppButton } from "@/components/ui/AppButton";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getCommunity } from "@/lib/community/registry";
-import {
-  formatLedgerDuration,
-  GOVERNANCE_HELPERS,
-  LEDGER_TIME_ASSUMPTION_NOTE,
-} from "@/lib/community/governanceDisplay";
 import type {
   CommunityDetailResult,
   CommunityRegistryRecord,
@@ -168,19 +164,19 @@ export default function CommunityDetailPage() {
             {error}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
+            <AppButton
               type="button"
+              tone="danger"
               onClick={() => void load()}
-              className="min-h-11 rounded-lg border border-rose-700 px-4 py-2 text-sm font-medium text-rose-100 hover:bg-rose-900/60"
             >
               Retry community request
-            </button>
-            <Link
+            </AppButton>
+            <AppLinkButton
               href="/communities"
-              className="inline-flex min-h-11 items-center rounded-lg px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              tone="secondary"
             >
               Back to communities
-            </Link>
+            </AppLinkButton>
           </div>
         </section>
       </div>
@@ -197,12 +193,13 @@ export default function CommunityDetailPage() {
           <p className="mt-2 text-sm text-slate-400">
             This ID is malformed or is not present in the canonical registry.
           </p>
-          <Link
+          <AppLinkButton
             href="/communities"
-            className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+            tone="primary"
+            className="mt-4"
           >
             Browse communities
-          </Link>
+          </AppLinkButton>
         </section>
       </div>
     );
@@ -258,22 +255,20 @@ export default function CommunityDetailPage() {
             {record.id}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
+            <AppButton
+              tone="secondary"
               onClick={() => void copyValue("Community ID", record.id)}
-              className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
               aria-label="Copy full community ID"
             >
               Copy ID
-            </button>
-            <button
-              type="button"
+            </AppButton>
+            <AppButton
+              tone="secondary"
               onClick={() => void shareCommunity(name, record.id)}
-              className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
               aria-label={`Share ${name} community page`}
             >
               Share page
-            </button>
+            </AppButton>
           </div>
         </div>
       </header>
@@ -304,32 +299,32 @@ export default function CommunityDetailPage() {
       {metadata && metadata.externalLinks.length > 0 && (
         <nav aria-label="Community links" className="mt-5 flex flex-wrap gap-2">
           {metadata.externalLinks.map((link) => (
-            <a
+            <AppLinkButton
               key={`${link.label}:${link.url}`}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              tone="secondary"
             >
               {link.label}
-            </a>
+            </AppLinkButton>
           ))}
         </nav>
       )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Link
+        <AppLinkButton
           href={`/communities/${record.id}/proposals`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+          tone="primary"
         >
           View community proposals
-        </Link>
-        <Link
+        </AppLinkButton>
+        <AppLinkButton
           href={`/community?community=${record.id}`}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+          tone="secondary"
         >
           Membership actions
-        </Link>
+        </AppLinkButton>
       </div>
 
       <section
@@ -377,18 +372,12 @@ export default function CommunityDetailPage() {
             <dd className="mt-1 text-slate-100">
               {governance.proposalThreshold ?? "Unavailable"}
             </dd>
-            <p className="mt-1 text-xs text-slate-500">
-              {GOVERNANCE_HELPERS.proposalThreshold}
-            </p>
           </div>
           <div>
             <dt className="text-sm text-slate-500">Quorum (NFT votes)</dt>
             <dd className="mt-1 text-slate-100">
               {governance.quorum ?? "Unavailable"}
             </dd>
-            <p className="mt-1 text-xs text-slate-500">
-              {GOVERNANCE_HELPERS.quorum}
-            </p>
           </div>
           <div>
             <dt className="text-sm text-slate-500">
@@ -396,15 +385,7 @@ export default function CommunityDetailPage() {
             </dt>
             <dd className="mt-1 text-slate-100">
               {governance.votingDelay ?? "Unavailable"}
-              {governance.votingDelay !== null && (
-                <span className="ml-2 text-xs text-slate-400">
-                  {formatLedgerDuration(governance.votingDelay)} ({LEDGER_TIME_ASSUMPTION_NOTE})
-                </span>
-              )}
             </dd>
-            <p className="mt-1 text-xs text-slate-500">
-              {GOVERNANCE_HELPERS.votingDelay}
-            </p>
           </div>
           <div>
             <dt className="text-sm text-slate-500">
@@ -412,15 +393,7 @@ export default function CommunityDetailPage() {
             </dt>
             <dd className="mt-1 text-slate-100">
               {governance.votingPeriod ?? "Unavailable"}
-              {governance.votingPeriod !== null && (
-                <span className="ml-2 text-xs text-slate-400">
-                  {formatLedgerDuration(governance.votingPeriod)} ({LEDGER_TIME_ASSUMPTION_NOTE})
-                </span>
-              )}
             </dd>
-            <p className="mt-1 text-xs text-slate-500">
-              {GOVERNANCE_HELPERS.votingPeriod}
-            </p>
           </div>
         </dl>
         <p className="mt-4 text-xs text-slate-500">
@@ -428,11 +401,6 @@ export default function CommunityDetailPage() {
           estimates.
         </p>
       </section>
-
-      <ProposalActivity
-        communityId={record.id}
-        governorContractId={record.governorContract}
-      />
 
       <section
         aria-labelledby="registry-title"

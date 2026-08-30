@@ -10,6 +10,7 @@ import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider"
 import type { Community } from "@/lib/community/types";
 import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { AppButton } from "@/components/ui/AppButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
@@ -292,14 +293,14 @@ export default function CommunityPage() {
                 Community data could not be loaded
               </h2>
               <p className="mt-2 text-sm text-rose-200">{dataLoadError}</p>
-              <button
-                type="button"
+              <AppButton
+                tone="danger"
                 onClick={() => void refresh()}
                 disabled={refreshing}
-                className="mt-4 rounded-lg border border-rose-700 px-4 py-2 text-sm font-medium text-rose-100 hover:bg-rose-900/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-300 disabled:opacity-50"
+                className="mt-4"
               >
                 {refreshing ? "Retrying..." : "Retry loading community data"}
-              </button>
+              </AppButton>
             </section>
           )}
 
@@ -356,20 +357,20 @@ export default function CommunityPage() {
                   <dd>{votes ?? "—"}</dd>
                 </div>
               </dl>
-              <button
-                type="button"
+              <AppButton
+                tone="secondary"
                 onClick={() => void handleDelegate()}
                 disabled={
                   !address ||
                   mintLifecycle.isInFlight ||
                   delegationLifecycle.isInFlight
                 }
-                className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                className="mt-4"
               >
                 {delegationLifecycle.isInFlight
                   ? "Delegation in progress…"
                   : "Delegate to self"}
-              </button>
+              </AppButton>
               <TransactionLifecycleStatus
                 stage={delegationLifecycle.stage}
                 operationLabel="Delegate"
@@ -486,18 +487,18 @@ export default function CommunityPage() {
                   </p>
                 )}
               </div>
-              <button
-                type="button"
+              <AppButton
+                tone="primary"
                 onClick={() => void handleMint()}
                 disabled={
                   !address ||
                   mintLifecycle.isInFlight ||
                   delegationLifecycle.isInFlight
                 }
-                className="min-h-11 w-full touch-manipulation rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-50 sm:w-auto"
+                className="w-full sm:w-auto"
               >
                 {mintLifecycle.isInFlight ? "Mint in progress…" : "Mint NFT"}
-              </button>
+              </AppButton>
               <TransactionLifecycleStatus
                 stage={mintLifecycle.stage}
                 operationLabel="Mint"

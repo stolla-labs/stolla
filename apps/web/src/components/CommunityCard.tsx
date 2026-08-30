@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { CommunityAvatar } from "@/components/CommunityAvatar";
-import { OnChainIdentifier } from "@/components/ui/OnChainIdentifier";
-import type { Community } from "@/lib/community/types";
+import { AppLinkButton } from "@/components/ui/AppLinkButton";
+import type { CommunityView } from "@/lib/community/types";
 import { truncateMiddle } from "@/lib/truncate";
-import { FreshnessNotice } from "@/components/ui/FreshnessNotice";
 
-export function CommunityCard({ community }: { community: Community }) {
+export function CommunityCard({ community }: { community: CommunityView }) {
   const { metadata, metadataError, record, governance } = community;
   const name = metadata?.name ?? `Community ${truncateMiddle(record.id, 8, 6)}`;
 
@@ -21,15 +19,12 @@ export function CommunityCard({ community }: { community: Community }) {
           <h2 className="break-words text-lg font-semibold text-slate-100 [overflow-wrap:anywhere]">
             {name}
           </h2>
-          <div className="mt-0.5 text-xs text-slate-500">
-            <OnChainIdentifier
-              label="Community ID"
-              value={record.id}
-              kind="opaque"
-              truncateStart={10}
-              truncateEnd={8}
-            />
-          </div>
+          <p
+            className="mt-0.5 break-all font-mono text-xs text-slate-500"
+            title={record.id}
+          >
+            {truncateMiddle(record.id, 10, 8)}
+          </p>
         </div>
       </div>
 
@@ -41,12 +36,12 @@ export function CommunityCard({ community }: { community: Community }) {
           {metadata.description}
         </p>
       ) : (
-        <FreshnessNotice className="mt-4 p-3">
+        <p className="mt-4 text-sm text-amber-300" role="status">
           Metadata unavailable. The verified registry record is still shown.
           {metadataError ? (
             <span className="sr-only"> {metadataError}</span>
           ) : null}
-        </FreshnessNotice>
+        </p>
       )}
 
       <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-800 pt-4 text-sm">
@@ -80,13 +75,14 @@ export function CommunityCard({ community }: { community: Community }) {
         </div>
       </dl>
 
-      <Link
+      <AppLinkButton
         href={`/communities/${record.id}`}
         aria-label={`View ${name} community details`}
-        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 sm:self-start"
+        tone="primary"
+        className="mt-5 sm:self-start"
       >
         View community
-      </Link>
+      </AppLinkButton>
     </article>
   );
 }
