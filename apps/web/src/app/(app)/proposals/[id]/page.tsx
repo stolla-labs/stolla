@@ -27,8 +27,10 @@ function shortenAddress(addr: string): string {
   if (addr.length <= 12) return addr;
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
-import { fetchVoteTotals, type VoteTotals } from "@/lib/voteAggregation";
+import { fetchVoteTotals, type VoteTotals } from "@/lib/proposal-events";
 import { fmt, pct } from "@/lib/voteDisplay";
+import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
+import { ProposalMetadataDisplay } from "@/components/proposal/ProposalMetadataDisplay";
 
 
 type ProposalResult = {
@@ -56,6 +58,12 @@ export default function ProposalDetailPage({
     community?.metadata?.name ??
     (community ? `Community ${truncateMiddle(community.record.id)}` : null);
   const isValidId = parseProposalId(proposalIdHex) !== null;
+  const { proposals: discoveredProposals } = useProposalDiscovery(
+    governorContractId || undefined,
+  );
+  const proposalDescription = discoveredProposals.find(
+    (candidate) => candidate.id.toLowerCase() === proposalIdHex.toLowerCase(),
+  )?.description;
   const { address, signTransaction } = useWallet();
   const [result, setResult] = useState<ProposalResult | null>(null);
   const [loadErrorId, setLoadErrorId] = useState<string | null>(null);
@@ -498,6 +506,19 @@ export default function ProposalDetailPage({
       <div aria-live="polite" className="sr-only">
         {copied ? "Proposer address copied to clipboard" : null}
       </div>
+
+      <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
+        {proposalDescription ? (
+          <ProposalMetadataDisplay description={proposalDescription} />
+        ) : (
+          <div>
+            <h2 className="font-semibold text-slate-100">Description</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Description unavailable from public event history.
+            </p>
+          </div>
+        )}
+      </section>
 
 
       <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">

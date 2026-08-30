@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { listCommunities } from "@/lib/community/registry";
-import type { CommunityView } from "@/lib/community/types";
+import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
+import type { Community } from "@/lib/community/types";
 import { truncateMiddle } from "@/lib/truncate";
 
 const COMMUNITY_ROUTE = /^\/communities\/([0-9a-fA-F]{64})(?:\/|$)/;
 
 export function CommunitySwitcher() {
   const pathname = usePathname();
+  const registry = useCommunityRegistry();
   const selectedId = pathname.match(COMMUNITY_ROUTE)?.[1]?.toLowerCase() ?? null;
   const [open, setOpen] = useState(false);
-  const [communities, setCommunities] = useState<CommunityView[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -42,10 +43,10 @@ export function CommunitySwitcher() {
       setLoading(true);
       setError("");
       try {
-        const all: CommunityView[] = [];
+        const all: Community[] = [];
         let cursor: number | null = null;
         for (let pageNumber = 0; pageNumber < 20; pageNumber += 1) {
-          const page = await listCommunities(cursor, 50);
+          const page = await registry.list(cursor, 50);
           if (!active) return;
           all.push(...page.communities);
           if (page.nextCursor === null) break;
@@ -69,7 +70,7 @@ export function CommunitySwitcher() {
     return () => {
       active = false;
     };
-  }, [loaded, open]);
+  }, [loaded, open, registry]);
 
   const selected = communities.find(
     (community) => community.record.id === selectedId,

@@ -4,11 +4,16 @@ import { ProposalState } from "@/lib/bindings/community-governor/src";
 
 vi.mock("@/hooks/useProposalDiscovery", () => ({
   useProposalDiscovery: vi.fn(() => ({
-    proposals: [{ id: "a".repeat(64), description: "Public proposal" }],
+    proposals: [{ id: "a".repeat(64), description: "Public proposal", metadata: null }],
     proposalIds: ["a".repeat(64)],
     loading: false,
     error: null,
     empty: false,
+    freshness: {
+      state: "current",
+      explanation: "Proposal history is up to date.",
+      ledgerGap: 0,
+    },
     refresh: vi.fn(),
   })),
 }));

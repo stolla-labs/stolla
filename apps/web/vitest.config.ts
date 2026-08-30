@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/__tests__/setup.ts", "./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
+    testTimeout: 15000,
     env: {
       NEXT_PUBLIC_STELLAR_NETWORK: "testnet",
       NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID:

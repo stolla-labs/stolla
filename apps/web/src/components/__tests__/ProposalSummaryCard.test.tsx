@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
-import type { ProposalSummary } from "@/lib/proposal/types";
+import type { ProposalSummary } from "@/lib/proposal-events";
 
 const FULL_ID = "ab".repeat(32);
 
@@ -30,7 +30,6 @@ describe("ProposalSummaryCard", () => {
         showDescription
         stateStatus="ready"
         stateLabel="Active"
-        onCopyId={() => undefined}
       />,
     );
 
@@ -124,6 +123,22 @@ describe("ProposalSummaryCard", () => {
       }),
     );
     expect(onRetryState).toHaveBeenCalledTimes(1);
+  });
+
+  it("copies the proposal id via the shared identifier control", async () => {
+    Object.assign(navigator, {
+      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+    render(
+      <ProposalSummaryCard
+        summary={baseSummary()}
+        stateStatus="ready"
+        stateLabel="Active"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy Proposal ID" }));
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(FULL_ID);
   });
 
   it("keeps long proposal IDs from breaking the layout", () => {

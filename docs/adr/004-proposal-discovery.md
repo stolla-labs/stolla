@@ -155,6 +155,9 @@ with RPC remaining the ingestion source.
 - Maintainers must configure and preserve a valid start ledger
 - The migration away from `localStorage` becomes incremental rather than
   all-at-once
+- Application code consolidates event query, decode, map, dedupe, and vote
+  aggregation under `apps/web/src/lib/proposal-events/` so global and
+  Community Governor scopes share one pipeline
 
 ## Follow-up Backlog Mapping
 

@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Server as RpcServer } from "@stellar/stellar-sdk/rpc";
 import type { Api } from "@stellar/stellar-sdk/rpc";
 import { config, requireContractIds, requireGovernorStartLedger } from "@/lib/stellar";
 import { decodeProposalEvent } from "@/lib/proposalEvents";
+import {
+  evaluateDiscoveryFreshness,
+  type FreshnessResult,
+} from "@/lib/proposal/freshness";
 import { getE2EBridge } from "@/lib/e2eMock";
 
 export type DiscoveredProposal = {
@@ -42,6 +46,17 @@ export function useProposalDiscovery(governorContractId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [empty, setEmpty] = useState(false);
+  const [freshnessMeta, setFreshnessMeta] = useState<{
+    latestLedger: number | null;
+    lastEventLedger: number | null;
+    discoveredCount: number;
+    hadError: boolean;
+  }>({
+    latestLedger: null,
+    lastEventLedger: null,
+    discoveredCount: 0,
+    hadError: false,
+  });
 
   const discover = useCallback(async () => {
     const governor = governorContractId ?? requireContractIds().governor;
@@ -57,10 +72,19 @@ export function useProposalDiscovery(governorContractId?: string) {
       if (mocked) {
         setProposals(mocked);
         setEmpty(mocked.length === 0);
+        setFreshnessMeta({
+          latestLedger: null,
+          lastEventLedger: null,
+          discoveredCount: mocked.length,
+          hadError: false,
+        });
         return true;
       }
       const discovered: DiscoveredProposal[] = [];
       let cursor: string | undefined = undefined;
+      let latestLedger: number | null = null;
+      let lastEventLedger: number | null = null;
+      let hadError = false;
 
       for (;;) {
         // Topic filters against current testnet RPC return empty for OZ
@@ -89,7 +113,18 @@ export function useProposalDiscovery(governorContractId?: string) {
               limit: 100,
             };
 
-        const response = await server.getEvents(request);
+        let response: Awaited<ReturnType<typeof server.getEvents>>;
+        try {
+          response = await server.getEvents(request);
+        } catch {
+          hadError = true;
+          break;
+        }
+
+        // Capture the RPC head ledger from the first page.
+        if (latestLedger === null && response.latestLedger) {
+          latestLedger = response.latestLedger;
+        }
 
         for (const event of response.events) {
           if (event.topic.length < 2) continue;
@@ -109,6 +144,16 @@ export function useProposalDiscovery(governorContractId?: string) {
             id: Buffer.from(proposalIdBytes).toString("hex"),
             description: extractDescription(event),
           });
+
+          // Track the highest ledger sequence from event metadata.
+          const eventLedger =
+            typeof event.ledger === "number" ? event.ledger : null;
+          if (eventLedger !== null) {
+            lastEventLedger =
+              lastEventLedger === null
+                ? eventLedger
+                : Math.max(lastEventLedger, eventLedger);
+          }
         }
 
         if (!response.events.length || !response.cursor) break;
@@ -118,9 +163,16 @@ export function useProposalDiscovery(governorContractId?: string) {
       discovered.reverse();
       setProposals(discovered);
       setEmpty(discovered.length === 0);
+      setFreshnessMeta({
+        latestLedger,
+        lastEventLedger,
+        discoveredCount: discovered.length,
+        hadError,
+      });
       return true;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Discovery failed");
+      setFreshnessMeta((prev) => ({ ...prev, hadError: true }));
       return false;
     } finally {
       setLoading(false);
@@ -137,12 +189,18 @@ export function useProposalDiscovery(governorContractId?: string) {
 
   const proposalIds = proposals.map((proposal) => proposal.id);
 
+  const freshness: FreshnessResult = useMemo(
+    () => evaluateDiscoveryFreshness(freshnessMeta),
+    [freshnessMeta],
+  );
+
   return {
     proposals,
     proposalIds,
     loading,
     error,
     empty,
+    freshness,
     refresh: discover,
   };
 }

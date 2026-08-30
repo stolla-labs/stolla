@@ -2,8 +2,13 @@
 
 import { useMemo } from "react";
 import { useWallet } from "@/context/WalletProvider";
-import { compareNetworks, type NetworkComparison } from "@/lib/network";
-import { activeNetwork } from "@/lib/stellar";
+import {
+  compareNetworks,
+  describeNetwork,
+  type DetectedNetwork,
+  type NetworkComparison,
+} from "@/lib/network";
+import { activeCapabilities } from "@/lib/stellar";
 
 /**
  * Reconciles the network the wallet reports with the one the application is
@@ -11,9 +16,23 @@ import { activeNetwork } from "@/lib/stellar";
  * network directly, so mismatch handling stays in one place.
  */
 export function useNetworkGuard(): NetworkComparison {
-  const { walletNetwork } = useWallet();
+  const { walletNetwork, walletNetworkPassphrase } = useWallet();
   return useMemo(
-    () => compareNetworks(activeNetwork, walletNetwork),
-    [walletNetwork],
+    () => {
+      // Older test/E2E adapters supplied the already-detected object. Keep the
+      // transition safe while production wallet state uses the passphrase.
+      const legacyDetected =
+        typeof walletNetwork === "object" && walletNetwork !== null
+          ? (walletNetwork as DetectedNetwork)
+          : null;
+      const detected = walletNetworkPassphrase
+        ? describeNetwork(
+            walletNetworkPassphrase,
+            typeof walletNetwork === "string" ? walletNetwork : undefined,
+          )
+        : legacyDetected;
+      return compareNetworks(activeCapabilities.network, detected);
+    },
+    [walletNetwork, walletNetworkPassphrase],
   );
 }

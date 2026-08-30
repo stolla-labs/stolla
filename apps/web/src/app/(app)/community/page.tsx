@@ -6,8 +6,8 @@ import {
   createNftClient,
   createReadOnlyNftClient,
 } from "@/lib/contracts";
-import { getCommunity } from "@/lib/community/registry";
-import type { CommunityView } from "@/lib/community/types";
+import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
+import type { Community } from "@/lib/community/types";
 import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { AppButton } from "@/components/ui/AppButton";
@@ -26,6 +26,7 @@ type ActionStatus = {
 
 export default function CommunityPage() {
   const { address, signTransaction } = useWallet();
+  const registry = useCommunityRegistry();
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [balance, setBalance] = useState<number | null>(null);
@@ -41,7 +42,7 @@ export default function CommunityPage() {
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(
     null,
   );
-  const [activeCommunity, setActiveCommunity] = useState<CommunityView | null>(
+  const [activeCommunity, setActiveCommunity] = useState<Community | null>(
     null,
   );
   const [routeResolved, setRouteResolved] = useState(false);
@@ -85,7 +86,7 @@ export default function CommunityPage() {
       }
 
       setInitialLoading(true);
-      void getCommunity(communityId)
+      void registry.get(communityId)
         .then((result) => {
           if (!active) return;
           if (
@@ -116,7 +117,7 @@ export default function CommunityPage() {
       window.clearTimeout(timeout);
       active = false;
     };
-  }, [resetDelegationLifecycle, resetMintLifecycle]);
+  }, [registry, resetDelegationLifecycle, resetMintLifecycle]);
 
   const refresh = useCallback(async () => {
     if (!contractsConfigured) return false;

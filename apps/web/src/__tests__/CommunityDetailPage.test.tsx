@@ -2,6 +2,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommunityDetailResult } from "@/lib/community/types";
+import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
 
 const mocks = vi.hoisted(() => ({
   useParams: vi.fn(),
@@ -11,13 +12,18 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useParams: mocks.useParams,
 }));
-vi.mock("@/lib/community/registry", () => ({
-  getCommunity: mocks.getCommunity,
-}));
-
 import CommunityDetailPage from "@/app/(app)/communities/[id]/page";
 
 const COMMUNITY_ID = "ab".repeat(32);
+const registry = { list: vi.fn(), get: mocks.getCommunity };
+
+function renderPage() {
+  return render(
+    <CommunityRegistryProvider registry={registry}>
+      <CommunityDetailPage />
+    </CommunityRegistryProvider>,
+  );
+}
 
 const foundResult: CommunityDetailResult = {
   status: "found",
@@ -79,7 +85,7 @@ describe("CommunityDetailPage", () => {
     const request = deferred<CommunityDetailResult>();
     mocks.getCommunity.mockReturnValue(request.promise);
 
-    render(<CommunityDetailPage />);
+    renderPage();
     expect(screen.getByText("Loading community details…")).toBeInTheDocument();
 
     await act(async () => {
@@ -103,18 +109,21 @@ describe("CommunityDetailPage", () => {
       `/communities/${COMMUNITY_ID}/proposals`,
     );
     expect(
-      screen.getAllByRole("button", { name: /Copy full .* address/ }),
+      screen.getAllByRole("button", { name: /^Copy .* contract$/ }),
     ).toHaveLength(2);
     expect(
-      screen.getAllByRole("link", { name: /on Stellar Expert/ }),
+      screen.getAllByRole("link", { name: /Open .* contract in explorer/ }),
     ).toHaveLength(2);
+    expect(
+      screen.getByRole("button", { name: "Copy Community owner" }),
+    ).toBeInTheDocument();
   });
 
   it("renders malformed and unknown IDs as clear not-found states", async () => {
     mocks.useParams.mockReturnValue({ id: "not-an-id" });
     mocks.getCommunity.mockResolvedValue({ status: "not-found" });
 
-    const { rerender } = render(<CommunityDetailPage />);
+    const { rerender } = renderPage();
     expect(await screen.findByText("Community not found")).toBeInTheDocument();
 
     mocks.useParams.mockReturnValue({ id: COMMUNITY_ID });
@@ -122,7 +131,11 @@ describe("CommunityDetailPage", () => {
       status: "malformed",
       message: "Registry schema mismatch.",
     });
-    rerender(<CommunityDetailPage />);
+    rerender(
+      <CommunityRegistryProvider registry={registry}>
+        <CommunityDetailPage />
+      </CommunityRegistryProvider>,
+    );
 
     expect(
       await screen.findByText("Community record is malformed"),
@@ -137,7 +150,7 @@ describe("CommunityDetailPage", () => {
     metadataFailure.community.metadataError = "Metadata request failed.";
     mocks.getCommunity.mockResolvedValue(metadataFailure);
 
-    render(<CommunityDetailPage />);
+    renderPage();
 
     expect(
       await screen.findByText("Community metadata is unavailable"),
@@ -154,7 +167,7 @@ describe("CommunityDetailPage", () => {
     partial.community.governance.unavailableFields = ["Quorum"];
     mocks.getCommunity.mockResolvedValue(partial);
 
-    render(<CommunityDetailPage />);
+    renderPage();
 
     expect(
       await screen.findByText(/Some Governor reads failed: Quorum/),
@@ -167,7 +180,7 @@ describe("CommunityDetailPage", () => {
       .mockRejectedValueOnce(new Error("RPC down"))
       .mockResolvedValueOnce(foundResult);
 
-    render(<CommunityDetailPage />);
+    renderPage();
     expect(
       await screen.findByText("Community could not be loaded"),
     ).toBeInTheDocument();
@@ -181,7 +194,7 @@ describe("CommunityDetailPage", () => {
 
   it("copies canonical identifiers and falls back to copying the share URL", async () => {
     mocks.getCommunity.mockResolvedValue(foundResult);
-    render(<CommunityDetailPage />);
+    renderPage();
     await screen.findByText("Builders Guild");
 
     fireEvent.click(
@@ -211,7 +224,7 @@ describe("CommunityDetailPage", () => {
       value: share,
     });
     mocks.getCommunity.mockResolvedValue(foundResult);
-    render(<CommunityDetailPage />);
+    renderPage();
     await screen.findByText("Builders Guild");
     const shareButton = screen.getByRole("button", {
       name: "Share Builders Guild community page",

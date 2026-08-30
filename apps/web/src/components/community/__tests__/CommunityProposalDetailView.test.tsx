@@ -6,19 +6,19 @@ import {
   atlasCommunity,
   beaconCommunity,
   multiCommunityRegistry,
-} from "@/test/fixtures/communities";
-import { createGovernorReaderFactory } from "@/test/mocks/governor";
+  createGovernorReaderFactory,
+} from "@/test-support/stellar";
 
 describe("CommunityProposalDetailView", () => {
   it("scopes an identical proposal id to the routed community's own Governor", async () => {
     const getReader = createGovernorReaderFactory([
-      { contractId: atlasCommunity.governorContractId, proposals: { "2a": ProposalState.Active } },
-      { contractId: beaconCommunity.governorContractId, proposals: { "2a": ProposalState.Executed } },
+      { contractId: atlasCommunity.record.governorContract, proposals: { "2a": ProposalState.Active } },
+      { contractId: beaconCommunity.record.governorContract, proposals: { "2a": ProposalState.Executed } },
     ]);
 
     const { unmount } = render(
       <CommunityProposalDetailView
-        communityId={atlasCommunity.id}
+        communityId={atlasCommunity.record.id}
         proposalId="2a"
         registry={multiCommunityRegistry}
         getReader={getReader}
@@ -29,7 +29,7 @@ describe("CommunityProposalDetailView", () => {
 
     render(
       <CommunityProposalDetailView
-        communityId={beaconCommunity.id}
+        communityId={beaconCommunity.record.id}
         proposalId="2a"
         registry={multiCommunityRegistry}
         getReader={getReader}
@@ -40,12 +40,12 @@ describe("CommunityProposalDetailView", () => {
 
   it("renders the canonical breadcrumb chain through to the proposal", async () => {
     const getReader = createGovernorReaderFactory([
-      { contractId: atlasCommunity.governorContractId, proposals: { "01": ProposalState.Pending } },
+      { contractId: atlasCommunity.record.governorContract, proposals: { "01": ProposalState.Pending } },
     ]);
 
     render(
       <CommunityProposalDetailView
-        communityId={atlasCommunity.id}
+        communityId={atlasCommunity.record.id}
         proposalId="01"
         registry={multiCommunityRegistry}
         getReader={getReader}
@@ -53,9 +53,9 @@ describe("CommunityProposalDetailView", () => {
     );
 
     const nav = await screen.findByRole("navigation", { name: "Breadcrumb" });
-    expect(within(nav).getByRole("link", { name: atlasCommunity.name })).toHaveAttribute(
+    expect(within(nav).getByRole("link", { name: atlasCommunity.metadata!.name })).toHaveAttribute(
       "href",
-      `/community/${atlasCommunity.id}`,
+      `/community/${atlasCommunity.record.id}`,
     );
     expect(within(nav).getByText("Proposal #01")).toHaveAttribute(
       "aria-current",
@@ -66,14 +66,14 @@ describe("CommunityProposalDetailView", () => {
   it("surfaces a proposal load failure without crashing the page", async () => {
     const getReader = createGovernorReaderFactory([
       {
-        contractId: atlasCommunity.governorContractId,
+        contractId: atlasCommunity.record.governorContract,
         proposals: { "01": new Error("RPC simulation failed") },
       },
     ]);
 
     render(
       <CommunityProposalDetailView
-        communityId={atlasCommunity.id}
+        communityId={atlasCommunity.record.id}
         proposalId="01"
         registry={multiCommunityRegistry}
         getReader={getReader}
@@ -85,7 +85,7 @@ describe("CommunityProposalDetailView", () => {
     expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
   });
 
-  it("produces not-found behavior for an unknown community id", () => {
+  it("produces not-found behavior for an unknown community id", async () => {
     const getReader = createGovernorReaderFactory([]);
     render(
       <CommunityProposalDetailView
@@ -96,6 +96,6 @@ describe("CommunityProposalDetailView", () => {
       />,
     );
 
-    expect(screen.getByText("Community not found")).toBeInTheDocument();
+    expect(await screen.findByText("Community not found")).toBeInTheDocument();
   });
 });
