@@ -6,7 +6,7 @@ import {
 } from "@stellar/stellar-sdk";
 import { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 import { Api, Server as RpcServer } from "@stellar/stellar-sdk/rpc";
-import { config } from "@/lib/stellar";
+import { activeCapabilities, requireRpcConfig } from "@/lib/stellar";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
 import {
   parseCommunityMetadata,
@@ -14,7 +14,7 @@ import {
   type CommunityMetadataDraft,
   type GovernanceDraft,
 } from "./schema";
-import { getCommunity, parseRegistryRecord } from "./registry";
+import { communityRegistry, parseRegistryRecord } from "./registry";
 import type { CommunityRegistryRecord } from "./types";
 
 export const COMMUNITY_DEPLOYMENT_RECOVERY_VERSION = 1 as const;
@@ -74,6 +74,13 @@ export type CommunityDeploymentAdapter = {
   verifyRegistry(
     expected: CommunityRegistryRecord,
   ): Promise<"verified" | "missing" | "mismatch" | "rpc-error">;
+  /**
+   * Reads the CommunityFactory owner so the UI can gate deployment before any
+   * simulation or signature. Resolves to the owner address string on success;
+   * throws on a transient read failure so callers can retry rather than treat
+   * the result as an authorization verdict.
+   */
+  readFactoryOwner(factoryId: string, publicKey: string): Promise<string>;
 };
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -164,7 +171,10 @@ export async function serializeCommunityFactoryInvocation(
   input: CommunityDeploymentInput,
   metadataHashOverride?: Uint8Array,
 ): Promise<CommunityFactoryInvocation> {
-  if (input.networkPassphrase !== config.networkPassphrase) {
+  if (
+    input.networkPassphrase !==
+    activeCapabilities.network.networkPassphrase
+  ) {
     throw new Error("The deployment network passphrase does not match the application network.");
   }
   const metadataHash =
@@ -285,13 +295,14 @@ export function parseCommunityDeploymentRecovery(
 
 export const defaultCommunityDeploymentAdapter: CommunityDeploymentAdapter = {
   async simulate(input) {
+    const rpc = requireRpcConfig();
     const invocation = await serializeCommunityFactoryInvocation(input);
     const transaction = await AssembledTransaction.build<unknown>({
       contractId: invocation.contractId,
       method: invocation.method,
       args: invocation.args,
       networkPassphrase: invocation.networkPassphrase,
-      rpcUrl: config.rpcUrl,
+      rpcUrl: rpc.rpcUrl,
       publicKey: invocation.sourceAccount,
       timeoutInSeconds: COMMUNITY_DEPLOYMENT_TIMEOUT_SECONDS,
       parseResultXdr: scValToNative,
@@ -320,7 +331,9 @@ export const defaultCommunityDeploymentAdapter: CommunityDeploymentAdapter = {
 
   async transactionStatus(hash) {
     try {
-      const response = await new RpcServer(config.rpcUrl).getTransaction(hash);
+      const response = await new RpcServer(
+        requireRpcConfig().rpcUrl,
+      ).getTransaction(hash);
       switch (response.status) {
         case Api.GetTransactionStatus.SUCCESS:
           return "success";
@@ -338,7 +351,7 @@ export const defaultCommunityDeploymentAdapter: CommunityDeploymentAdapter = {
 
   async verifyRegistry(expected) {
     try {
-      const result = await getCommunity(expected.id);
+      const result = await communityRegistry.get(expected.id);
       if (result.status === "not-found") return "missing";
       if (result.status !== "found") return "mismatch";
       return result.community.record.nftContract === expected.nftContract &&
@@ -348,6 +361,29 @@ export const defaultCommunityDeploymentAdapter: CommunityDeploymentAdapter = {
     } catch {
       return "rpc-error";
     }
+  },
+
+  /**
+   * Reads `owner()` off the factory as a read-only simulation. Any throw is a
+   * transient read failure that the UI reports as retryable, never as
+   * "unauthorized".
+   */
+  async readFactoryOwner(factoryId, publicKey) {
+    const transaction = await AssembledTransaction.build<string>({
+      contractId: factoryId,
+      method: "owner",
+      args: [],
+      networkPassphrase: config.networkPassphrase,
+      rpcUrl: config.rpcUrl,
+      publicKey,
+      timeoutInSeconds: COMMUNITY_DEPLOYMENT_TIMEOUT_SECONDS,
+      parseResultXdr: (value) => scValToNative(value) as string,
+    });
+    const owner = transaction.result;
+    if (typeof owner !== "string" || owner.trim() === "") {
+      throw new Error("The CommunityFactory owner read did not return an address.");
+    }
+    return owner;
   },
 };
 

@@ -7,6 +7,8 @@ const healthEnvKeys = [
   "NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL",
   "NEXT_PUBLIC_NFT_CONTRACT_ID",
   "NEXT_PUBLIC_GOVERNOR_CONTRACT_ID",
+  "NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID",
+  "NEXT_PUBLIC_GOVERNOR_START_LEDGER",
 ] as const;
 
 const contractIds = {
@@ -14,6 +16,9 @@ const contractIds = {
     "CCV3ODX5QNB6XH2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2",
   NEXT_PUBLIC_GOVERNOR_CONTRACT_ID:
     "CCV3ODX5QNB6XH2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2",
+  NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID:
+    "CCV3ODX5QNB6XH2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2XZ2",
+  NEXT_PUBLIC_GOVERNOR_START_LEDGER: "12345",
 };
 
 async function requestHealth(env: Record<string, string>) {
@@ -55,6 +60,14 @@ describe("GET /api/health", () => {
         governorConfigured: true,
         allConfigured: true,
       },
+      capabilities: {
+        rpc: true,
+        explorer: true,
+        communityFactory: true,
+        legacyContracts: true,
+        proposalDiscovery: true,
+      },
+      unavailableCapabilities: [],
     });
   });
 

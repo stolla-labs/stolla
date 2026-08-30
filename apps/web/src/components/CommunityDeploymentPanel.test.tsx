@@ -73,7 +73,22 @@ function adapter() {
     }),
     transactionStatus: vi.fn().mockResolvedValue("success"),
     verifyRegistry: vi.fn().mockResolvedValue("verified"),
+    readFactoryOwner: vi.fn().mockResolvedValue(address),
   };
+}
+
+const simulateButtons = () =>
+  screen.queryAllByRole("button", { name: "Simulate deployment" });
+const approveButton = () =>
+  screen.queryByRole("button", { name: "Approve and deploy" });
+
+/** The owner preflight resolves asynchronously to "ready" before any action. */
+async function awaitReady() {
+  await waitFor(async () => {
+    expect(
+      simulateButtons().some((button) => !(button as HTMLButtonElement).disabled),
+    ).toBe(true);
+  });
 }
 
 describe("CommunityDeploymentPanel", () => {
@@ -92,6 +107,7 @@ describe("CommunityDeploymentPanel", () => {
     mocks.getE2EBridge.mockReturnValue({ deployment });
     render(<CommunityDeploymentPanel {...props} />);
 
+    await awaitReady();
     fireEvent.click(screen.getByRole("button", { name: "Simulate deployment" }));
     expect(await screen.findByText(/12345678 stroops/)).toHaveTextContent(
       "1.2345678 XLM",
@@ -134,6 +150,7 @@ describe("CommunityDeploymentPanel", () => {
     mocks.getE2EBridge.mockReturnValue({ deployment });
     render(<CommunityDeploymentPanel {...props} />);
 
+    await awaitReady();
     fireEvent.click(screen.getByRole("button", { name: "Simulate deployment" }));
     await screen.findByText(/12345678 stroops/);
     fireEvent.click(screen.getByRole("button", { name: "Approve and deploy" }));
@@ -194,5 +211,84 @@ describe("CommunityDeploymentPanel", () => {
       screen.getByRole("button", { name: "Simulate deployment" }),
     ).toBeEnabled();
     expect(deployment.signAndSubmit).not.toHaveBeenCalled();
+  });
+
+  it("blocks the deploy approval action for a non-owner wallet", async () => {
+    const deployment = adapter();
+    const other = `G${"B".repeat(55)}`;
+    mocks.useWallet.mockReturnValue({
+      address: other,
+      signTransaction: vi.fn(),
+      walletNetwork: "testnet",
+      walletNetworkPassphrase: "Test SDF Network ; September 2015",
+    });
+    mocks.getE2EBridge.mockReturnValue({ deployment });
+    render(<CommunityDeploymentPanel {...props} />);
+
+    await screen.findByText(/Only the CommunityFactory owner can create communities/);
+    expect(
+      screen.getByRole("button", { name: "Simulate deployment" }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Simulate deployment" }));
+    expect(deployment.simulate).not.toHaveBeenCalled();
+    expect(approveButton()).not.toBeInTheDocument();
+  });
+
+  it("reports a disconnected wallet as disconnected and holds actions", async () => {
+    mocks.useWallet.mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+      walletNetwork: null,
+      walletNetworkPassphrase: null,
+    });
+    render(<CommunityDeploymentPanel {...props} />);
+
+    expect(
+      await screen.findByText(/Connect your wallet to check whether this account can create a community/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Simulate deployment" }),
+    ).toBeDisabled();
+  });
+
+  it("is network-aware and never reports a mismatched wallet as unauthorized", async () => {
+    const deployment = adapter();
+    mocks.useWallet.mockReturnValue({
+      address,
+      signTransaction: vi.fn(),
+      walletNetwork: "mainnet",
+      walletNetworkPassphrase: "Public Global Stellar Network ; September 2015",
+    });
+    mocks.getE2EBridge.mockReturnValue({ deployment });
+    render(<CommunityDeploymentPanel {...props} />);
+
+    expect(await screen.findByText(/Expected testnet/)).toHaveTextContent(
+      "Detected mainnet",
+    );
+    expect(deployment.readFactoryOwner).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText(/cannot create/i),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/only the communityfactory owner/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("treats a factory owner read failure as retryable, not unauthorized", async () => {
+    const deployment = adapter();
+    deployment.readFactoryOwner.mockRejectedValueOnce(new Error("RPC unavailable"));
+    mocks.getE2EBridge.mockReturnValue({ deployment });
+    render(<CommunityDeploymentPanel {...props} />);
+
+    const retry = await screen.findByRole("button", { name: "Retry owner check" });
+    expect(
+      screen.queryByText(/only the communityfactory owner|cannot create/i),
+    ).not.toBeInTheDocument();
+
+    deployment.readFactoryOwner.mockResolvedValueOnce(address);
+    fireEvent.click(retry);
+    await awaitReady();
+    expect(deployment.readFactoryOwner).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText("Retry owner check")).not.toBeInTheDocument();
   });
 });

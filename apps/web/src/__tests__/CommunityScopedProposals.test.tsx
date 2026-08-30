@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommunityDetailResult } from "@/lib/community/types";
+import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
 
 const mocks = vi.hoisted(() => ({
   useParams: vi.fn(),
@@ -14,10 +15,6 @@ vi.mock("next/navigation", () => ({
   useParams: mocks.useParams,
 }));
 
-vi.mock("@/lib/community/registry", () => ({
-  getCommunity: mocks.getCommunity,
-}));
-
 vi.mock("@/hooks/useProposalDiscovery", () => ({
   useProposalDiscovery: mocks.useProposalDiscovery,
 }));
@@ -28,6 +25,16 @@ vi.mock("@/lib/contracts", () => ({
 
 import { ProposalState } from "@/lib/proposalState";
 import CommunityProposalHistoryPage from "@/app/(app)/communities/[id]/proposals/page";
+
+const registry = { list: vi.fn(), get: mocks.getCommunity };
+
+function renderPage() {
+  return render(
+    <CommunityRegistryProvider registry={registry}>
+      <CommunityProposalHistoryPage />
+    </CommunityRegistryProvider>,
+  );
+}
 
 const FIRST_ID = "11".repeat(32);
 const SECOND_ID = "22".repeat(32);
@@ -83,7 +90,7 @@ describe("community-scoped proposal history", () => {
         : communityResult(SECOND_ID, SECOND_GOVERNOR, "Second DAO"),
     );
     mocks.useProposalDiscovery.mockReturnValue({
-      proposals: [{ id: PROPOSAL_ID, description: "Shared numeric ID" }],
+      proposals: [{ id: PROPOSAL_ID, description: "Shared numeric ID", metadata: null }],
       loading: false,
       error: null,
       empty: false,
@@ -97,7 +104,7 @@ describe("community-scoped proposal history", () => {
   });
 
   it("uses the route community Governor and keeps colliding IDs scoped", async () => {
-    const { rerender } = render(<CommunityProposalHistoryPage />);
+    const { rerender } = renderPage();
 
     expect(
       await screen.findByRole("link", {
@@ -113,7 +120,11 @@ describe("community-scoped proposal history", () => {
     );
 
     mocks.useParams.mockReturnValue({ id: SECOND_ID });
-    rerender(<CommunityProposalHistoryPage />);
+    rerender(
+      <CommunityRegistryProvider registry={registry}>
+        <CommunityProposalHistoryPage />
+      </CommunityRegistryProvider>,
+    );
 
     await waitFor(() =>
       expect(
@@ -131,7 +142,7 @@ describe("community-scoped proposal history", () => {
   it("shows an unknown community independently of proposal history", async () => {
     mocks.getCommunity.mockResolvedValue({ status: "not-found" });
 
-    render(<CommunityProposalHistoryPage />);
+    renderPage();
 
     expect(await screen.findByText("Community not found")).toBeInTheDocument();
     expect(mocks.useProposalDiscovery).not.toHaveBeenCalled();

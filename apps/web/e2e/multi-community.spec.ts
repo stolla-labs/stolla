@@ -39,11 +39,19 @@ test("browses canonical scoped routes and switches communities without stale pro
   await expect(
     page.getByRole("heading", { name: "Alpha Builders proposals" }),
   ).toBeVisible();
-  await expect(page.getByText("Alpha treasury proposal")).toBeVisible();
+  await expect(page.getByText("Fund Alpha treasury observability")).toBeVisible();
+  await expect(page.getByText(/public dashboards for community treasury/)).toBeVisible();
 
   await page.getByRole("link", { name: /View proposal/i }).first().click();
   await expect(page).toHaveURL(
     `/communities/${ALPHA_ID}/proposals/${PROPOSAL_ID}`,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Fund Alpha treasury observability" }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open discussion/ })).toHaveAttribute(
+    "href",
+    "https://forum.example.org/t/alpha-observability",
   );
   await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText(
     "Alpha Builders",
@@ -56,7 +64,7 @@ test("browses canonical scoped routes and switches communities without stale pro
   await page.getByRole("link", { name: "View community proposals" }).click();
   await expect(page).toHaveURL(`/communities/${BETA_ID}/proposals`);
   await expect(page.getByText("Beta grants proposal")).toBeVisible();
-  await expect(page.getByText("Alpha treasury proposal")).toHaveCount(0);
+  await expect(page.getByText("Fund Alpha treasury observability")).toHaveCount(0);
 
   const dimensions = await page.evaluate(() => ({
     client: document.documentElement.clientWidth,

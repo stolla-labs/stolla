@@ -1,8 +1,8 @@
 import Link from "next/link";
-import type { CommunityRecord } from "@/lib/communities/types";
+import type { Community } from "@/lib/community/types";
 
 export type CommunitySwitcherProps = {
-  communities: CommunityRecord[];
+  communities: Community[];
   activeCommunityId?: string;
 };
 
@@ -16,11 +16,11 @@ export function CommunitySwitcher({
     <nav aria-label="Switch community">
       <ul className="flex flex-wrap gap-1">
         {communities.map((community) => {
-          const isActive = community.id === activeCommunityId;
+          const isActive = community.record.id === activeCommunityId;
           return (
-            <li key={community.id}>
+            <li key={community.record.id}>
               <Link
-                href={`/community/${community.id}`}
+                href={`/community/${community.record.id}`}
                 aria-current={isActive ? "page" : undefined}
                 className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
                   isActive
@@ -28,7 +28,7 @@ export function CommunitySwitcher({
                     : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
                 }`}
               >
-                {community.name}
+                {community.metadata?.name ?? community.record.id}
               </Link>
             </li>
           );

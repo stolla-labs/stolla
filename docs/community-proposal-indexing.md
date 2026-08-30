@@ -186,6 +186,12 @@ The browser deduplicates appended pages by `proposalKey` defensively. It must
 not merge local storage IDs into public results or silently query a globally
 configured Governor when a community query fails.
 
+Client-side shared helpers for direct-RPC discovery (decode, pagination,
+dedupe, vote totals, Freshness State stubs) live in
+`apps/web/src/lib/proposal-events/`. Community routes must pass an explicit
+Governor contract id into that pipeline and must not fall back to the env
+global Governor.
+
 ## Failure and retry behavior
 
 - HTTP 429, timeouts, and transient 5xx responses use exponential backoff with

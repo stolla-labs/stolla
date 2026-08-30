@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommunityDetailResult } from "@/lib/community/types";
+import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
 
 const mocks = vi.hoisted(() => ({
   useParams: vi.fn(),
@@ -9,10 +10,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({
   useParams: mocks.useParams,
-}));
-
-vi.mock("@/lib/community/registry", () => ({
-  getCommunity: mocks.getCommunity,
 }));
 
 vi.mock("@/app/(app)/proposals/[id]/page", () => ({
@@ -30,6 +27,16 @@ vi.mock("@/app/(app)/proposals/[id]/page", () => ({
 }));
 
 import CommunityProposalDetailPage from "@/app/(app)/communities/[id]/proposals/[proposalId]/page";
+
+const registry = { list: vi.fn(), get: mocks.getCommunity };
+
+function renderPage() {
+  return render(
+    <CommunityRegistryProvider registry={registry}>
+      <CommunityProposalDetailPage />
+    </CommunityRegistryProvider>,
+  );
+}
 
 const COMMUNITY_ID = "ab".repeat(32);
 const PROPOSAL_ID = "cd".repeat(32);
@@ -74,7 +81,7 @@ describe("community-scoped proposal detail route", () => {
   });
 
   it("passes the route proposal and registered Governor to proposal detail", async () => {
-    render(<CommunityProposalDetailPage />);
+    renderPage();
 
     expect(
       await screen.findByText(
@@ -87,7 +94,7 @@ describe("community-scoped proposal detail route", () => {
   it("reports an unknown community before loading proposal data", async () => {
     mocks.getCommunity.mockResolvedValue({ status: "not-found" });
 
-    render(<CommunityProposalDetailPage />);
+    renderPage();
 
     expect(await screen.findByText("Community not found")).toBeInTheDocument();
     expect(
@@ -101,7 +108,7 @@ describe("community-scoped proposal detail route", () => {
     malformed.community.record.governorContract = "not-a-contract";
     mocks.getCommunity.mockResolvedValue(malformed);
 
-    render(<CommunityProposalDetailPage />);
+    renderPage();
 
     expect(
       await screen.findByText("Community contracts are invalid"),

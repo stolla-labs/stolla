@@ -12,6 +12,9 @@ export type StollaE2EBridge = {
     address: string;
     networkPassphrase: string;
     rejected?: boolean;
+    /** Test-only signing material used by the real-transaction browser suite. */
+    secretKey?: string;
+    signedNetworkPassphrases?: string[];
   };
   communities?: CommunityRegistryPage["communities"];
   proposals?: Record<string, E2EProposal[]>;
@@ -29,10 +32,10 @@ declare global {
 }
 
 export function e2eMocksEnabled(): boolean {
-  return (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_E2E_MOCKS === "true"
-  );
+  // next.config.ts rejects this public flag for production builds. Keeping the
+  // client check to one compile-time flag also makes development E2E behavior
+  // deterministic across Next.js runtimes that rewrite NODE_ENV internally.
+  return process.env.NEXT_PUBLIC_E2E_MOCKS === "true";
 }
 
 export function getE2EBridge(): StollaE2EBridge | null {

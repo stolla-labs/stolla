@@ -32,7 +32,7 @@ export type GovernanceSnapshot = {
   unavailableFields: string[];
 };
 
-export type CommunityView = {
+export type Community = {
   record: CommunityRegistryRecord;
   metadata: CommunityMetadata | null;
   metadataError: string | null;
@@ -40,12 +40,17 @@ export type CommunityView = {
 };
 
 export type CommunityRegistryPage = {
-  communities: CommunityView[];
+  communities: Community[];
   nextCursor: number | null;
   malformedRecords: number;
 };
 
 export type CommunityDetailResult =
-  | { status: "found"; community: CommunityView }
+  | { status: "found"; community: Community }
   | { status: "not-found" }
   | { status: "malformed"; message: string };
+
+export interface CommunityRegistry {
+  list(cursor: number | null, limit: number): Promise<CommunityRegistryPage>;
+  get(communityId: string): Promise<CommunityDetailResult>;
+}

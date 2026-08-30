@@ -1,19 +1,29 @@
 /** Covers issue #148: community list search, pagination, and metadata failures. */
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CommunityView } from "@/lib/community/types";
+import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
+import type { Community, CommunityRegistry } from "@/lib/community/types";
 
 const mocks = vi.hoisted(() => ({
   listCommunities: vi.fn(),
 }));
 
-vi.mock("@/lib/community/registry", () => ({
-  listCommunities: mocks.listCommunities,
-}));
-
 import CommunitiesPage from "@/app/(app)/communities/page";
 
-function community(idByte: string, name = "Builders Guild"): CommunityView {
+const registry = {
+  list: mocks.listCommunities,
+  get: vi.fn(),
+} satisfies CommunityRegistry;
+
+function renderPage() {
+  return render(
+    <CommunityRegistryProvider registry={registry}>
+      <CommunitiesPage />
+    </CommunityRegistryProvider>,
+  );
+}
+
+function community(idByte: string, name = "Builders Guild"): Community {
   return {
     record: {
       id: idByte.repeat(64),
@@ -60,13 +70,13 @@ describe("CommunitiesPage", () => {
 
   it("shows loading state and renders registry communities without a wallet", async () => {
     const request = deferred<{
-      communities: CommunityView[];
+      communities: Community[];
       nextCursor: null;
       malformedRecords: number;
     }>();
     mocks.listCommunities.mockReturnValue(request.promise);
 
-    render(<CommunitiesPage />);
+    renderPage();
     expect(
       screen.getByText("Loading registered communities…"),
     ).toBeInTheDocument();
@@ -98,11 +108,10 @@ describe("CommunitiesPage", () => {
       malformedRecords: 0,
     });
 
-    render(<CommunitiesPage />);
+    renderPage();
 
-    expect(
-      await screen.findByText(/No communities are registered yet/),
-    ).toHaveAttribute("role", "status");
+    const empty = await screen.findByText(/No communities are registered yet/);
+    expect(empty.closest("[role='status']")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Create a community" }),
     ).toHaveAttribute("href", "/communities/create");
@@ -117,7 +126,7 @@ describe("CommunitiesPage", () => {
         malformedRecords: 0,
       });
 
-    render(<CommunitiesPage />);
+    renderPage();
     expect(
       await screen.findByText("Community registry is temporarily unavailable"),
     ).toBeInTheDocument();
@@ -141,7 +150,7 @@ describe("CommunitiesPage", () => {
       malformedRecords: 1,
     });
 
-    render(<CommunitiesPage />);
+    renderPage();
 
     expect(
       await screen.findByText(/Some registry data is unavailable/),
@@ -169,7 +178,7 @@ describe("CommunitiesPage", () => {
         malformedRecords: 0,
       });
 
-    render(<CommunitiesPage />);
+    renderPage();
     expect(await screen.findByText("First DAO")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Load more communities" }),
@@ -192,7 +201,7 @@ describe("CommunitiesPage", () => {
       malformedRecords: 0,
     });
 
-    render(<CommunitiesPage />);
+    renderPage();
     expect(await screen.findByText("Builders Guild")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Search communities by name"), {
       target: { value: "  CIVIC  " },
@@ -215,7 +224,7 @@ describe("CommunitiesPage", () => {
       malformedRecords: 0,
     });
 
-    render(<CommunitiesPage />);
+    renderPage();
 
     expect(
       await screen.findByText(/No communities match “missing”/),
@@ -242,7 +251,7 @@ describe("CommunitiesPage", () => {
         malformedRecords: 0,
       });
 
-    render(<CommunitiesPage />);
+    renderPage();
     expect(await screen.findByText("Civic DAO")).toBeInTheDocument();
     expect(mocks.listCommunities).toHaveBeenNthCalledWith(1, null, 9);
     expect(mocks.listCommunities).toHaveBeenNthCalledWith(2, 9, 9);

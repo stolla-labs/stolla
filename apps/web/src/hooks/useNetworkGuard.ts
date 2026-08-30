@@ -2,8 +2,13 @@
 
 import { useMemo } from "react";
 import { useWallet } from "@/context/WalletProvider";
-import { compareNetworks, describeNetwork, type NetworkComparison } from "@/lib/network";
-import { activeNetwork } from "@/lib/stellar";
+import {
+  compareNetworks,
+  describeNetwork,
+  type DetectedNetwork,
+  type NetworkComparison,
+} from "@/lib/network";
+import { activeCapabilities } from "@/lib/stellar";
 
 /**
  * Reconciles the network the wallet reports with the one the application is
@@ -11,31 +16,22 @@ import { activeNetwork } from "@/lib/stellar";
  * network directly, so mismatch handling stays in one place.
  */
 export function useNetworkGuard(): NetworkComparison {
-  const { walletNetwork, walletNetworkPassphrase } = useWallet() as {
-    walletNetwork: unknown;
-    walletNetworkPassphrase?: string | null;
-  };
+  const { walletNetwork, walletNetworkPassphrase } = useWallet();
   return useMemo(
     () => {
-      if (!walletNetwork) return compareNetworks(activeNetwork, null);
-      // Test mock provides DetectedNetwork directly; prod provides string.
-      if (
-        typeof walletNetwork === "object" &&
-        walletNetwork !== null &&
-        "passphrase" in walletNetwork
-      ) {
-        return compareNetworks(
-          activeNetwork,
-          walletNetwork as unknown as import("@/lib/network").DetectedNetwork,
-        );
-      }
-      if (typeof walletNetwork === "string") {
-        return compareNetworks(
-          activeNetwork,
-          describeNetwork(walletNetworkPassphrase ?? "", walletNetwork),
-        );
-      }
-      return compareNetworks(activeNetwork, null);
+      // Older test/E2E adapters supplied the already-detected object. Keep the
+      // transition safe while production wallet state uses the passphrase.
+      const legacyDetected =
+        typeof walletNetwork === "object" && walletNetwork !== null
+          ? (walletNetwork as DetectedNetwork)
+          : null;
+      const detected = walletNetworkPassphrase
+        ? describeNetwork(
+            walletNetworkPassphrase,
+            typeof walletNetwork === "string" ? walletNetwork : undefined,
+          )
+        : legacyDetected;
+      return compareNetworks(activeCapabilities.network, detected);
     },
     [walletNetwork, walletNetworkPassphrase],
   );

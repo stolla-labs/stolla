@@ -5,7 +5,7 @@ export type NetworkId = "testnet" | "mainnet" | "futurenet";
 export type StellarNetwork = {
   id: NetworkId;
   label: string;
-  passphrase: string;
+  networkPassphrase: string;
   /** Path segment used by stellar.expert, or null when the network is not indexed. */
   explorerSegment: string | null;
 };
@@ -14,19 +14,19 @@ export const NETWORKS: Record<NetworkId, StellarNetwork> = {
   testnet: {
     id: "testnet",
     label: "Testnet",
-    passphrase: Networks.TESTNET,
+    networkPassphrase: Networks.TESTNET,
     explorerSegment: "testnet",
   },
   mainnet: {
     id: "mainnet",
     label: "Mainnet",
-    passphrase: Networks.PUBLIC,
+    networkPassphrase: Networks.PUBLIC,
     explorerSegment: "public",
   },
   futurenet: {
     id: "futurenet",
     label: "Futurenet",
-    passphrase: Networks.FUTURENET,
+    networkPassphrase: Networks.FUTURENET,
     explorerSegment: null,
   },
 };
@@ -38,7 +38,7 @@ export const NETWORKS: Record<NetworkId, StellarNetwork> = {
 export type DetectedNetwork = {
   id: NetworkId | null;
   label: string;
-  passphrase: string;
+  networkPassphrase: string;
 };
 
 export function findNetworkByPassphrase(
@@ -46,7 +46,7 @@ export function findNetworkByPassphrase(
 ): StellarNetwork | null {
   return (
     Object.values(NETWORKS).find(
-      (network) => network.passphrase === passphrase,
+      (network) => network.networkPassphrase === passphrase,
     ) ?? null
   );
 }
@@ -57,12 +57,12 @@ export function describeNetwork(
 ): DetectedNetwork {
   const known = findNetworkByPassphrase(passphrase);
   if (known) {
-    return { id: known.id, label: known.label, passphrase };
+    return { id: known.id, label: known.label, networkPassphrase: passphrase };
   }
   return {
     id: null,
     label: reportedName?.trim() || "Unrecognized network",
-    passphrase,
+    networkPassphrase: passphrase,
   };
 }
 
@@ -79,7 +79,9 @@ export function compareNetworks(
     return { status: "unknown", expected, detected: null };
   }
   const status =
-    detected.passphrase === expected.passphrase ? "match" : "mismatch";
+    detected.networkPassphrase === expected.networkPassphrase
+      ? "match"
+      : "mismatch";
   return { status, expected, detected };
 }
 
@@ -122,4 +124,124 @@ export function transactionUrl(network: StellarNetwork, hash: string) {
 
 export function contractUrl(network: StellarNetwork, contractId: string) {
   return explorerUrl(network, "contract", contractId);
+}
+
+export type ActiveNetworkId = Exclude<NetworkId, "futurenet">;
+export type NetworkCapabilityName =
+  | "rpc"
+  | "explorer"
+  | "communityFactory"
+  | "legacyContracts"
+  | "proposalDiscovery";
+
+export type CapabilityAvailability =
+  | { available: true }
+  | { available: false; reason: string; requiredEnvironment: readonly string[] };
+
+export type NetworkCapabilities = {
+  network: StellarNetwork & { id: ActiveNetworkId };
+  rpc: CapabilityAvailability & { url: string; horizonUrl: string; friendbotUrl: string | null };
+  explorer: CapabilityAvailability & { origin: string; segment: string | null };
+  contracts: {
+    communityFactory: string;
+    legacyNft: string;
+    legacyGovernor: string;
+  };
+  communityFactory: CapabilityAvailability & { contractId: string };
+  legacyContracts: CapabilityAvailability & { nftContractId: string; governorContractId: string };
+  proposalDiscovery: CapabilityAvailability & { governorContractId: string; startLedger: number | null };
+};
+
+type CapabilityEnvironment = Record<string, string | undefined>;
+const EXPLORER_ORIGIN_VALUE = "https://stellar.expert/explorer";
+
+function unavailable(reason: string, ...requiredEnvironment: string[]): CapabilityAvailability {
+  return { available: false, reason, requiredEnvironment };
+}
+
+function configured(value: string | undefined) {
+  return value?.trim() ?? "";
+}
+
+export function resolveActiveNetworkId(value?: string): ActiveNetworkId {
+  return value?.trim().toLowerCase() === "mainnet" ? "mainnet" : "testnet";
+}
+
+export function parsePositiveLedger(value?: string): number | null {
+  const normalized = value?.trim();
+  if (!normalized || !/^\d+$/.test(normalized)) return null;
+  const ledger = Number(normalized);
+  return Number.isSafeInteger(ledger) && ledger > 0 ? ledger : null;
+}
+
+export function buildNetworkCapabilities(
+  id: ActiveNetworkId,
+  environment: CapabilityEnvironment = process.env,
+): NetworkCapabilities {
+  const network = NETWORKS[id] as StellarNetwork & { id: ActiveNetworkId };
+  const rpcEnvironment = id === "mainnet" ? "NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL" : "NEXT_PUBLIC_STELLAR_RPC_URL";
+  const rpcUrl = configured(environment[rpcEnvironment]) || (id === "testnet" ? "https://soroban-testnet.stellar.org" : "");
+  const horizonUrl = id === "mainnet" ? "https://horizon.stellar.org" : "https://horizon-testnet.stellar.org";
+  const communityFactory = configured(environment.NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID);
+  const legacyNft = configured(environment.NEXT_PUBLIC_NFT_CONTRACT_ID);
+  const legacyGovernor = configured(environment.NEXT_PUBLIC_GOVERNOR_CONTRACT_ID);
+  const startLedger = parsePositiveLedger(environment.NEXT_PUBLIC_GOVERNOR_START_LEDGER);
+
+  return {
+    network,
+    rpc: {
+      url: rpcUrl,
+      horizonUrl,
+      friendbotUrl: id === "testnet" ? "https://friendbot.stellar.org" : null,
+      ...(rpcUrl ? { available: true as const } : unavailable(`RPC is unavailable for ${network.label}.`, rpcEnvironment)),
+    },
+    explorer: {
+      origin: EXPLORER_ORIGIN_VALUE,
+      segment: network.explorerSegment,
+      ...(network.explorerSegment ? { available: true as const } : unavailable(`Explorer is unavailable for ${network.label}.`)),
+    },
+    contracts: { communityFactory, legacyNft, legacyGovernor },
+    communityFactory: {
+      contractId: communityFactory,
+      ...(communityFactory ? { available: true as const } : unavailable("CommunityFactory is unavailable for the active deployment.", "NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID")),
+    },
+    legacyContracts: {
+      nftContractId: legacyNft,
+      governorContractId: legacyGovernor,
+      ...(legacyNft && legacyGovernor ? { available: true as const } : unavailable("Legacy single-instance contracts are unavailable for the active deployment.", "NEXT_PUBLIC_NFT_CONTRACT_ID", "NEXT_PUBLIC_GOVERNOR_CONTRACT_ID")),
+    },
+    proposalDiscovery: {
+      governorContractId: legacyGovernor,
+      startLedger,
+      ...(legacyGovernor && startLedger ? { available: true as const } : unavailable("Proposal discovery is unavailable for the active deployment.", "NEXT_PUBLIC_GOVERNOR_CONTRACT_ID", "NEXT_PUBLIC_GOVERNOR_START_LEDGER")),
+    },
+  };
+}
+
+export class NetworkCapabilityError extends Error {
+  constructor(
+    readonly capability: NetworkCapabilityName,
+    readonly networkId: ActiveNetworkId,
+    readonly requiredEnvironment: readonly string[],
+    message: string,
+  ) {
+    super(message);
+    this.name = "NetworkCapabilityError";
+  }
+}
+
+export function requireNetworkCapability<K extends NetworkCapabilityName>(
+  capabilities: NetworkCapabilities,
+  capability: K,
+): Extract<NetworkCapabilities[K], { available: true }> {
+  const value = capabilities[capability];
+  if (!value.available) {
+    throw new NetworkCapabilityError(capability, capabilities.network.id, value.requiredEnvironment, value.reason);
+  }
+  return value as Extract<NetworkCapabilities[K], { available: true }>;
+}
+
+export function listUnavailableCapabilities(capabilities: NetworkCapabilities) {
+  const names: NetworkCapabilityName[] = ["rpc", "explorer", "communityFactory", "legacyContracts", "proposalDiscovery"];
+  return names.filter((name) => !capabilities[name].available);
 }

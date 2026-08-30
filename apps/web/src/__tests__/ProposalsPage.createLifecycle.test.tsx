@@ -32,6 +32,7 @@ vi.mock("@/hooks/useProposalDiscovery", () => ({
 }));
 
 import ProposalsPage from "@/app/(app)/proposals/page";
+import { serializeProposalMetadata } from "@/lib/proposal-metadata";
 
 const PROPOSAL_ID = "ab".repeat(32);
 
@@ -46,8 +47,14 @@ function deferred<T>() {
 }
 
 function fillDescription(value = "  Fund the grants program  ") {
-  fireEvent.change(screen.getByLabelText(/Proposal description/i), {
+  fireEvent.change(screen.getByRole("textbox", { name: "Title (required)" }), {
     target: { value },
+  });
+  fireEvent.change(screen.getByRole("textbox", { name: "Summary (required)" }), {
+    target: { value: "Approve the community grants program." },
+  });
+  fireEvent.change(screen.getByRole("textbox", { name: "Body (required)" }), {
+    target: { value: "Fund reviewed grants from the community treasury." },
   });
 }
 
@@ -102,14 +109,14 @@ describe("ProposalsPage create lifecycle", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Create proposal" }));
     expect(
-      await screen.findByText("Proposal description is required."),
+      await screen.findByText("Title is required."),
     ).toBeInTheDocument();
     expect(propose).not.toHaveBeenCalled();
 
     fillDescription("   ");
     fireEvent.click(screen.getByRole("button", { name: "Create proposal" }));
     expect(
-      await screen.findByText("Proposal description is required."),
+      await screen.findByText("Title is required."),
     ).toBeInTheDocument();
     expect(propose).not.toHaveBeenCalled();
   });
@@ -140,11 +147,16 @@ describe("ProposalsPage create lifecycle", () => {
       targets: ["GWALLET"],
       functions: ["noop"],
       args: [[]],
-      description: "Fund the grants program",
+      description: serializeProposalMetadata({
+        title: "Fund the grants program",
+        summary: "Approve the community grants program.",
+        body: "Fund reviewed grants from the community treasury.",
+        discussionUrl: null,
+      }),
       proposer: "GWALLET",
     });
     expect(button).toBeDisabled();
-    expect(screen.getByLabelText(/Proposal description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Title (required)" })).toHaveValue(
       "  Fund the grants program  ",
     );
 
@@ -169,7 +181,7 @@ describe("ProposalsPage create lifecycle", () => {
     expect(mocks.storeProposalId).toHaveBeenCalledWith(PROPOSAL_ID);
     expect(mocks.refresh).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(screen.getByLabelText(/Proposal description/i)).toHaveValue("");
+      expect(screen.getByRole("textbox", { name: "Title (required)" })).toHaveValue("");
     });
   });
 
@@ -192,7 +204,7 @@ describe("ProposalsPage create lifecycle", () => {
     expect(
       (await screen.findAllByText(/rejected the wallet request/i)).length,
     ).toBeGreaterThanOrEqual(1);
-    expect(screen.getByLabelText(/Proposal description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Title (required)" })).toHaveValue(
       "Keep this draft",
     );
     expect(mocks.refresh).not.toHaveBeenCalled();
@@ -214,7 +226,7 @@ describe("ProposalsPage create lifecycle", () => {
     expect(
       (await screen.findAllByText(/could not be simulated/i)).length,
     ).toBeGreaterThanOrEqual(1);
-    expect(screen.getByLabelText(/Proposal description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Title (required)" })).toHaveValue(
       "Sim failure draft",
     );
     expect(mocks.refresh).not.toHaveBeenCalled();
@@ -239,7 +251,7 @@ describe("ProposalsPage create lifecycle", () => {
     expect(
       (await screen.findAllByText(/Confirmation timed out/i)).length,
     ).toBeGreaterThanOrEqual(1);
-    expect(screen.getByLabelText(/Proposal description/i)).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Title (required)" })).toHaveValue(
       "Confirm failure draft",
     );
     expect(mocks.refresh).not.toHaveBeenCalled();
@@ -268,6 +280,6 @@ describe("ProposalsPage create lifecycle", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Propose confirmed")).toBeInTheDocument();
     expect(screen.queryByText(/Propose failed/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Proposal description/i)).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Title (required)" })).toHaveValue("");
   });
 });
