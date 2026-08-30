@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   createReadOnlyGovernorClient: vi.fn(),
   createReadOnlyNftClient: vi.fn(),
   fetchVoteTotals: vi.fn(),
+  useProposalDiscovery: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useParams: mocks.useParams }));
@@ -18,8 +19,11 @@ vi.mock("@/lib/contracts", () => ({
   createReadOnlyGovernorClient: mocks.createReadOnlyGovernorClient,
   createReadOnlyNftClient: mocks.createReadOnlyNftClient,
 }));
-vi.mock("@/lib/voteAggregation", () => ({
+vi.mock("@/lib/proposal-events", () => ({
   fetchVoteTotals: mocks.fetchVoteTotals,
+}));
+vi.mock("@/hooks/useProposalDiscovery", () => ({
+  useProposalDiscovery: mocks.useProposalDiscovery,
 }));
 vi.mock("@/lib/stellar", () => ({
   contractIds: { nft: "CNFT", governor: "CGOV" },
@@ -68,8 +72,12 @@ function mockVoteTotals() {
 
 function mockReadOnly(overrides: Record<string, unknown> = {}) {
   mocks.createReadOnlyGovernorClient.mockReturnValue({
+    proposal_state: vi.fn().mockResolvedValue({ result: ProposalState.Active }),
+    proposal_snapshot: vi.fn().mockResolvedValue({ result: 1_500_000 }),
     proposal_proposer: vi.fn().mockResolvedValue({ result: "GPROPOSER" }),
     proposal_deadline: vi.fn().mockResolvedValue({ result: 2_000_000 }),
+    quorum: vi.fn().mockResolvedValue({ result: BigInt(100) }),
+    has_voted: vi.fn().mockResolvedValue({ result: false }),
     ...overrides,
   });
 }
@@ -111,6 +119,13 @@ beforeEach(() => {
   mockReadOnly();
   mockGovernor();
   mockNft();
+  mocks.useProposalDiscovery.mockReturnValue({
+    proposals: [],
+    loading: false,
+    error: null,
+    empty: true,
+    refresh: vi.fn(),
+  });
 });
 
 
@@ -156,7 +171,7 @@ describe("ProposalDetailPage", () => {
 
   it("renders an unavailable state for well-formed unknown IDs", async () => {
     mocks.useParams.mockReturnValue({ id: VALID_ID });
-    mockGovernor({
+    mockReadOnly({
       proposal_state: vi.fn().mockRejectedValue(new Error("Contract error")),
     });
 
@@ -190,8 +205,10 @@ describe("ProposalDetailPage", () => {
     mocks.useParams.mockReturnValue({ id: VALID_ID });
     const snapshot = vi.fn().mockResolvedValue({ result: 1_500_000 });
     const deadline = vi.fn().mockResolvedValue({ result: 2_000_000 });
-    mockGovernor({ proposal_snapshot: snapshot });
-    mockReadOnly({ proposal_deadline: deadline });
+    mockReadOnly({
+      proposal_snapshot: snapshot,
+      proposal_deadline: deadline,
+    });
 
     render(<ProposalDetailPage />);
 
@@ -233,7 +250,7 @@ describe("ProposalDetailPage", () => {
       .mockReturnValueOnce(secondResponse.promise);
 
     mocks.useParams.mockImplementation(() => ({ id: currentId }));
-    mockGovernor({
+    mockReadOnly({
       proposal_state: proposalState,
     });
 
@@ -417,8 +434,10 @@ describe("ProposalDetailPage", () => {
       .fn()
       .mockResolvedValueOnce({ result: false })
       .mockResolvedValueOnce({ result: true });
-    mockGovernor({
+    mockReadOnly({
       proposal_state: proposalState,
+    });
+    mockGovernor({
       has_voted: hasVoted,
       cast_vote: vi.fn().mockResolvedValue({
         signAndSend: vi.fn().mockResolvedValue(undefined),

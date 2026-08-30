@@ -1,7 +1,7 @@
 "use client";
 
-import { getCommunityById } from "@/lib/communities/registry";
-import type { CommunityRecord } from "@/lib/communities/types";
+import type { Community, CommunityRegistry } from "@/lib/community/types";
+import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
 import {
   useCommunityProposal,
   type ProposalReaderFactory,
@@ -9,6 +9,8 @@ import {
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
+import { AsyncState } from "@/components/ui/AsyncState";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 const stateLabels: Record<ProposalState, string> = {
   [ProposalState.Pending]: "Pending",
@@ -24,7 +26,7 @@ const stateLabels: Record<ProposalState, string> = {
 export type CommunityProposalDetailViewProps = {
   communityId: string;
   proposalId: string;
-  registry?: CommunityRecord[];
+  registry?: CommunityRegistry;
   getReader?: ProposalReaderFactory;
 };
 
@@ -34,11 +36,23 @@ export function CommunityProposalDetailView({
   registry,
   getReader,
 }: CommunityProposalDetailViewProps) {
-  const community = getCommunityById(communityId, registry);
+  const resolution = useRegistryCommunity(communityId, registry);
 
-  if (!community) {
+  if (resolution.status === "loading") {
+    return <p className="p-6 text-sm text-slate-400">Loading community…</p>;
+  }
+  if (resolution.status === "error") {
+    return (
+      <p role="alert" className="p-6 text-sm text-rose-300">
+        {resolution.error}
+      </p>
+    );
+  }
+  if (resolution.result.status !== "found") {
     return <CommunityNotFound communityId={communityId} />;
   }
+
+  const community = resolution.result.community;
 
   return (
     <CommunityProposalDetailPanel
@@ -54,12 +68,12 @@ function CommunityProposalDetailPanel({
   proposalId,
   getReader,
 }: {
-  community: CommunityRecord;
+  community: Community;
   proposalId: string;
   getReader?: ProposalReaderFactory;
 }) {
   const resolution = useCommunityProposal(
-    community.governorContractId,
+    community.record.governorContract,
     proposalId,
     getReader,
   );
@@ -67,8 +81,8 @@ function CommunityProposalDetailPanel({
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <CommunityBreadcrumbs
-        communityId={community.id}
-        communityName={community.name}
+        communityId={community.record.id}
+        communityName={community.metadata?.name ?? community.record.id}
         proposalId={proposalId}
       />
       <h1 className="mt-4 text-2xl font-bold text-slate-100">
@@ -76,12 +90,14 @@ function CommunityProposalDetailPanel({
       </h1>
 
       {resolution.status === "loading" && (
-        <p className="mt-6 text-sm text-slate-500">Loading proposal…</p>
+        <AsyncState className="mt-6 text-sm text-slate-500">
+          Loading proposal…
+        </AsyncState>
       )}
       {resolution.status === "error" && (
-        <p className="mt-6 rounded-lg border border-rose-800/60 bg-rose-950/50 p-4 text-sm text-rose-200">
+        <ErrorState className="mt-6" title="Proposal unavailable">
           {resolution.error}
-        </p>
+        </ErrorState>
       )}
       {resolution.status === "ready" && (
         <dl className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
@@ -93,7 +109,9 @@ function CommunityProposalDetailPanel({
           </div>
           <div>
             <dt className="text-slate-500">Community</dt>
-            <dd className="font-medium text-slate-100">{community.name}</dd>
+            <dd className="font-medium text-slate-100">
+              {community.metadata?.name ?? community.record.id}
+            </dd>
           </div>
         </dl>
       )}

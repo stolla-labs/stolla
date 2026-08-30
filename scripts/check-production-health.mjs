@@ -100,4 +100,18 @@ if (!payload || typeof payload !== "object" || payload.status !== "ok") {
   process.exit();
 }
 
+if (
+  payload.capabilities &&
+  (payload.capabilities.rpc !== true ||
+    (payload.capabilities.communityFactory !== true &&
+      payload.capabilities.legacyContracts !== true))
+) {
+  fail(
+    "CAPABILITY",
+    displayUrl,
+    "active network has no RPC or deployable contract capability",
+  );
+  process.exit();
+}
+
 console.log(`[health-check] OK: ${displayUrl} is healthy`);

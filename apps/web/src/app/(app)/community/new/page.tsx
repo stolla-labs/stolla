@@ -1,21 +1,8 @@
-import { CreateCommunityWizard } from "@/components/community/CreateCommunityWizard";
+import { redirect } from "next/navigation";
 
 /**
- * Assignee network-guard wizard (issue #146/#151). Primary product CTA uses
- * `/communities/create`; this route remains for the parallel wizard + Playwright
- * mocked-wallet creation suite.
+ * Legacy creation route. Canonical wizard lives at `/communities/create`.
  */
-export default function CreateCommunityPage() {
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-slate-100">Create a community</h1>
-      <p className="mt-2 text-slate-400">
-        Configure metadata and governance, then deploy the NFT and Governor pair
-        through the CommunityFactory.
-      </p>
-      <div className="mt-6">
-        <CreateCommunityWizard />
-      </div>
-    </div>
-  );
+export default function CommunityNewRedirectPage() {
+  redirect("/communities/create");
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import type { ProposalSummary } from "@/lib/proposal/types";
+import type { ProposalSummary } from "@/lib/proposal-events";
 import { truncateMiddle } from "@/lib/truncate";
+import { parseProposalDescription } from "@/lib/proposal-metadata";
 
 export type ProposalSummaryCardStateStatus =
   | "loading"
@@ -64,18 +65,35 @@ function DescriptionText({
 }) {
   const trimmed = description?.trim() ?? "";
   const hasDescription = trimmed.length > 0;
+  const parsed = parseProposalDescription(trimmed);
+  if (parsed.kind === "legacy") {
+    return (
+      <p
+        className={`mt-1 min-w-0 text-xs [overflow-wrap:anywhere] ${
+          hasDescription
+            ? "line-clamp-2 break-words text-slate-400"
+            : "text-slate-600"
+        }`}
+        title={hasDescription ? trimmed : undefined}
+      >
+        {hasDescription ? trimmed : "Description unavailable"}
+      </p>
+    );
+  }
+  const title = parsed.kind === "versioned" ? parsed.metadata.title : null;
+  const display =
+    parsed.kind === "versioned" ? parsed.metadata.summary : trimmed;
 
   return (
-    <p
-      className={`mt-1 min-w-0 text-xs [overflow-wrap:anywhere] ${
-        hasDescription
-          ? "line-clamp-2 break-words text-slate-400"
-          : "text-slate-600"
-      }`}
-      title={hasDescription ? trimmed : undefined}
-    >
-      {hasDescription ? trimmed : "Description unavailable"}
-    </p>
+    <span className="mt-1 min-w-0">
+      {title && <span className="block truncate text-sm font-medium text-slate-200">{title}</span>}
+      <span
+        className={`block text-xs [overflow-wrap:anywhere] ${hasDescription ? "line-clamp-2 break-words text-slate-400" : "text-slate-600"}`}
+        title={hasDescription ? display : undefined}
+      >
+        {hasDescription ? display : "Description unavailable"}
+      </span>
+    </span>
   );
 }
 

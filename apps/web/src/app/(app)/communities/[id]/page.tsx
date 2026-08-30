@@ -4,9 +4,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { CommunityAvatar } from "@/components/CommunityAvatar";
+import { ProposalActivity } from "@/components/community/ProposalActivity";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getCommunity } from "@/lib/community/registry";
+import {
+  formatLedgerDuration,
+  GOVERNANCE_HELPERS,
+  LEDGER_TIME_ASSUMPTION_NOTE,
+} from "@/lib/community/governanceDisplay";
 import type {
   CommunityDetailResult,
   CommunityRegistryRecord,
@@ -371,12 +377,18 @@ export default function CommunityDetailPage() {
             <dd className="mt-1 text-slate-100">
               {governance.proposalThreshold ?? "Unavailable"}
             </dd>
+            <p className="mt-1 text-xs text-slate-500">
+              {GOVERNANCE_HELPERS.proposalThreshold}
+            </p>
           </div>
           <div>
             <dt className="text-sm text-slate-500">Quorum (NFT votes)</dt>
             <dd className="mt-1 text-slate-100">
               {governance.quorum ?? "Unavailable"}
             </dd>
+            <p className="mt-1 text-xs text-slate-500">
+              {GOVERNANCE_HELPERS.quorum}
+            </p>
           </div>
           <div>
             <dt className="text-sm text-slate-500">
@@ -384,7 +396,15 @@ export default function CommunityDetailPage() {
             </dt>
             <dd className="mt-1 text-slate-100">
               {governance.votingDelay ?? "Unavailable"}
+              {governance.votingDelay !== null && (
+                <span className="ml-2 text-xs text-slate-400">
+                  {formatLedgerDuration(governance.votingDelay)} ({LEDGER_TIME_ASSUMPTION_NOTE})
+                </span>
+              )}
             </dd>
+            <p className="mt-1 text-xs text-slate-500">
+              {GOVERNANCE_HELPERS.votingDelay}
+            </p>
           </div>
           <div>
             <dt className="text-sm text-slate-500">
@@ -392,7 +412,15 @@ export default function CommunityDetailPage() {
             </dt>
             <dd className="mt-1 text-slate-100">
               {governance.votingPeriod ?? "Unavailable"}
+              {governance.votingPeriod !== null && (
+                <span className="ml-2 text-xs text-slate-400">
+                  {formatLedgerDuration(governance.votingPeriod)} ({LEDGER_TIME_ASSUMPTION_NOTE})
+                </span>
+              )}
             </dd>
+            <p className="mt-1 text-xs text-slate-500">
+              {GOVERNANCE_HELPERS.votingPeriod}
+            </p>
           </div>
         </dl>
         <p className="mt-4 text-xs text-slate-500">
@@ -400,6 +428,11 @@ export default function CommunityDetailPage() {
           estimates.
         </p>
       </section>
+
+      <ProposalActivity
+        communityId={record.id}
+        governorContractId={record.governorContract}
+      />
 
       <section
         aria-labelledby="registry-title"

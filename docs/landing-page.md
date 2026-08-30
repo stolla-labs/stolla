@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `/` route is a **marketing landing page**, not the app dashboard. It explains the product and drives users to `/community` or `/proposals`.
+The `/` route is a **marketing landing page**, not the app dashboard. It explains the product and drives users to `/communities/create`, `/communities`, or `/proposals`.
 
 ## Design system
 
@@ -50,7 +50,7 @@ Utility classes: `.lp-card`, `.lp-btn`, `.lp-btn-ghost`, `.landing-section`, `.l
 
 ## Required sections (in order)
 
-1. **Hero**: headline, subcopy, primary CTA (`/community`), secondary CTA (`/proposals`), stats row, hero image + live governance preview panel, trust strip
+1. **Hero**: headline, subcopy, primary CTA (`/communities/create`), secondary CTA (`/communities`), stats row, hero image + live governance preview panel, trust strip
 2. **Features**: 6 feature cards in bento grid (`#features`)
 3. **Showcase**: editorial proposal layout (`#showcase`)
 4. **How it works**: zigzag timeline with images (`#how-it-works`)
@@ -62,12 +62,14 @@ Utility classes: `.lp-card`, `.lp-btn`, `.lp-btn-ghost`, `.landing-section`, `.l
 ## Header (landing only)
 
 - Sticky header with section anchor nav: Features, Showcase, How it works, Technology, FAQ
-- **Enter app** button goes to `/community`
+- **Enter app** button goes to `/communities`
 - Do **not** show app nav (Community / Proposals tabs) on the landing page
 
-## App pages (`/community`, `/proposals`)
+## App pages (`/communities`, `/communities/create`, `/proposals`)
 
 Use the standard `Header` + `Footer` with wallet connect. Syne + IBM Plex Sans. No landing tokens or `.landing-root` wrapper.
+
+The legacy `/community/new` route permanently redirects to `/communities/create`.
 
 ## Images
 

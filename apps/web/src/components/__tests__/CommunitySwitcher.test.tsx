@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CommunityView } from "@/lib/community/types";
+import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
+import type { Community, CommunityRegistry } from "@/lib/community/types";
 
 const mocks = vi.hoisted(() => ({
   pathname: vi.fn(),
@@ -10,17 +11,26 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   usePathname: mocks.pathname,
 }));
-vi.mock("@/lib/community/registry", () => ({
-  listCommunities: mocks.listCommunities,
-}));
-
 import { CommunitySwitcher } from "../CommunitySwitcher";
 
 const ID = "ab".repeat(32);
 const community = {
   record: { id: ID },
   metadata: { name: "Builders Guild" },
-} as CommunityView;
+} as Community;
+
+const registry = {
+  list: mocks.listCommunities,
+  get: vi.fn(),
+} satisfies CommunityRegistry;
+
+function renderSwitcher() {
+  return render(
+    <CommunityRegistryProvider registry={registry}>
+      <CommunitySwitcher />
+    </CommunityRegistryProvider>,
+  );
+}
 
 describe("CommunitySwitcher", () => {
   beforeEach(() => {
@@ -34,7 +44,7 @@ describe("CommunitySwitcher", () => {
   });
 
   it("loads route-selected communities and supports search and selection", async () => {
-    render(<CommunitySwitcher />);
+    renderSwitcher();
     fireEvent.click(screen.getByRole("button"));
 
     const search = await screen.findByLabelText("Search communities");
@@ -55,7 +65,7 @@ describe("CommunitySwitcher", () => {
       nextCursor: null,
       malformedRecords: 0,
     });
-    render(<CommunitySwitcher />);
+    renderSwitcher();
     const trigger = screen.getByRole("button");
     fireEvent.click(trigger);
     await screen.findByText("No communities are registered.");

@@ -5,22 +5,23 @@ import { CommunitySwitcher } from "@/components/community/CommunitySwitcher";
 import {
   atlasCommunity,
   beaconCommunity,
-  multiCommunityRegistry,
+  multiCommunityFixtures,
 } from "@/test/fixtures/communities";
 
 describe("CommunitySwitcher", () => {
   it("links to every registered community with correct hrefs", () => {
     render(
       <CommunitySwitcher
-        communities={multiCommunityRegistry}
-        activeCommunityId={atlasCommunity.id}
+        communities={multiCommunityFixtures}
+        activeCommunityId={atlasCommunity.record.id}
       />,
     );
 
-    for (const community of multiCommunityRegistry) {
-      expect(screen.getByRole("link", { name: community.name })).toHaveAttribute(
+    for (const community of multiCommunityFixtures) {
+      const name = community.metadata?.name ?? community.record.id;
+      expect(screen.getByRole("link", { name })).toHaveAttribute(
         "href",
-        `/community/${community.id}`,
+        `/community/${community.record.id}`,
       );
     }
   });
@@ -28,17 +29,17 @@ describe("CommunitySwitcher", () => {
   it("marks only the active community as current", () => {
     render(
       <CommunitySwitcher
-        communities={multiCommunityRegistry}
-        activeCommunityId={beaconCommunity.id}
+        communities={multiCommunityFixtures}
+        activeCommunityId={beaconCommunity.record.id}
       />,
     );
 
-    expect(screen.getByRole("link", { name: beaconCommunity.name })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: beaconCommunity.metadata!.name })).toHaveAttribute(
       "aria-current",
       "page",
     );
     expect(
-      screen.getByRole("link", { name: atlasCommunity.name }),
+      screen.getByRole("link", { name: atlasCommunity.metadata!.name }),
     ).not.toHaveAttribute("aria-current");
   });
 
@@ -53,14 +54,15 @@ describe("CommunitySwitcher", () => {
     const user = userEvent.setup();
     render(
       <CommunitySwitcher
-        communities={multiCommunityRegistry}
-        activeCommunityId={atlasCommunity.id}
+        communities={multiCommunityFixtures}
+        activeCommunityId={atlasCommunity.record.id}
       />,
     );
 
-    for (const community of multiCommunityRegistry) {
+    for (const community of multiCommunityFixtures) {
       await user.tab();
-      expect(screen.getByRole("link", { name: community.name })).toHaveFocus();
+      const name = community.metadata?.name ?? community.record.id;
+      expect(screen.getByRole("link", { name })).toHaveFocus();
     }
   });
 });

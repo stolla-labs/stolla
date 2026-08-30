@@ -4,7 +4,7 @@ import {
   type SimulationResult,
   type SimulationStatus,
   formatFeeBreakdown,
-  stroopsToXlm,
+  stroopsToXlm // eslint-disable-line @typescript-eslint/no-unused-vars,
 } from "@/lib/fee-utils";
 
 export interface SimulatedFeeDisplayProps {

@@ -36,7 +36,7 @@
 use soroban_sdk::{
     testutils::{Address as _, MockAuth, MockAuthInvoke},
     token::{Client as TokenClient, StellarAssetClient},
-    Address, Env, Map, Symbol,
+    Address, Env, IntoVal, Map, Symbol,
 };
 
 use crate::{PriceOracle, PriceOracleClient};

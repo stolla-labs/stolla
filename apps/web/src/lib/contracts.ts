@@ -3,7 +3,11 @@ import { Client as NftClient } from "@/lib/bindings/community-nft/src";
 import { Client as GovernorClient } from "@/lib/bindings/community-governor/src";
 import { Client as CommunityFactoryClient } from "@/lib/bindings/community-factory/src";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
-import { config, requireCommunityFactoryContractId, requireContractIds } from "./stellar";
+import {
+  requireCommunityFactoryContractId,
+  requireContractIds,
+  requireRpcConfig,
+} from "./stellar";
 import { getE2EBridge } from "./e2eMock";
 
 type ClientOptions = {
@@ -39,11 +43,12 @@ export function createNftClient({
   signTransaction,
   contractId,
 }: ClientOptions) {
+  const rpc = requireRpcConfig();
   const nft = contractId ?? requireContractIds().nft;
   return new NftClient({
     contractId: nft,
-    networkPassphrase: config.passphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
     publicKey,
     signTransaction,
   });
@@ -54,45 +59,49 @@ export function createGovernorClient({
   signTransaction,
   contractId,
 }: ClientOptions) {
+  const rpc = requireRpcConfig();
   const governor = contractId ?? requireContractIds().governor;
   const mocked = createE2EGovernorClient(governor);
   if (mocked) return mocked as unknown as GovernorClient;
   return new GovernorClient({
     contractId: governor,
-    networkPassphrase: config.passphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
     publicKey,
     signTransaction,
   });
 }
 
 export function createReadOnlyNftClient(contractId?: string) {
+  const rpc = requireRpcConfig();
   const nft = contractId ?? requireContractIds().nft;
   return new NftClient({
     contractId: nft,
-    networkPassphrase: config.passphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
   });
 }
 
 export function createReadOnlyGovernorClient(contractId?: string) {
+  const rpc = requireRpcConfig();
   const governor = contractId ?? requireContractIds().governor;
   const mocked = createE2EGovernorClient(governor);
   if (mocked) return mocked as unknown as GovernorClient;
   return new GovernorClient({
     contractId: governor,
-    networkPassphrase: config.passphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
   });
 }
 
 
 
 export function createReadOnlyGovernorClientFor(governorContractId: string) {
+  const rpc = requireRpcConfig();
   return new GovernorClient({
     contractId: governorContractId,
-    networkPassphrase: config.networkPassphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
   });
 }
 
@@ -100,10 +109,11 @@ export function createCommunityFactoryClient({
   publicKey,
   signTransaction,
 }: ClientOptions) {
+  const rpc = requireRpcConfig();
   return new CommunityFactoryClient({
     contractId: requireCommunityFactoryContractId(),
-    networkPassphrase: config.networkPassphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
     publicKey,
     signTransaction,
   });
@@ -178,4 +188,3 @@ export function storeProposalIdFor(governorContractId: string, idHex: string) {
     );
   }
 }
-
