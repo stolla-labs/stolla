@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "vitest";
 import {
   deployCommunityFromWizard,
   extractTransactionHash,
@@ -23,20 +24,18 @@ const state: CommunityWizardState = {
   },
 };
 
-function dependencies(
-  overrides: {
-    walletNetworkPassphrase?: string | null;
-    deployError?: Error;
-    signError?: Error;
-    signResponse?: {
-      hash?: string;
-      txHash?: string;
-      result?: CommunityDeploymentResult;
-    };
-    stages?: DeploymentStage[];
-    hashes?: string[];
-  } = {},
-) {
+function dependencies(overrides: {
+  walletNetworkPassphrase?: string | null;
+  deployError?: Error;
+  signError?: Error;
+  signResponse?: {
+    hash?: string;
+    txHash?: string;
+    result?: CommunityDeploymentResult;
+  };
+  stages?: DeploymentStage[];
+  hashes?: string[];
+} = {}) {
   return {
     address: "GCREATOR",
     expectedNetworkPassphrase: "Test SDF Network ; September 2015",
@@ -60,66 +59,64 @@ function dependencies(
 
 describe("deployCommunityFromWizard", () => {
   it("fails before simulation on network mismatch", async () => {
-    await expect(
-      deployCommunityFromWizard(
-        state,
-        dependencies({
-          walletNetworkPassphrase:
-            "Public Global Stellar Network ; September 2015",
-        }),
-      ),
-    ).rejects.toMatchObject({
-      kind: "network",
-      constructor: CommunityDeploymentError,
-    });
+    await assert.rejects(
+      () =>
+        deployCommunityFromWizard(
+          state,
+          dependencies({ walletNetworkPassphrase: "Public Global Stellar Network ; September 2015" }),
+        ),
+      (error) =>
+        error instanceof CommunityDeploymentError && error.kind === "network",
+    );
   });
 
   it("surfaces simulation failures before wallet signing", async () => {
     const stages: DeploymentStage[] = [];
 
-    await expect(
-      deployCommunityFromWizard(
-        state,
-        dependencies({
-          deployError: new Error("simulation rejected contract args"),
-          stages,
-        }),
-      ),
-    ).rejects.toMatchObject({
-      kind: "simulation",
-      constructor: CommunityDeploymentError,
-    });
-    expect(stages).toEqual(["serializing", "simulating"]);
+    await assert.rejects(
+      () =>
+        deployCommunityFromWizard(
+          state,
+          dependencies({
+            deployError: new Error("simulation rejected contract args"),
+            stages,
+          }),
+        ),
+      (error) =>
+        error instanceof CommunityDeploymentError && error.kind === "simulation",
+    );
+    assert.deepEqual(stages, ["serializing", "simulating"]);
   });
 
   it("does not store a hash when the wallet rejects authorization", async () => {
     const hashes: string[] = [];
 
-    await expect(
-      deployCommunityFromWizard(
-        state,
-        dependencies({
-          signError: new Error("User rejected request"),
-          hashes,
-        }),
-      ),
-    ).rejects.toMatchObject({
-      kind: "wallet_rejection",
-      constructor: CommunityDeploymentError,
-    });
-    expect(hashes).toEqual([]);
+    await assert.rejects(
+      () =>
+        deployCommunityFromWizard(
+          state,
+          dependencies({
+            signError: new Error("User rejected request"),
+            hashes,
+          }),
+        ),
+      (error) =>
+        error instanceof CommunityDeploymentError &&
+        error.kind === "wallet_rejection",
+    );
+    assert.deepEqual(hashes, []);
   });
 
   it("fails submission when the wallet response has no hash", async () => {
-    await expect(
-      deployCommunityFromWizard(
-        state,
-        dependencies({ signResponse: { result: undefined } }),
-      ),
-    ).rejects.toMatchObject({
-      kind: "submission",
-      constructor: CommunityDeploymentError,
-    });
+    await assert.rejects(
+      () =>
+        deployCommunityFromWizard(
+          state,
+          dependencies({ signResponse: { result: undefined } }),
+        ),
+      (error) =>
+        error instanceof CommunityDeploymentError && error.kind === "submission",
+    );
   });
 
   it("stores the transaction hash immediately after successful submission", async () => {
@@ -141,9 +138,9 @@ describe("deployCommunityFromWizard", () => {
       }),
     );
 
-    expect(outcome.hash).toBe("hash-from-wallet");
-    expect(hashes).toEqual(["hash-from-wallet"]);
-    expect(stages).toEqual([
+    assert.equal(outcome.hash, "hash-from-wallet");
+    assert.deepEqual(hashes, ["hash-from-wallet"]);
+    assert.deepEqual(stages, [
       "serializing",
       "simulating",
       "awaiting_wallet",
@@ -155,9 +152,9 @@ describe("deployCommunityFromWizard", () => {
 
 describe("extractTransactionHash", () => {
   it("accepts common wallet hash field names", () => {
-    expect(extractTransactionHash({ hash: "a" })).toBe("a");
-    expect(extractTransactionHash({ txHash: "b" })).toBe("b");
-    expect(extractTransactionHash({ transactionHash: "c" })).toBe("c");
-    expect(extractTransactionHash({ id: "d" })).toBe("d");
+    assert.equal(extractTransactionHash({ hash: "a" }), "a");
+    assert.equal(extractTransactionHash({ txHash: "b" }), "b");
+    assert.equal(extractTransactionHash({ transactionHash: "c" }), "c");
+    assert.equal(extractTransactionHash({ id: "d" }), "d");
   });
 });

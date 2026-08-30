@@ -107,15 +107,34 @@ stellar keys generate deployer --network testnet
 ./scripts/fund-testnet.sh deployer
 ```
 
-Deploy both contracts:
+Deploy the contracts to testnet:
 
 ```bash
 ./scripts/deploy-testnet.sh deployer
 ```
 
-The deploy script builds the contracts, deploys them, and writes the resulting
-contract IDs to `apps/web/.env.local`. Restart the development server after
-deploying so Next.js picks up the new values.
+The deploy script:
+1. Builds all contracts (`community_nft`, `community_governor`, and `community_factory`).
+2. Uploads approved `community_nft.wasm` and `community_governor.wasm` to testnet.
+3. Deploys `CommunityFactory` initialized with the approved WASM hashes and deployer owner.
+4. Deploys default `community_nft` and `community_governor` instances for fallback routes.
+5. Captures the deployment ledger sequence from the Soroban RPC.
+6. Preserves unrelated variables in `apps/web/.env.local` while updating the testnet configuration:
+   - `NEXT_PUBLIC_STELLAR_NETWORK=testnet`
+   - `NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org`
+   - `NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID`
+   - `NEXT_PUBLIC_NFT_CONTRACT_ID`
+   - `NEXT_PUBLIC_GOVERNOR_CONTRACT_ID`
+   - `NEXT_PUBLIC_GOVERNOR_START_LEDGER`
+7. Displays a summary containing all contract IDs, WASM hashes, deployment ledger, and Stellar Expert explorer links.
+
+To preview or test command construction without broadcasting transactions:
+
+```bash
+./scripts/deploy-testnet.sh deployer --dry-run
+```
+
+Restart the development server after deploying so Next.js picks up the new values.
 
 ## Deploy the web app
 

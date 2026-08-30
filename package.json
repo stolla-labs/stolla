@@ -15,7 +15,7 @@
     "lint": "npm run lint --workspace=web",
     "clean": "node scripts/clean.mjs",
     "typecheck": "npm run typecheck --workspace=web",
-    "test": "npm run test --workspace=web && node --test scripts/check-production-health.test.mjs",
+    "test": "npm run test --workspace=web && node --test scripts/check-production-health.test.mjs scripts/deploy-testnet.test.mjs",
     "test:web": "npm run test --workspace=web",
     "test:e2e": "npm run test:e2e --workspace=web",
     "test:e2e:ci": "npm run test:e2e:ci --workspace=web",
