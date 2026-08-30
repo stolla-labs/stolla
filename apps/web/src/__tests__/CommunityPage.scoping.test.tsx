@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommunityDetailResult } from "@/lib/community/types";
+import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
 
 const mocks = vi.hoisted(() => ({
   useWallet: vi.fn(),
@@ -20,9 +21,6 @@ vi.mock("@/lib/contracts", () => ({
 vi.mock("@/lib/stellar", () => ({
   contractIds: { nft: "CGLOBAL", governor: "CGOV" },
 }));
-vi.mock("@/lib/community/registry", () => ({
-  getCommunity: mocks.getCommunity,
-}));
 vi.mock("@/app/(app)/community/community-data.mjs", async (importOriginal) => {
   const actual = await importOriginal<
     typeof import("@/app/(app)/community/community-data.mjs")
@@ -31,6 +29,16 @@ vi.mock("@/app/(app)/community/community-data.mjs", async (importOriginal) => {
 });
 
 import CommunityPage from "@/app/(app)/community/page";
+
+const registry = { list: vi.fn(), get: mocks.getCommunity };
+
+function renderPage() {
+  return render(
+    <CommunityRegistryProvider registry={registry}>
+      <CommunityPage />
+    </CommunityRegistryProvider>,
+  );
+}
 
 function result(id: string, nftContract: string, name: string): CommunityDetailResult {
   return {
@@ -96,7 +104,7 @@ describe("CommunityPage selected-community contract scoping", () => {
     );
 
     window.history.replaceState({}, "", `/community?community=${firstId}`);
-    const first = render(<CommunityPage />);
+    const first = renderPage();
     expect(await screen.findByText("First DAO")).toBeInTheDocument();
     await waitFor(() =>
       expect(mocks.createReadOnlyNftClient).toHaveBeenCalledWith(firstContract),
@@ -104,7 +112,7 @@ describe("CommunityPage selected-community contract scoping", () => {
     first.unmount();
 
     window.history.replaceState({}, "", `/community?community=${secondId}`);
-    render(<CommunityPage />);
+    renderPage();
     expect(await screen.findByText("Second DAO")).toBeInTheDocument();
     await waitFor(() =>
       expect(mocks.createReadOnlyNftClient).toHaveBeenCalledWith(secondContract),

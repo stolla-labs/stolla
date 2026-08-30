@@ -80,6 +80,28 @@ occur in one atomic Soroban invocation. See the
 [metadata and governance schema](community-metadata-governance-schema.md), and
 [ADR-005](adr/005-community-factory-registry.md).
 
+### Network capability matrix
+
+The web application resolves its active Stellar deployment once through
+`apps/web/src/lib/network.ts`. The typed matrix binds the network passphrase,
+RPC, explorer, CommunityFactory, legacy NFT/Governor pair, and proposal
+discovery start ledger to the same `testnet` or `mainnet` identity. Consumers
+must use the matrix (or the compatibility exports in `stellar.ts`) instead of
+reading environment variables independently.
+
+Each optional surface has an explicit `available` state. Requiring a missing
+surface throws `NetworkCapabilityError` with the capability name, active
+network, and required environment keys. This prevents a missing factory or
+discovery ledger from becoming an unrelated contract/RPC failure. Wallet
+comparison always uses `networkPassphrase`; a Testnet wallet therefore matches
+Testnet exactly while unknown or wrong passphrases remain blocked.
+
+`GET /api/health` publishes booleans and unavailable capability names without
+returning RPC URLs, contract IDs, or passphrases. Production health checks
+require an RPC and at least one deployable contract model (CommunityFactory or
+the legacy pair). Test fixtures call the same production matrix builder so E2E
+defaults cannot silently drift from runtime configuration.
+
 ### Deploy Order
 
 1. Upload approved `community_nft` and `community_governor` WASM.

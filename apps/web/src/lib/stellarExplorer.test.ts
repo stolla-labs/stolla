@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildStellarExplorerAccountUrl,
   buildStellarExplorerContractUrl,
   buildStellarExplorerTxUrl,
   resolveStellarNetworkId,
@@ -53,6 +54,26 @@ describe("buildStellarExplorerContractUrl", () => {
 
   it("rejects malformed contract addresses", () => {
     expect(buildStellarExplorerContractUrl("CNFT", "testnet")).toBeNull();
+  });
+});
+
+describe("buildStellarExplorerAccountUrl", () => {
+  const accountId = `G${"A".repeat(55)}`;
+
+  it("builds network-specific account links", () => {
+    expect(buildStellarExplorerAccountUrl(accountId, "testnet")).toBe(
+      `https://stellar.expert/explorer/testnet/account/${accountId}`,
+    );
+    expect(buildStellarExplorerAccountUrl(accountId, "mainnet")).toBe(
+      `https://stellar.expert/explorer/public/account/${accountId}`,
+    );
+  });
+
+  it("returns null for missing or malformed account addresses", () => {
+    expect(buildStellarExplorerAccountUrl(null, "testnet")).toBeNull();
+    expect(buildStellarExplorerAccountUrl(undefined, "testnet")).toBeNull();
+    expect(buildStellarExplorerAccountUrl("", "testnet")).toBeNull();
+    expect(buildStellarExplorerAccountUrl("CNFT", "testnet")).toBeNull();
   });
 });
 

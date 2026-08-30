@@ -205,6 +205,8 @@ stolla/
 
 ## Documentation
 
+- [Proposal Metadata v1](docs/proposal-metadata-v1.md) defines the backwards-compatible Governor description envelope and fallback rules.
+
 - [PRD](docs/prd.md)
 - [Architecture](docs/architecture.md)
 - [ADRs](docs/adr/)

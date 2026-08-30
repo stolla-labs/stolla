@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
 export const FACTORY_ID = `C${"A".repeat(55)}`;
@@ -158,6 +158,11 @@ export async function installCreationFixtures(
 
 export async function completeWizardToReview(page: Page) {
   await page.goto("/communities/create");
+  await expect(
+    page.getByRole("heading", { name: "Describe your community" }),
+  ).toBeVisible();
+  // Allow the wizard hydration timeout to settle before editing controlled inputs.
+  await page.waitForTimeout(50);
   await page.getByLabel("Community name (required)").fill("Creator Guild");
   await page.getByLabel("NFT symbol (required)").fill("CREATE");
   await page
@@ -169,8 +174,17 @@ export async function completeWizardToReview(page: Page) {
   await page
     .getByLabel("Community metadata URI (required)")
     .fill("https://fixtures.stolla.test/community.json");
+  await expect(page.getByLabel("Community name (required)")).toHaveValue(
+    "Creator Guild",
+  );
   await page.getByRole("button", { name: "Continue to governance" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Configure governance" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Review community" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Review deployment inputs" }),
+  ).toBeVisible();
   await page
     .getByLabel(/I confirm that these metadata and governance values/)
     .check();

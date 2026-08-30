@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
 import { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 import { nativeToScVal, scValToNative, xdr } from "@stellar/stellar-sdk";
-import { config, requireCommunityFactoryId } from "@/lib/stellar";
+import { requireCommunityFactoryId, requireRpcConfig } from "@/lib/stellar";
 import { e2eGetCommunity, e2eListCommunities } from "@/lib/e2eMock";
 import {
   parseCommunityMetadata,
@@ -33,12 +33,13 @@ async function readContract(
   method: string,
   args: xdr.ScVal[] = [],
 ): Promise<unknown> {
+  const rpc = requireRpcConfig();
   const transaction = await AssembledTransaction.build<unknown>({
     contractId,
     method,
     args,
-    networkPassphrase: config.networkPassphrase,
-    rpcUrl: config.rpcUrl,
+    networkPassphrase: rpc.networkPassphrase,
+    rpcUrl: rpc.rpcUrl,
     parseResultXdr: (value) => scValToNative(value),
   });
   return transaction.result;

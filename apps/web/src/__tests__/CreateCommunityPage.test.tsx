@@ -265,4 +265,55 @@ describe("CreateCommunityPage", () => {
     expect(window.confirm).not.toHaveBeenCalled();
     expect(screen.getByLabelText(/Community name/)).toHaveValue("");
   });
+
+  it("hides discard while submitted deployment recovery is present", async () => {
+    sessionStorage.setItem(
+      "stolla:community-deployment:testnet:v1",
+      JSON.stringify({
+        version: 1,
+        network: "testnet",
+        transactionHash: "ab".repeat(32),
+        expectedRecord: {
+          id: "cd".repeat(32),
+          nftContract: `C${"B".repeat(55)}`,
+          governorContract: `C${"C".repeat(55)}`,
+          creator: "GADMIN",
+          communityOwner: "GADMIN",
+          createdAtLedger: 1,
+          creationIndex: 1,
+          metadataUri: "https://example.test/community.json",
+          metadataHash: "12".repeat(32),
+          metadataSchemaVersion: 1,
+        },
+        submittedAt: 1,
+      }),
+    );
+    render(<CreateCommunityPage />);
+    enterValidMetadata();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: /Discard draft|Restart wizard/ }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("warns beforeunload while the session draft is dirty", async () => {
+    render(<CreateCommunityPage />);
+    fireEvent.change(screen.getByLabelText(/Community name/), {
+      target: { value: "Dirty DAO" },
+    });
+    await waitFor(() =>
+      expect(
+        sessionStorage.getItem("stolla:community-wizard:testnet:v1"),
+      ).toContain("Dirty DAO"),
+    );
+
+    const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+    Object.defineProperty(event, "returnValue", {
+      writable: true,
+      value: undefined,
+    });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
 });

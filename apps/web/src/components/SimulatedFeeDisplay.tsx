@@ -4,7 +4,6 @@ import {
   type SimulationResult,
   type SimulationStatus,
   formatFeeBreakdown,
-  stroopsToXlm,
 } from "@/lib/fee-utils";
 
 export interface SimulatedFeeDisplayProps {

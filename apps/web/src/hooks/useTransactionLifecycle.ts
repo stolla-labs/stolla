@@ -30,14 +30,6 @@ export type TransactionLifecycleState = {
   isTerminal: boolean;
 };
 
-const TERMINAL_STAGES: TransactionStage[] = [
-  "confirmed",
-  "wallet_rejected",
-  "submission_failed",
-  "duplicate_vote",
-  "simulation_failed",
-];
-
 const PENDING_STAGES: TransactionStage[] = [
   "simulating",
   "wallet_approval",
@@ -73,6 +65,7 @@ export function useTransactionLifecycle(options?: UseTransactionLifecycleOptions
   });
   const inFlightRef = useRef(false);
   const onConfirmedRef = useRef(options?.onConfirmed);
+
   useEffect(() => {
     onConfirmedRef.current = options?.onConfirmed;
   }, [options?.onConfirmed]);
