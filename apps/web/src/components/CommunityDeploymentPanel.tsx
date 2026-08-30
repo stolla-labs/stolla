@@ -33,6 +33,36 @@ type Props = {
   confirmed: boolean;
 };
 
+export type FactoryAuthorizationStatus =
+  | "checking"
+  | "ready"
+  | "disconnected"
+  | "network-unknown"
+  | "wrong-network"
+  | "unauthorized"
+  | "read-failed";
+
+function authorizationMessage(status: FactoryAuthorizationStatus): string | null {
+  switch (status) {
+    case "ready":
+      return null;
+    case "checking":
+      return "Checking CommunityFactory owner authorization.";
+    case "disconnected":
+      return "Connect your wallet to check whether this account can create a community.";
+    case "network-unknown":
+      return "Reading the wallet network. Deploy stays locked until it is confirmed.";
+    case "wrong-network":
+      return "Your wallet is on a different Stellar network. Switch it to the configured network to check creation rights.";
+    case "unauthorized":
+      return "Only the CommunityFactory owner can create communities during this pilot. This wallet cannot deploy one.";
+    case "read-failed":
+      return "Could not read the CommunityFactory owner. Retry to re-check before simulating.";
+    default:
+      return null;
+  }
+}
+
 function friendlyError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/reject|declin|denied/i.test(message)) {
@@ -72,6 +102,13 @@ export function CommunityDeploymentPanel({
   const [knownTransactionStatus, setKnownTransactionStatus] =
     useState<DeploymentTransactionStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [ownerRead, setOwnerRead] = useState<
+    | { status: "ok"; owner: string }
+    | { status: "error" }
+    | null
+  >(null);
+  const [authorizationCheck, setAuthorizationCheck] = useState(0);
+  const preflightInFlight = useRef(false);
   const inFlight = useRef(false);
   const previousInput = useRef("");
   const simulationGeneration = useRef(0);
@@ -124,6 +161,65 @@ export function CommunityDeploymentPanel({
       return () => window.clearTimeout(timeout);
     }
   }, [inputSignature, networkMismatch, transactionHash]);
+
+  /**
+   * Authorization preflight: resolve the authorization state before any
+   * simulation or signature. The deterministic states (disconnected,
+   * network-unknown, wrong-network, unconfigured factory) are derived during
+   * render. Only when the wallet and the network are in a comparable state do
+   * we read the factory owner from chain and compare it with the connected
+   * address. The read is network-aware - it only runs when the wallet network
+   * matches the application network, so a wrong-network wallet is reported as
+   * such rather than as unauthorized. A failed read surfaces a retryable
+   * "read-failed" state, never an authorization verdict.
+   */
+  const staticAuthorization: FactoryAuthorizationStatus | null = useMemo(() => {
+    if (transactionHash) return null;
+    if (!address) return "disconnected";
+    if (walletNetworkUnknown) return "network-unknown";
+    if (networkMismatch) return "wrong-network";
+    if (!factoryId) return "read-failed";
+    return null;
+  }, [address, factoryId, networkMismatch, transactionHash, walletNetworkUnknown]);
+
+  const authorization: FactoryAuthorizationStatus = useMemo(() => {
+    if (staticAuthorization !== null) return staticAuthorization;
+    if (ownerRead === null) return "checking";
+    if (ownerRead.status === "ok") {
+      return ownerRead.owner === address ? "ready" : "unauthorized";
+    }
+    return "read-failed";
+  }, [address, ownerRead, staticAuthorization]);
+
+  useEffect(() => {
+    if (transactionHash || staticAuthorization !== null) return;
+    let cancelled = false;
+    if (preflightInFlight.current) return;
+    preflightInFlight.current = true;
+    void adapter
+      .readFactoryOwner(factoryId, address ?? "")
+      .then((owner) => {
+        if (cancelled) return;
+        setOwnerRead({ status: "ok", owner });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setOwnerRead({ status: "error" });
+      })
+      .finally(() => {
+        preflightInFlight.current = false;
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    adapter,
+    address,
+    authorizationCheck,
+    factoryId,
+    staticAuthorization,
+    transactionHash,
+  ]);
 
   const verifyExpectedRecord = useCallback(
     async (expected: CommunityDeploymentRecovery["expectedRecord"]) => {
@@ -221,6 +317,7 @@ export function CommunityDeploymentPanel({
       !factoryId ||
       networkMismatch ||
       walletNetworkUnknown ||
+      authorization !== "ready" ||
       transactionHash
     ) {
       return;
@@ -270,6 +367,7 @@ export function CommunityDeploymentPanel({
       !confirmed ||
       networkMismatch ||
       walletNetworkUnknown ||
+      authorization !== "ready" ||
       transactionHash
     ) {
       return;
@@ -354,6 +452,39 @@ export function CommunityDeploymentPanel({
         </LiveStatus>
       )}
 
+      {(authorization === "disconnected" ||
+        authorization === "network-unknown" ||
+        authorization === "unauthorized" ||
+        authorization === "read-failed") && (
+        <LiveStatus
+          tone={authorization === "unauthorized" ? "error" : "routine"}
+          className="mt-3 rounded-lg border border-amber-800/70 bg-amber-950/30 p-4 text-sm text-amber-200"
+        >
+          {authorizationMessage(authorization)}
+          {authorization === "read-failed" && (
+            <button
+              type="button"
+              onClick={() => {
+                setOwnerRead(null);
+                setAuthorizationCheck((count) => count + 1);
+              }}
+              className="mt-3 block min-h-11 rounded-lg border border-amber-600 px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-900/50"
+            >
+              Retry owner check
+            </button>
+          )}
+        </LiveStatus>
+      )}
+
+      {authorization === "checking" && (
+        <LiveStatus
+          tone="routine"
+          className="mt-3 rounded-lg border border-slate-700 bg-[#0b0f19] p-4 text-sm text-slate-300"
+        >
+          {authorizationMessage("checking")}
+        </LiveStatus>
+      )}
+
       {simulation && !transactionHash && (
         <dl className="mt-4 rounded-lg border border-emerald-800/70 bg-emerald-950/20 p-4 text-sm">
           <div className="flex flex-wrap justify-between gap-2">
@@ -406,6 +537,7 @@ export function CommunityDeploymentPanel({
               !factoryId ||
               networkMismatch ||
               walletNetworkUnknown ||
+              authorization !== "ready" ||
               stage === "simulating"
             }
             className="min-h-11 rounded-lg border border-indigo-500 px-4 py-2 text-sm font-medium text-indigo-200 hover:bg-indigo-950/50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -421,6 +553,7 @@ export function CommunityDeploymentPanel({
                 !confirmed ||
                 networkMismatch ||
                 walletNetworkUnknown ||
+                authorization !== "ready" ||
                 stage === "awaiting_approval"
               }
               className="min-h-11 rounded-lg bg-indigo-500 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
