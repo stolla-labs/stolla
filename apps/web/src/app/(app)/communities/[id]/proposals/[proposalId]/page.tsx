@@ -7,7 +7,7 @@ import ProposalDetailPage from "@/app/(app)/proposals/[id]/page";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { getCommunity } from "@/lib/community/registry";
-import type { CommunityView } from "@/lib/community/types";
+import type { Community } from "@/lib/community/types";
 import { parseProposalId } from "@/lib/proposals";
 
 function isContractId(value: string) {
@@ -19,7 +19,7 @@ export default function CommunityProposalDetailPage() {
     id: string;
     proposalId: string;
   }>();
-  const [community, setCommunity] = useState<CommunityView | null>(null);
+  const [community, setCommunity] = useState<Community | null>(null);
   const [status, setStatus] = useState<
     "loading" | "community-not-found" | "invalid-contracts" | "error"
   >("loading");

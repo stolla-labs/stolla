@@ -7,7 +7,7 @@ import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { listCommunities } from "@/lib/community/registry";
-import type { CommunityView } from "@/lib/community/types";
+import type { Community } from "@/lib/community/types";
 
 const PAGE_SIZE = 9;
 const MAX_QUERY_LENGTH = 100;
@@ -41,7 +41,7 @@ function writeListUrlState(
 }
 
 export default function CommunitiesPage() {
-  const [communities, setCommunities] = useState<CommunityView[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [loading, setLoading] = useState(true);

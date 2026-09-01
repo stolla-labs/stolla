@@ -45,7 +45,6 @@ export default defineConfig({
       NEXT_PUBLIC_E2E_MOCKS: "true",
       NEXT_PUBLIC_STELLAR_NETWORK: "testnet",
       NEXT_PUBLIC_STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
-      NEXT_PUBLIC_E2E_MOCKS: "true",
       NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID: FACTORY_ID,
       NEXT_PUBLIC_NFT_CONTRACT_ID: `C${"B".repeat(55)}`,
       NEXT_PUBLIC_GOVERNOR_CONTRACT_ID: `C${"C".repeat(55)}`,

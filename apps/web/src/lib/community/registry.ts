@@ -11,8 +11,9 @@ import type {
   CommunityDetailResult,
   CommunityRegistryPage,
   CommunityRegistryRecord,
-  CommunityView,
+  Community,
   GovernanceSnapshot,
+  CommunityRegistry,
 } from "./types";
 
 const EMPTY_GOVERNANCE: GovernanceSnapshot = {
@@ -220,7 +221,7 @@ async function loadGovernance(
 
 async function hydrateRecord(
   record: CommunityRegistryRecord,
-): Promise<CommunityView> {
+): Promise<Community> {
   const [metadataResult, governanceResult] = await Promise.allSettled([
     loadMetadata(record),
     loadGovernance(record),
@@ -321,3 +322,8 @@ export async function getCommunity(
 
   return { status: "found", community: await hydrateRecord(record) };
 }
+
+export const communityRegistry: CommunityRegistry = {
+  list: listCommunities,
+  get: getCommunity,
+};

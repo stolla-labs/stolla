@@ -21,7 +21,7 @@ import { useTransactionLifecycle } from "@/hooks/useTransactionLifecycle";
 import { TransactionLifecycleDisplay } from "@/components/TransactionLifecycleDisplay";
 import { truncateMiddle } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
-import type { CommunityView } from "@/lib/community/types";
+import type { Community } from "@/lib/community/types";
 
 function shortenAddress(addr: string): string {
   if (addr.length <= 12) return addr;
@@ -44,7 +44,7 @@ export default function ProposalDetailPage({
   community,
 }: {
   proposalId?: string;
-  community?: CommunityView;
+  community?: Community;
 } = {}) {
   const params = useParams<{ id?: string; proposalId?: string }>();
   const proposalIdHex = proposalId ?? params.proposalId ?? params.id ?? "";
