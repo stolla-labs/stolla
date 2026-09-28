@@ -13,6 +13,9 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { AppButton } from "@/components/ui/AppButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
+import { MetadataPublisher } from "@/components/metadata/MetadataPublisher";
+import { buildMemberDocument } from "@/lib/metadata/publish";
+import { isResourceUri } from "@/lib/community/schema";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import {
   loadCommunityData,
@@ -32,7 +35,11 @@ export default function CommunityPage() {
   const [balance, setBalance] = useState<number | null>(null);
   const [votes, setVotes] = useState<string | null>(null);
   const [recipient, setRecipient] = useState("");
-  const [tokenUri, setTokenUri] = useState("ipfs://");
+  const [tokenUri, setTokenUri] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [memberDescription, setMemberDescription] = useState("");
+  const [memberImage, setMemberImage] = useState("");
+  const [generatedTokenUri, setGeneratedTokenUri] = useState(false);
   const [recipientError, setRecipientError] = useState<string | null>(null);
   const [tokenUriError, setTokenUriError] = useState<string | null>(null);
   const [status, setStatus] = useState<ActionStatus | null>(null);
@@ -171,9 +178,9 @@ export default function CommunityPage() {
       setStatus({ message: "Connect your wallet first.", tone: "error" });
       return;
     }
-    if (!recipient || !tokenUri) {
+    if (!recipient || !isResourceUri(tokenUri)) {
       setRecipientError(!recipient ? "Recipient address is required." : null);
-      setTokenUriError(!tokenUri ? "IPFS metadata URI is required." : null);
+      setTokenUriError(!tokenUri ? "IPFS metadata URI is required." : "Use a valid ipfs:// or https:// URI of at most 256 bytes.");
       setStatus(null);
       return;
     }
@@ -448,6 +455,33 @@ export default function CommunityPage() {
                 )}
               </div>
               <div>
+                  <MetadataPublisher
+                  key={JSON.stringify([memberName, memberDescription, memberImage])}
+                  label="Publish member metadata"
+                  build={() => [buildMemberDocument({ name: memberName, description: memberDescription, image: memberImage })]}
+                  onUploaded={([uri]) => { setGeneratedTokenUri(true); setTokenUri(uri); setTokenUriError(null); }}
+                />
+                <div className="mt-4 grid gap-3">
+                  <label className="text-sm text-slate-400">Member token name
+                    <input value={memberName} onChange={(event) => { setMemberName(event.target.value); if (generatedTokenUri) { setTokenUri(""); setGeneratedTokenUri(false); } }}
+                      className="mt-1 block min-h-11 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 text-slate-100" />
+                  </label>
+                  <label className="text-sm text-slate-400">Member description
+                    <textarea value={memberDescription} onChange={(event) => { setMemberDescription(event.target.value); if (generatedTokenUri) { setTokenUri(""); setGeneratedTokenUri(false); } }}
+                      className="mt-1 block w-full rounded-lg border border-slate-700 bg-[#0b0f19] p-3 text-slate-100" />
+                  </label>
+                  <label className="text-sm text-slate-400">Member image URI (optional)
+                    <input value={memberImage} onChange={(event) => { setMemberImage(event.target.value); if (generatedTokenUri) { setTokenUri(""); setGeneratedTokenUri(false); } }}
+                      className="mt-1 block min-h-11 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 text-slate-100" />
+                  </label>
+                </div>
+              </div>
+              {generatedTokenUri && tokenUri && (
+                <p className="break-all text-xs text-emerald-300">Pinned member URI: <code>{tokenUri}</code></p>
+              )}
+              <details className="rounded-lg border border-slate-700 p-3">
+                <summary className="cursor-pointer text-sm text-indigo-300">Use an existing member metadata URI</summary>
+                <div className="mt-3">
                 <label
                   htmlFor="token-uri"
                   className="block break-words text-sm text-slate-400"
@@ -460,10 +494,10 @@ export default function CommunityPage() {
                   value={tokenUri}
                   onChange={(e) => {
                     setTokenUri(e.target.value);
+                    setGeneratedTokenUri(false);
                     setTokenUriError(null);
                   }}
                   type="text"
-                  required
                   aria-describedby={`token-uri-help${
                     tokenUriError ? " token-uri-error" : ""
                   }`}
@@ -474,8 +508,7 @@ export default function CommunityPage() {
                   className="mt-1 block min-h-11 w-full min-w-0 max-w-full overflow-x-auto rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 font-mono text-sm text-slate-100 placeholder:text-slate-600"
                 />
                 <p id="token-uri-help" className="mt-1 text-xs text-slate-500">
-                  Use an IPFS URI such as ipfs://collection/member.json. Long
-                  URIs scroll within the field.
+                  Pin the preview above to fill this field, or paste an existing IPFS URI.
                 </p>
                 {tokenUriError && (
                   <p
@@ -486,7 +519,9 @@ export default function CommunityPage() {
                     {tokenUriError}
                   </p>
                 )}
-              </div>
+                </div>
+              </details>
+              {tokenUriError && <p role="alert" className="text-sm text-rose-300">Pin member metadata above or enter an existing URI.</p>}
               <AppButton
                 tone="primary"
                 onClick={() => void handleMint()}

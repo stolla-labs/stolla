@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { CommunityDeploymentPanel } from "@/components/CommunityDeploymentPanel";
+import { MetadataPublisher } from "@/components/metadata/MetadataPublisher";
 import { AppButton } from "@/components/ui/AppButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { useWallet } from "@/context/WalletProvider";
@@ -26,6 +27,7 @@ import {
 import { communityDeploymentRecoveryKey } from "@/lib/community/deployment";
 import { contractIds } from "@/lib/stellar";
 import { resolveStellarNetworkId } from "@/lib/stellarExplorer";
+import { buildCommunityDocuments } from "@/lib/metadata/publish";
 
 const FIELD_ORDER: (keyof CommunityMetadataDraft)[] = [
   "name",
@@ -75,6 +77,7 @@ export default function CreateCommunityPage() {
   const [accountStatus, setAccountStatus] = useState("");
   const [hasSubmittedRecovery, setHasSubmittedRecovery] = useState(false);
   const previousAddress = useRef<string | null | undefined>(undefined);
+  const generatedUris = useRef(false);
   const pageTitleRef = useRef<HTMLHeadingElement>(null);
 
   const wizardDraft = {
@@ -193,7 +196,13 @@ export default function CreateCommunityPage() {
   }, [address]);
 
   function updateField(field: keyof CommunityMetadataDraft, value: string) {
-    setDraft((current) => ({ ...current, [field]: value }));
+    const clearGenerated = field !== "collectionUri" && field !== "metadataUri" && generatedUris.current;
+    if (clearGenerated) generatedUris.current = false;
+    setDraft((current) => ({
+      ...current,
+      [field]: value,
+      ...(clearGenerated ? { collectionUri: "", metadataUri: "" } : {}),
+    }));
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
@@ -208,7 +217,7 @@ export default function CreateCommunityPage() {
     setErrors(nextErrors);
     const firstInvalid = FIELD_ORDER.find((field) => nextErrors[field]);
     if (firstInvalid) {
-      document.getElementById(firstInvalid)?.focus();
+      document.getElementById(firstInvalid === "collectionUri" || firstInvalid === "metadataUri" ? "manual-uri-summary" : firstInvalid)?.focus();
       return;
     }
     setStep(2);
@@ -254,6 +263,7 @@ export default function CreateCommunityPage() {
       return;
     }
     sessionStorage.removeItem(storageKey);
+    generatedUris.current = false;
     setDraft({ ...EMPTY_METADATA_DRAFT });
     setGovernance({ ...DEFAULT_GOVERNANCE_DRAFT });
     setErrors({});
@@ -696,7 +706,25 @@ export default function CreateCommunityPage() {
             <h2 id="resources-title" className="font-semibold text-slate-100">
               Public resources
             </h2>
+            <div className="mt-4">
+              <MetadataPublisher
+                key={JSON.stringify([draft.name, draft.symbol, draft.description, draft.logo, draft.externalLinkLabel, draft.externalLinkUrl])}
+                label="Publish community and collection metadata"
+                build={() => buildCommunityDocuments(draft)}
+                onUploaded={([metadataUri, collectionUri]) => {
+                  generatedUris.current = true;
+                  setDraft((current) => ({ ...current, metadataUri, collectionUri }));
+                  setErrors((current) => ({ ...current, metadataUri: undefined, collectionUri: undefined }));
+                }}
+              />
+            </div>
+            {(errors.collectionUri || errors.metadataUri) && (
+              <p role="alert" className="mt-2 text-sm text-rose-300">Pin the metadata above or open the manual URI fields below.</p>
+            )}
             <div className="mt-4 space-y-5">
+              <details className="rounded-lg border border-slate-700 p-3">
+                <summary id="manual-uri-summary" className="cursor-pointer text-sm text-indigo-300">Use existing metadata URIs</summary>
+                <div className="mt-4 space-y-5">
               <div className="min-w-0">
                 <label
                   htmlFor="collectionUri"
@@ -713,7 +741,6 @@ export default function CreateCommunityPage() {
                   onChange={(event) =>
                     updateField("collectionUri", event.target.value)
                   }
-                  required
                   aria-invalid={Boolean(errors.collectionUri)}
                   aria-describedby={`collectionUri-help${errors.collectionUri ? " collectionUri-error" : ""}`}
                   className={`${inputClassName} font-mono`}
@@ -748,7 +775,6 @@ export default function CreateCommunityPage() {
                   onChange={(event) =>
                     updateField("metadataUri", event.target.value)
                   }
-                  required
                   aria-invalid={Boolean(errors.metadataUri)}
                   aria-describedby={`metadataUri-help${errors.metadataUri ? " metadataUri-error" : ""}`}
                   className={`${inputClassName} font-mono`}
@@ -766,6 +792,8 @@ export default function CreateCommunityPage() {
                 </p>
                 <ErrorMessage field="metadataUri" errors={errors} />
               </div>
+                </div>
+              </details>
 
               <div className="min-w-0">
                 <label htmlFor="logo" className="block text-sm text-slate-300">

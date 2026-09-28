@@ -28,7 +28,7 @@ const FAQ = [
   {
     question: "How is NFT metadata stored?",
     answer:
-      "Each token stores an IPFS metadata URI on-chain (SEP-0050 compatible). In the MVP you paste the URI when minting. An upload helper may come later.",
+      "Build and preview SEP-0050 member metadata in the mint form, then pin it to IPFS and mint with the returned URI. You can also paste an existing URI.",
   },
 ] as const;
 

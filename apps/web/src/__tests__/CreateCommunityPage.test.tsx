@@ -10,6 +10,7 @@ vi.mock("@/context/WalletProvider", () => ({
 }));
 
 import CreateCommunityPage from "@/app/(app)/communities/create/page";
+import { metadataSha256 } from "@/lib/metadata/publish";
 import {
   MOCK_CONTRACT_B,
   MOCK_GOVERNOR_CONTRACT_ID,
@@ -46,6 +47,35 @@ describe("CreateCommunityPage", () => {
       signTransaction: vi.fn(),
       isConnecting: false,
     });
+  });
+
+  it("pins previewed community and collection bytes and fills both URIs", async () => {
+    const uploaded: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+      const document = JSON.parse(init?.body as string) as { kind: string; json: string };
+      uploaded.push(document.json);
+      return new Response(JSON.stringify({
+        uri: `ipfs://b${document.kind === "community" ? "a" : "b"}${"a".repeat(52)}`,
+        sha256: await metadataSha256(document.json),
+      }), { status: 200 });
+    });
+    render(<CreateCommunityPage />);
+    fireEvent.change(screen.getByLabelText(/Community name/), { target: { value: "Builders Guild" } });
+    fireEvent.change(screen.getByLabelText(/NFT symbol/), { target: { value: "BUILD" } });
+    fireEvent.change(screen.getByLabelText(/Description/), { target: { value: "Public goods builders" } });
+    fireEvent.click(screen.getByRole("button", { name: "Preview metadata" }));
+    expect(await screen.findAllByText(/SHA-256:/)).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Pin preview to IPFS" }));
+    await waitFor(() => expect(screen.getByLabelText(/Community metadata URI/)).toHaveValue(`ipfs://ba${"a".repeat(52)}`));
+    expect(screen.getByLabelText(/NFT collection URI/)).toHaveValue(`ipfs://bb${"a".repeat(52)}`);
+    expect(uploaded).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Continue to governance" }));
+    expect(screen.getByText("Metadata validated and saved for this wizard session.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Back to metadata" }));
+    fireEvent.change(screen.getByLabelText(/Description/), { target: { value: "Updated description" } });
+    expect(screen.getByLabelText(/Community metadata URI/)).toHaveValue("");
+    expect(screen.getByLabelText(/NFT collection URI/)).toHaveValue("");
+    expect(screen.queryByText(/Metadata pinned:/)).not.toBeInTheDocument();
   });
 
   it("announces inline errors for every missing required metadata field", async () => {

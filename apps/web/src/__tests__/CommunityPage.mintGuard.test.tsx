@@ -27,6 +27,7 @@ vi.mock("@/app/(app)/community/community-data.mjs", () => ({
 }));
 
 import CommunityPage from "@/app/(app)/community/page";
+import { metadataSha256 } from "@/lib/metadata/publish";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -70,6 +71,27 @@ describe("CommunityPage mint lifecycle", () => {
         return true;
       },
     );
+  });
+
+  it("pins member metadata and mints with the returned URI", async () => {
+    const mint = vi.fn().mockResolvedValue({ sign: async () => undefined, send: async () => ({ result: 12 }) });
+    mocks.createNftClient.mockReturnValue({ mint });
+    const upload = vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+      const document = JSON.parse(init?.body as string) as { json: string };
+      return new Response(JSON.stringify({ uri: `ipfs://b${"a".repeat(53)}`, sha256: await metadataSha256(document.json) }), { status: 200 });
+    });
+    render(<CommunityPage />);
+    fireEvent.change(await screen.findByLabelText(/Recipient address/i), { target: { value: "GRECIPIENT" } });
+    fireEvent.change(screen.getByLabelText("Member token name"), { target: { value: "Member #12" } });
+    fireEvent.change(screen.getByLabelText("Member description"), { target: { value: "A voting member" } });
+    fireEvent.click(screen.getByRole("button", { name: "Preview metadata" }));
+    expect(await screen.findByText(/SHA-256:/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Pin preview to IPFS" }));
+    await waitFor(() => expect(screen.getByLabelText(/IPFS metadata URI/i)).toHaveValue(`ipfs://b${"a".repeat(53)}`));
+    fireEvent.click(screen.getByRole("button", { name: "Mint NFT" }));
+    await waitFor(() => expect(mint).toHaveBeenCalledWith({ to: "GRECIPIENT", token_uri: `ipfs://b${"a".repeat(53)}` }));
+    expect(upload).toHaveBeenCalledTimes(1);
+    upload.mockRestore();
   });
 
   it("shows simulating then approval then confirmation for mint", async () => {
@@ -197,6 +219,17 @@ describe("CommunityPage mint lifecycle", () => {
     expect(
       screen.getByText("IPFS metadata URI is required."),
     ).toBeInTheDocument();
+    expect(mint).not.toHaveBeenCalled();
+  });
+
+  it("does not mint with an incomplete IPFS URI", async () => {
+    const mint = vi.fn();
+    mocks.createNftClient.mockReturnValue({ mint });
+    render(<CommunityPage />);
+    fireEvent.change(await screen.findByLabelText(/Recipient address/i), { target: { value: "GRECIPIENT" } });
+    fireEvent.change(screen.getByLabelText(/IPFS metadata URI/i), { target: { value: "ipfs://" } });
+    fireEvent.click(screen.getByRole("button", { name: "Mint NFT" }));
+    expect(screen.getByText("Use a valid ipfs:// or https:// URI of at most 256 bytes.")).toBeInTheDocument();
     expect(mint).not.toHaveBeenCalled();
   });
 
