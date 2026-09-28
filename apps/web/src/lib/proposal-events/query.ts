@@ -1,6 +1,7 @@
 import { rpc, xdr } from "@stellar/stellar-sdk";
 import { config, requireGovernorStartLedger } from "../stellar";
 import { PROPOSAL_EVENT_NAMES } from "./kinds";
+import { resolveEventStartLedger, retentionErrorMessage } from "./retention";
 
 const PROPOSAL_EVENT_TOPIC_FILTERS = PROPOSAL_EVENT_NAMES.map((name) => [
   xdr.ScVal.scvSymbol(name).toXDR("base64"),
@@ -27,7 +28,7 @@ export async function getProposalEvents(
   governorContractId: string,
   cursor?: string,
 ): Promise<ProposalEventsPage> {
-  const startLedger = requireGovernorStartLedger();
+  const configuredStartLedger = requireGovernorStartLedger();
 
   if (!governorContractId) {
     throw new Error(
@@ -47,10 +48,12 @@ export async function getProposalEvents(
   ];
 
   try {
+    const startLedger = cursor
+      ? undefined
+      : (await resolveEventStartLedger(server, configuredStartLedger)).startLedger;
     const response = await server.getEvents(
       cursor
         ? ({
-            startLedger,
             filters,
             cursor,
             limit: 10,
@@ -68,8 +71,8 @@ export async function getProposalEvents(
       cursor: response.cursor,
     };
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Unknown RPC query failure.";
+    const message = retentionErrorMessage(error) ??
+      (error instanceof Error ? error.message : "Unknown RPC query failure.");
 
     throw new Error(
       `Failed to query governor proposal events: ${message}`,

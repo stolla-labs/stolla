@@ -29,15 +29,19 @@ const PROPOSAL_HEX =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const VOTER = "GAZSOBEW6H374SOMTQIRC432JXTA4VPSG6P3ADA35TRQIYT3WTVQWFE5";
 
-const { mockGetEvents, mockServerConstructor, mockScValToNative } = vi.hoisted(
+const { mockGetEvents, mockGetLatestLedger, mockFetch, mockServerConstructor, mockScValToNative } = vi.hoisted(
   () => {
     const getEvents = vi.fn();
+    const getLatestLedger = vi.fn();
+    const fetch = vi.fn();
     const scValToNative = vi.fn();
     const serverConstructor = vi.fn(function MockServer() {
-      return { getEvents };
+      return { getEvents, getLatestLedger, serverURL: "https://test.rpc.url" };
     });
     return {
       mockGetEvents: getEvents,
+      mockGetLatestLedger: getLatestLedger,
+      mockFetch: fetch,
       mockServerConstructor: serverConstructor,
       mockScValToNative: scValToNative,
     };
@@ -106,6 +110,9 @@ function voteCastEvent(contractId: string, proposalHex = PROPOSAL_HEX) {
 describe("Community Governor scoping", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetLatestLedger.mockResolvedValue({ sequence: 2000 });
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 900 } }) });
+    vi.stubGlobal("fetch", mockFetch);
   });
 
   it("getProposalEvents filters getEvents by the selected Governor only", async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import type { rpc } from "@stellar/stellar-sdk";
 import { fetchGovernorEvents } from "./paginate";
 import { MOCK_CONTRACT_A } from "@/test-support/stellar/fixtures";
@@ -17,7 +17,11 @@ function makeServer(
   for (const page of pages) {
     getEvents.mockResolvedValueOnce(page);
   }
-  return { getEvents } as unknown as rpc.Server;
+  return {
+    getEvents,
+    getLatestLedger: vi.fn().mockResolvedValue({ sequence: 2000 }),
+    serverURL: "https://test.rpc.url",
+  } as unknown as rpc.Server;
 }
 
 async function collect(gen: AsyncGenerator<{ events: rpc.Api.EventResponse[]; cursor: string }>) {
@@ -27,6 +31,13 @@ async function collect(gen: AsyncGenerator<{ events: rpc.Api.EventResponse[]; cu
 }
 
 describe("fetchGovernorEvents", () => {
+  const mockFetch = vi.fn();
+
+  beforeEach(() => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 900 } }) });
+    vi.stubGlobal("fetch", mockFetch);
+  });
+
   it("uses startLedger on first request and cursor on subsequent ones", async () => {
     const server = makeServer([
       { events: [makeEvent("a")], cursor: "cursor-1" },
@@ -63,6 +74,15 @@ describe("fetchGovernorEvents", () => {
     expect(pages).toHaveLength(1);
     expect(pages[0].events).toHaveLength(0);
     expect(server.getEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("clamps a stale start before the first page", async () => {
+    const server = makeServer([{ events: [], cursor: "" }]);
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 1500 } }) });
+
+    await collect(fetchGovernorEvents({ server, contractId: CONTRACT, startLedger: START_LEDGER }));
+
+    expect(server.getEvents).toHaveBeenCalledWith(expect.objectContaining({ startLedger: 1500 }));
   });
 
   it("collects multiple pages and yields them in order", async () => {
@@ -119,7 +139,8 @@ describe("fetchGovernorEvents", () => {
   });
 
   it("re-throws RPC errors", async () => {
-    const server = { getEvents: vi.fn().mockRejectedValue(new Error("network error")) } as unknown as rpc.Server;
+    const server = makeServer([]);
+    vi.mocked(server.getEvents).mockRejectedValue(new Error("network error"));
 
     await expect(
       collect(fetchGovernorEvents({ server, contractId: CONTRACT, startLedger: START_LEDGER })),

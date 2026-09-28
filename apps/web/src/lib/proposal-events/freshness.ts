@@ -37,6 +37,8 @@ export interface FreshnessMetadata {
   discoveredCount: number;
   /** Whether any paginated page returned an error. */
   hadError: boolean;
+  /** The configured start predates the oldest event history retained by RPC. */
+  retentionClamped?: boolean;
 }
 
 /**
@@ -80,7 +82,19 @@ export const STALE_THRESHOLD = 100;
 export function evaluateDiscoveryFreshness(
   meta: FreshnessMetadata,
 ): FreshnessResult {
-  const { latestLedger, lastEventLedger, discoveredCount, hadError } = meta;
+  const { latestLedger, lastEventLedger, discoveredCount, hadError, retentionClamped } = meta;
+
+  if (retentionClamped) {
+    return {
+      state: "stale",
+      explanation: hadError
+        ? "Proposal history is partial: earlier events are outside the RPC retention window, and some retained events could not be loaded."
+        : "Proposal history is partial: earlier events are outside the RPC retention window.",
+      ledgerGap: latestLedger !== null && lastEventLedger !== null
+        ? latestLedger - lastEventLedger
+        : null,
+    };
+  }
 
   // --- Unavailable: no data at all ---
   if (discoveredCount === 0 && lastEventLedger === null) {

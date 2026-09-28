@@ -17,6 +17,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { truncateEnd } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
+import { DiscoveryFreshnessBanner } from "@/components/DiscoveryFreshnessBanner";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 
 type ActionStatus = {
@@ -47,6 +48,7 @@ export default function ProposalsPage() {
     loading,
     error,
     empty,
+    freshness,
     refresh,
   } =
     useProposalDiscovery();
@@ -441,9 +443,16 @@ export default function ProposalsPage() {
           </div>
         )}
 
+        {!loading && !error && (
+          <DiscoveryFreshnessBanner
+            freshness={freshness}
+            onRetry={() => void refresh()}
+          />
+        )}
+
         {!loading && !error && empty && (
           <LiveStatus className="mt-3 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-400">
-            No public proposals have been discovered yet.
+            No public proposals were found in the scanned range.
           </LiveStatus>
         )}
 

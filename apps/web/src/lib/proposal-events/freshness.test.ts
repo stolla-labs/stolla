@@ -25,6 +25,23 @@ function meta(overrides: Partial<FreshnessMetadata> = {}): FreshnessMetadata {
 // ---------------------------------------------------------------------------
 
 describe("evaluateDiscoveryFreshness", () => {
+  it("marks a clamped scan stale with a retention reason even if it found no events", () => {
+    const result = evaluateDiscoveryFreshness(meta({
+      discoveredCount: 0,
+      lastEventLedger: null,
+      retentionClamped: true,
+    }));
+    expect(result.state).toBe("stale");
+    expect(result.explanation).toMatch(/RPC retention window/);
+  });
+
+  it("keeps the retention reason when a clamped scan also encounters an error", () => {
+    const result = evaluateDiscoveryFreshness(meta({ retentionClamped: true, hadError: true }));
+    expect(result.state).toBe("stale");
+    expect(result.explanation).toMatch(/RPC retention window/);
+    expect(result.explanation).toMatch(/could not be loaded/);
+  });
+
   describe("current", () => {
     it("returns current when gap is zero", () => {
       const result = evaluateDiscoveryFreshness(

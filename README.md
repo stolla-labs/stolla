@@ -166,6 +166,7 @@ Add these environment variables in the Vercel project settings:
 | `NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID` | From the factory deployment |
 | `NEXT_PUBLIC_NFT_CONTRACT_ID` | From deploy script output |
 | `NEXT_PUBLIC_GOVERNOR_CONTRACT_ID` | From deploy script output |
+| `NEXT_PUBLIC_GOVERNOR_START_LEDGER` | Governor deploy ledger from deploy script output |
 | `NEXT_PUBLIC_IPFS_GATEWAY_URL` | Public IPFS gateway ending in `/ipfs/` |
 
 After the first production deployment, Vercel will redeploy automatically when

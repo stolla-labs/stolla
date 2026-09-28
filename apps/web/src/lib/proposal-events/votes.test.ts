@@ -10,9 +10,12 @@ const DEFAULT_PROPOSAL =
 const VOTER = "GAZSOBEW6H374SOMTQIRC432JXTA4VPSG6P3ADA35TRQIYT3WTVQWFE5";
 
 // vi.mock is hoisted – use vi.hoisted() so factory closures can reference them
-const { mockScValToNative, mockGetEvents } = vi.hoisted(() => ({
+const { mockScValToNative, mockGetEvents, mockGetLatestLedger, mockFetch, mockRequireGovernorStartLedger } = vi.hoisted(() => ({
   mockScValToNative: vi.fn(),
   mockGetEvents: vi.fn(),
+  mockGetLatestLedger: vi.fn(),
+  mockFetch: vi.fn(),
+  mockRequireGovernorStartLedger: vi.fn(),
 }));
 
 vi.mock("@stellar/stellar-sdk", async (importOriginal) => {
@@ -24,6 +27,8 @@ vi.mock("@stellar/stellar-sdk", async (importOriginal) => {
       ...actual.rpc,
       Server: vi.fn(function (this: Record<string, unknown>) {
         this.getEvents = mockGetEvents;
+        this.getLatestLedger = mockGetLatestLedger;
+        this.serverURL = "https://soroban-testnet.stellar.org";
       }),
     },
   };
@@ -35,7 +40,7 @@ vi.mock("../stellar", () => ({
     governor:
       "CDJZ4QTYXZ5YKHRXRBCOXQDZI5TUE5QLODC5IJFYDXQMQJFP5PFRMPHY",
   },
-  requireGovernorStartLedger: () => 1000,
+  requireGovernorStartLedger: mockRequireGovernorStartLedger,
 }));
 
 vi.mock("../e2eMock", () => ({
@@ -90,6 +95,31 @@ function setupPage(
 describe("fetchVoteTotals", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockRequireGovernorStartLedger.mockReturnValue(1000);
+    mockGetLatestLedger.mockResolvedValue({ sequence: 2000 });
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 900 } }) });
+    vi.stubGlobal("fetch", mockFetch);
+  });
+
+  it("reports a named missing configuration error without querying events", async () => {
+    const error = new Error("Set NEXT_PUBLIC_GOVERNOR_START_LEDGER.");
+    error.name = "GovernorStartLedgerConfigurationError";
+    mockRequireGovernorStartLedger.mockImplementation(() => { throw error; });
+
+    const result = await fetchVoteTotals(DEFAULT_PROPOSAL);
+
+    expect(result).toMatchObject({ incomplete: true, error: "Set NEXT_PUBLIC_GOVERNOR_START_LEDGER." });
+    expect(mockGetEvents).not.toHaveBeenCalled();
+    expect(mockGetLatestLedger).not.toHaveBeenCalled();
+  });
+
+  it("clamps the vote scan to the RPC retention window", async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 1500 } }) });
+    mockGetEvents.mockResolvedValue({ events: [], latestLedger: 2000 });
+
+    await fetchVoteTotals(DEFAULT_PROPOSAL);
+
+    expect(mockGetEvents).toHaveBeenCalledWith(expect.objectContaining({ startLedger: 1500 }));
   });
 
   describe("mixed weighted votes", () => {

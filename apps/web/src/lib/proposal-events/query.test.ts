@@ -3,14 +3,18 @@ import { getProposalEvents } from "./query";
 
 const GOVERNOR = "C123456789";
 
-const { mockGetEvents, mockServerConstructor } = vi.hoisted(() => {
+const { mockGetEvents, mockGetLatestLedger, mockFetch, mockServerConstructor } = vi.hoisted(() => {
   const getEvents = vi.fn();
+  const getLatestLedger = vi.fn();
+  const fetch = vi.fn();
   const serverConstructor = vi.fn(function MockServer() {
-    return { getEvents };
+    return { getEvents, getLatestLedger, serverURL: "https://test.rpc.url" };
   });
 
   return {
     mockGetEvents: getEvents,
+    mockGetLatestLedger: getLatestLedger,
+    mockFetch: fetch,
     mockServerConstructor: serverConstructor,
   };
 });
@@ -39,6 +43,9 @@ vi.mock("../stellar", () => ({
 describe("getProposalEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetLatestLedger.mockResolvedValue({ sequence: 20000 });
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 10000 } }) });
+    vi.stubGlobal("fetch", mockFetch);
   });
 
   it("throws if governor contract ID is not configured", async () => {
@@ -53,7 +60,7 @@ describe("getProposalEvents", () => {
       latestLedger: 456,
       cursor: "nextCursor",
     });
-    await getProposalEvents(GOVERNOR, "cursor123");
+    await getProposalEvents(GOVERNOR);
 
     expect(mockServerConstructor).toHaveBeenCalledWith(
       "https://test.rpc.url",
@@ -74,11 +81,29 @@ describe("getProposalEvents", () => {
             ],
           },
         ],
-        cursor: "cursor123",
         limit: 10,
       }),
     );
     expect(mockGetEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("clamps the first page to the RPC retention boundary", async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 15000 } }) });
+    mockGetEvents.mockResolvedValue({ events: [], latestLedger: 20000, cursor: "" });
+
+    await getProposalEvents(GOVERNOR);
+
+    expect(mockGetEvents).toHaveBeenCalledWith(expect.objectContaining({ startLedger: 15000 }));
+  });
+
+  it("uses only the cursor for a later page", async () => {
+    mockGetEvents.mockResolvedValue({ events: [], latestLedger: 20000, cursor: "next" });
+
+    await getProposalEvents(GOVERNOR, "cursor123");
+
+    expect(mockGetEvents).toHaveBeenCalledWith(expect.objectContaining({ cursor: "cursor123" }));
+    expect(mockGetEvents.mock.calls[0][0]).not.toHaveProperty("startLedger");
+    expect(mockGetLatestLedger).not.toHaveBeenCalled();
   });
 
   it("returns events, latestLedger, and cursor", async () => {

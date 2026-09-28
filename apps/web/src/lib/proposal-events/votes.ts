@@ -2,6 +2,7 @@ import { rpc, scValToNative } from "@stellar/stellar-sdk";
 import { Buffer } from "buffer";
 import { config, contractIds, requireGovernorStartLedger } from "../stellar";
 import { getE2EBridge } from "../e2eMock";
+import { resolveEventStartLedger, retentionErrorMessage } from "./retention";
 
 export interface VoteTotals {
   for: bigint;
@@ -49,24 +50,26 @@ export async function fetchVoteTotals(
     };
   }
 
+  let configuredStartLedger: number;
+  try {
+    configuredStartLedger = requireGovernorStartLedger();
+  } catch (error: unknown) {
+    return {
+      totals: { for: BigInt(0), against: BigInt(0), abstain: BigInt(0), total: BigInt(0) },
+      incomplete: true,
+      error: error instanceof Error ? error.message : "NEXT_PUBLIC_GOVERNOR_START_LEDGER is not configured.",
+    };
+  }
   const server = new rpc.Server(config.rpcUrl);
   const proposalIdBuffer = Buffer.from(proposalIdHex, "hex");
-  let startLedger: number;
-  try {
-    const maybeFn = requireGovernorStartLedger as unknown as () => number | undefined;
-    startLedger = typeof maybeFn === "function" ? (maybeFn() ?? 1) : 1;
-    if (!Number.isFinite(startLedger)) startLedger = 1;
-  } catch {
-    startLedger = 1;
-  }
 
   const totals: VoteTotals = { for: BigInt(0), against: BigInt(0), abstain: BigInt(0), total: BigInt(0) };
   const seenEventIds = new Set<string>();
   let incomplete = false;
   let cursor: string | undefined;
 
-  // Testnet RPC rejects startLedger=1 and OZ topic filters currently return
-  // empty sets; scan by contract and match vote_cast + proposal id locally.
+  // OZ topic filters currently return empty sets; scan by contract and match
+  // vote_cast + proposal id locally.
   const filters: rpc.Api.EventFilter[] = [
     {
       type: "contract",
@@ -75,6 +78,7 @@ export async function fetchVoteTotals(
   ];
 
   try {
+    const { startLedger } = await resolveEventStartLedger(server, configuredStartLedger);
     for (let page = 0; page < 50; page++) {
       const response = cursor
         ? await server.getEvents({ filters, cursor, limit: 100 })
@@ -137,7 +141,7 @@ export async function fetchVoteTotals(
     }
   } catch (err: unknown) {
     const message =
-      err instanceof Error ? err.message : "Failed to fetch vote events";
+      retentionErrorMessage(err) ?? (err instanceof Error ? err.message : "Failed to fetch vote events");
     return { totals, incomplete: true, error: message };
   }
 

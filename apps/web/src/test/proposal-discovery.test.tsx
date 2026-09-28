@@ -1,6 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
+import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
+
+const mockSignTransaction = vi.hoisted(() => vi.fn());
 
 vi.mock("@/hooks/useProposalDiscovery", () => ({
   useProposalDiscovery: vi.fn(() => ({
@@ -44,7 +47,7 @@ vi.mock("@/lib/contracts", async () => {
 vi.mock("@/context/WalletProvider", () => ({
   useWallet: () => ({
     address: null,
-    signTransaction: vi.fn(),
+    signTransaction: mockSignTransaction,
     isConnecting: false,
   }),
 }));
@@ -72,5 +75,27 @@ describe("ProposalsPage - localStorage not required for proposals", () => {
       `/proposals/${proposalId}`,
     );
     expect(getItemSpy).not.toHaveBeenCalled();
+  });
+
+  it("labels retained-only history as stale on the proposals page", async () => {
+    vi.mocked(useProposalDiscovery).mockReturnValue({
+      proposals: [],
+      proposalIds: [],
+      loading: false,
+      error: null,
+      empty: true,
+      freshness: {
+        state: "stale",
+        explanation: "Proposal history is partial: earlier events are outside the RPC retention window.",
+        ledgerGap: null,
+      },
+      refresh: vi.fn(),
+    });
+    const ProposalsPage = (await import("@/app/(app)/proposals/page")).default;
+
+    render(<ProposalsPage />);
+
+    expect(screen.getByText(/earlier events are outside the RPC retention window/)).toBeInTheDocument();
+    expect(screen.getByText(/No public proposals were found in the scanned range/)).toBeInTheDocument();
   });
 });

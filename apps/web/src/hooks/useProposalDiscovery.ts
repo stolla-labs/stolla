@@ -9,6 +9,7 @@ import {
   evaluateDiscoveryFreshness,
   type FreshnessResult,
 } from "@/lib/proposal-events";
+import { resolveEventStartLedger, retentionErrorMessage } from "@/lib/proposal-events/retention";
 import { getE2EBridge } from "@/lib/e2eMock";
 
 export type DiscoveredProposal = {
@@ -51,23 +52,23 @@ export function useProposalDiscovery(governorContractId?: string) {
     lastEventLedger: number | null;
     discoveredCount: number;
     hadError: boolean;
+    retentionClamped: boolean;
   }>({
     latestLedger: null,
     lastEventLedger: null,
     discoveredCount: 0,
     hadError: false,
+    retentionClamped: false,
   });
 
   const discover = useCallback(async () => {
-    const governor = governorContractId ?? requireContractIds().governor;
-    const server = new RpcServer(config.rpcUrl);
-    const startLedger = requireGovernorStartLedger();
-
     setLoading(true);
     setError(null);
     setEmpty(false);
 
     try {
+      const governor = governorContractId ?? requireContractIds().governor;
+      const configuredStartLedger = requireGovernorStartLedger();
       const mocked = getE2EBridge()?.proposals?.[governor];
       if (mocked) {
         setProposals(mocked);
@@ -77,9 +78,15 @@ export function useProposalDiscovery(governorContractId?: string) {
           lastEventLedger: null,
           discoveredCount: mocked.length,
           hadError: false,
+          retentionClamped: false,
         });
         return true;
       }
+      const server = new RpcServer(config.rpcUrl);
+      const { startLedger, clamped } = await resolveEventStartLedger(
+        server,
+        configuredStartLedger,
+      );
       const discovered: DiscoveredProposal[] = [];
       let cursor: string | undefined = undefined;
       let latestLedger: number | null = null;
@@ -116,7 +123,9 @@ export function useProposalDiscovery(governorContractId?: string) {
         let response: Awaited<ReturnType<typeof server.getEvents>>;
         try {
           response = await server.getEvents(request);
-        } catch {
+        } catch (err: unknown) {
+          const retentionMessage = retentionErrorMessage(err);
+          if (retentionMessage) setError(retentionMessage);
           hadError = true;
           break;
         }
@@ -168,11 +177,12 @@ export function useProposalDiscovery(governorContractId?: string) {
         lastEventLedger,
         discoveredCount: discovered.length,
         hadError,
+        retentionClamped: clamped,
       });
       return true;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Discovery failed");
-      setFreshnessMeta((prev) => ({ ...prev, hadError: true }));
+      setError(retentionErrorMessage(err) ?? (err instanceof Error ? err.message : "Discovery failed"));
+      setFreshnessMeta({ latestLedger: null, lastEventLedger: null, discoveredCount: 0, hadError: true, retentionClamped: false });
       return false;
     } finally {
       setLoading(false);

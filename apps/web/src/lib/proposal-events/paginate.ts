@@ -1,4 +1,5 @@
 import { rpc } from "@stellar/stellar-sdk";
+import { resolveEventStartLedger } from "./retention";
 
 export interface EventPage {
   events: rpc.Api.EventResponse[];
@@ -26,7 +27,8 @@ export interface FetchGovernorEventsOptions {
 export async function* fetchGovernorEvents(
   opts: FetchGovernorEventsOptions,
 ): AsyncGenerator<EventPage> {
-  const { server, contractId, startLedger, maxPages } = opts;
+  const { server, contractId, startLedger: configuredStartLedger, maxPages } = opts;
+  const { startLedger } = await resolveEventStartLedger(server, configuredStartLedger);
   const filters: rpc.Api.EventFilter[] = [
     { type: "contract", contractIds: [contractId] },
   ];

@@ -53,6 +53,10 @@ export const contractIds = {
   factory: activeCapabilities.contracts.communityFactory,
 };
 
+export class GovernorStartLedgerConfigurationError extends Error {
+  name = "GovernorStartLedgerConfigurationError";
+}
+
 export function requireRpcConfig() {
   const rpc = requireNetworkCapability(activeCapabilities, "rpc");
   return { rpcUrl: rpc.url, networkPassphrase: activeNetwork.networkPassphrase };
@@ -81,22 +85,17 @@ export function parseGovernorStartLedger(
   const ledger = parsePositiveLedger(value);
   if (ledger !== null) return ledger;
   if (value === undefined || value.trim() === "") {
-    throw new Error(
+    throw new GovernorStartLedgerConfigurationError(
       "Governor start ledger is not configured. Set NEXT_PUBLIC_GOVERNOR_START_LEDGER to the positive integer ledger where the Governor was deployed (see README).",
     );
   }
-  throw new Error(
+  throw new GovernorStartLedgerConfigurationError(
     `Invalid NEXT_PUBLIC_GOVERNOR_START_LEDGER: expected a positive integer, got "${value}".`,
   );
 }
 
 export function requireGovernorStartLedger(): number {
-  const startLedger = requireNetworkCapability(
-    activeCapabilities,
-    "proposalDiscovery",
-  ).startLedger;
-  if (startLedger === null) {
-    throw new Error("Proposal discovery start ledger is unavailable.");
-  }
-  return startLedger;
+  return parseGovernorStartLedger(
+    publicCapabilityEnvironment.NEXT_PUBLIC_GOVERNOR_START_LEDGER,
+  );
 }
