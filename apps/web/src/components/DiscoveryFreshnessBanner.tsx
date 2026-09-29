@@ -1,1 +1,88 @@
-InVzZSBjbGllbnQiOwoKaW1wb3J0IHR5cGUgeyBGcmVzaG5lc3NSZXN1bHQgfSBmcm9tICJAL2xpYi9wcm9wb3NhbC1ldmVudHMiOwoKY29uc3QgU1RBVEVfU1RZTEVTOiBSZWNvcmQ8CiAgRnJlc2huZXNzUmVzdWx0WyJzdGF0ZSJdLAogIHsgY2xhc3NOYW1lOiBzdHJpbmc7IGljb246IHN0cmluZyB9Cj4gPSB7CiAgY3VycmVudDoge30gYXMgdW5rbm93biBhcyB7IGNsYXNzTmFtZTogc3RyaW5nOyBpY29uOiBzdHJpbmcgfSwKICBkZWxheWVkOiB7CiAgICBjbGFzc05hbWU6ICJib3JkZXItYW1iZXItODAwLzYwIGJnLWFtYmVyLTk1MC80MCB0ZXh0LWFtYmVyLTIwMCIsCiAgICBpY29uOiAiXHUyNUJBIiwKICB9LAogIHN0YWxlOiB7CiAgICBjbGFzc05hbWU6ICJib3JkZXItYW1iZXItODAwLzcwIGJnLWFtYmVyLTk1MC81MCB0ZXh0LWFtYmVyLTIwMCIsCiAgICBpY29uOiAiXHUyNUJBIiwKICB9LAogIHVuYXZhaWxhYmxlOiB7CiAgICBjbGFzc05hbWU6ICJib3JkZXItcm9zZS04MDAvNzAgYmctcm9zZS05NTAvNDAgdGV4dC1yb3NlLTIwMCIsCiAgICBpY29uOiAiXHUyNzE3IiwKICB9LAp9OwoKY29uc3QgRVhQTEFOQVRJT05fVVJMID0KICAiaHR0cHM6Ly9naXRodWIuY29tL3N0b2xsYS1sYWJzL3N0b2xsYS9ibG9iL21haW4vZG9jcy9jb21tdW5pdHktcHJvcG9zYWwtaW5kZXhpbmcubWQjZmluYWxpdHktZnJlc2huZXNzLWFuZC1jYWNoaW5nIjsKCmV4cG9ydCB0eXBlIERpc2NvdmVyeUZyZXNobmVzc0Jhbm5lclByb3BzID0gewogIGZyZXNobmVzczogRnJlc2huZXNzUmVzdWx0OwogIC8qKiBXaGVuIHByb3ZpZGVkLCByZW5kZXIgYSByZXRyeSBidXR0b24gdGhhdCBjYWxscyB0aGlzIGNhbGxiYWNrLiAqLwogIG9uUmV0cnk/OiAoKSA9PiB2b2lkOwogIGlzUmV0cnlpbmc/OiBib29sZWFuOwp9OwoKLyoqCiAqIEJhbm5lciBpbmRpY2F0aW5nIHRoZSBmcmVzaG5lc3Mgb2YgcHJvcG9zYWwgZGlzY292ZXJ5IHJlc3VsdHMuCiAqCiAqIFJlbmRlcnMgbm90aGluZyBmb3IgdGhlIGBjdXJyZW50YCBzdGF0ZSDigJQgdXNlcnMgZG9uJ3QgbmVlZCB0byBrbm93CiAqIHRoYXQgZXZlcnl0aGluZyBpcyBmaW5lLiAgQWxsIG90aGVyIHN0YXRlcyBzaG93IGEgYmFubmVyIHdpdGggYW4KICogZXhwbGFuYXRpb24sIGEgbGluayB0byBkb2N1bWVudGF0aW9uLCBhbmQgYW4gb3B0aW9uYWwgcmV0cnkgYWN0aW9uLgogKi8KZXhwb3J0IGZ1bmN0aW9uIERpc2NvdmVyeUZyZXNobmVzc0Jhbm5lcih7CiAgZnJlc2huZXNzLAogIG9uUmV0cnksCiAgaXNSZXRyeWluZyA9IGZhbHNlLAp9OiBEaXNjb3ZlcnlGcmVzaG5lc3NCYW5uZXJQcm9wcykgewogIGlmICghZnJlc2huZXNzIHx8IGZyZXNobmVzcy5zdGF0ZSA9PT0gImN1cnJlbnQiKSByZXR1cm4gbnVsbDsKCiAgY29uc3QgeyBjbGFzc05hbWUsIGljb24gfSA9IFNUQVRFX1NUWUxFU1tmcmVzaG5lc3Muc3RhdGVdOwoKICBjb25zdCBkZXRhaWwgPSBmcmVzaG5lc3MuZGV0YWlsPy50cmltKCk7CgogIHJldHVybiAoCiAgICA8ZGl2CiAgICAgIHJvbGU9InN0YXR1cyIKICAgICAgY2xhc3NOYW1lPXtg bXQtMyByb3VuZGVkLWxnIGJvcmRlciBwLTQgdGV4dC1zbSAke2NsYXNzTmFtZX1gfQogICAgPgogICAgICA8cD4KICAgICAgICA8c3BhbiBhcmlhLWhpZGRlbj0idHJ1ZSI+e2ljb259IDwvc3Bhbj4KICAgICAgICB7ZnJlc2huZXNzLmV4cGxhbmF0aW9ufQogICAgICA8L3A+CiAgICAgIHtkZXRhaWwgJiYgKAogICAgICAgIDxwIGNsYXNzTmFtZT0ibXQtMSB0ZXh0LXhzIG9wYWNpdHktOTAiPgogICAgICAgICAgPHNwYW4gY2xhc3NOYW1lPSJmb250LW1lZGl1bSI+RGV0YWlsczogPC9zcGFuPgogICAgICAgICAge2RldGFpbH0KICAgICAgICA8L3A+CiAgICAgICkKICAgICAgPGRpdiBjbGFzc05hbWU9Im10LTIgZmxleCBmbGV4LXdyYXAgaXRlbXMtY2VudGVyIGdhcC0zIj4KICAgICAgICA8YQogICAgICAgICAgaHJlZj17RVhQTEFOQVRJT05fVVJMfQogICAgICAgICAgdGFyZ2V0PSJfYmxhbmsiCiAgICAgICAgICByZWw9Im5vb3BlbmVyIG5vcmVmZXJyZXIiCiAgICAgICAgICBjbGFzc05hbWU9InVuZGVybGluZSB1bmRlcmxpbmUtb2Zmc2V0LTIgaG92ZXI6bm8tdW5kZXJsaW5lIgogICAgICAgID4KICAgICAgICAgIExlYXJuIGFib3V0IHByb3Bvc2FsIGhpc3RvcnkgbGltaXRzCiAgICAgICAgPC9hPgogICAgICAgIHtvblJldHJ5ICYmICgKICAgICAgICAgIDxidXR0b24KICAgICAgICAgICAgdHlwZT0iYnV0dG9uIgogICAgICAgICAgICBvbkNsaWNrPXtvblJldHJ5fQogICAgICAgICAgICBkaXNhYmxlZD17aXNSZXRyeWluZ30KICAgICAgICAgICAgY2xhc3NOYW1lPSJtaW4taC05IHJvdW5kZWQtbGcgYm9yZGVyIGJvcmRlci1jdXJyZW50IHB4LTMgcHktMS41IHRleHQteHMgZm9udC1tZWRpdW0gdHJhbnNpdGlvbiBob3ZlcjpiZy13aGl0ZS8xMCBkaXNhYmxlZDpvcGFjaXR5LTUwIgogICAgICAgICAgPgogICAgICAgICAgICB7aXNSZXRyeWluZyA/ICJSZXRyeWluZ1x1MjAyNiIgOiAiUmV0cnkgZGlzY292ZXJ5In0KICAgICAgICAgIDwvYnV0dG9uPgogICAgICAgICl9CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgKTsKfQo=
+"use client";
+
+import type { FreshnessResult } from "@/lib/proposal-events";
+
+const STATE_STYLES: Record<
+  FreshnessResult["state"],
+  { className: string; icon: string }
+> = {
+  current: {} as any,
+  delayed: {
+    className: "border-amber-800/60 bg-amber-950/40 text-amber-200",
+    icon: "\u25B2",
+  },
+  stale: {
+    className: "border-amber-800/70 bg-amber-950/50 text-amber-200",
+    icon: "\u25B2",
+  },
+  unavailable: {
+    className: "border-rose-800/70 bg-rose-950/40 text-rose-200",
+    icon: "\u2717",
+  },
+};
+
+const EXPL"ANATION_URL =
+  "https://github.com/stolla-labs/stolla/blob/main/docs/community-proposal-indexing.md#finality-freshness-and-caching";
+
+export type DiscoveryFreshnessBannerProps = {
+  freshness: FreshnessResult;
+  /** When provided, render a retry button that calls this callback. */
+  onRetry?: () => void;
+  isRetrying?: boolean;
+};
+
+/**
+ * Banner indicating the freshness of proposal discovery results.
+ *
+ * Renders nothing for the `current` state — users don't need to know
+ * that everything is fine.  All other states show a banner with an
+ * explanation, a link to documentation, and an optional retry action.
+ */
+export function DiscoveryFreshnessBanner({
+  freshness,
+  onRetry,
+  isRetrying = false,
+}: DiscoveryFreshnessBannerProps) {
+  if (!freshness || freshness.state === "current") return null;
+
+  const { className, icon } = STATE_STYLES[nreshness.state];
+
+  const detail = freshness.errorMessage;
+
+  return (
+    <div
+      role="status"
+      className={`mt-3 rounded-lg border p-4 text-sm ${className}`}
+    >
+      <p>
+        <span aria-hidden="true">{icon} </span>
+        {freshness.explanation}
+      </p>
+      {detail && (
+        <p className="mt-1 break-words font-mono text-xs opacity-90">
+          {detail}
+        </p>
+      )}
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <a
+          href={EXPLANATION_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 hover:no-underline"
+        >
+          Learn about proposal history limits
+        </a>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            disabled={isRetrying}
+            className="min-h-9 rounded-lg border border-current px-3 py-1.5 text-xs font-medium transition hover:bg-white/10 disabled:opacity-50"
+          >
+            {isRetrying ? "Retrying\u2026" : "Retry discovery"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

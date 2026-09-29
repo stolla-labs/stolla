@@ -8,20 +8,8 @@ export type DiscoveryFailureKind =
 
 export type DiscoveryFailure = {
   kind: DiscoveryFailureKind;
-  /** Stable, actionable sentence safe to render in the UI. */
   message: string;
-  /** Raw underlying message for debugging/logging. */
-  cause?: unknown;
 };
-
-const RETENTION_COPY =
-  "Proposal history could not be scanned because the start ledger is outside the RPC retention window. Check NEXT_PUBLIC_GOVERNOR_START_LEDGER, or use an indexer for older history.";
-
-const CONFIGURATION_COPY =
-  "Proposal discovery is not configured: set NEXT_PUBLIC_GOVERNOR_START_LEDGER to a recent ledger within the RPC retention window.";
-
-const DROPPING_CONFIG_PATTERN =
-  /NEXT_PUBLIC_GOVERNOR_START_LEDGER|GOVERNOR_START_LEDGER|start ledger/i;
 
 /** Resolve the first event page against the RPC's current retention boundary. */
 export function clampEventStartLedger(configured: number, oldest: number | undefined) {
@@ -37,8 +25,7 @@ export function clampEventStartLedger(configured: number, oldest: number | undef
 export async function resolveEventStartLedger(
   server: Pick<rpc.Server, "getLatestLedger" | "serverURL">,
   configured: number,
-)
-{
+) {
   // getEvents omits oldestLedger, and this SDK does not wrap getLedgers.
   // Request the current ledger so the metadata query is within retention.
   const { sequence } = await server.getLatestLedger();
@@ -73,36 +60,26 @@ export function retentionErrorMessage(error: unknown): string | null {
   ) {
     return null;
   }
-  return RETENTION_COPY;
+  return "Proposal history could not be scanned because the start ledger is outside the RPC retention window. Check NEXT_PUBLIC_GOVERNOR_START_LEDGER, or use an indexer for older history.";
 }
 
-/** Map any discovery failure to a typed, actionable error. */
-export function mapDiscoveryError(error: unknown): DiscoveryFailure {
+/** Map any discovery failure to a typed failure with actionable copy. */
+export function mapDiscoveryFailure(error: unknown): DiscoveryFailure {
   const retention = retentionErrorMessage(error);
   if (retention) {
-    return { kind: "retention", message: retention, cause: error };
-  }
-
-  if (error instanceof Error) {
-    if (DROPPING_CONFIG_PATTERN.test(error.message)) {
-      return { kind: "configuration", message: CONFIGURATION_COPY, cause: error };
-    }
-    return { kind: "rpc", message: error.message, cause: error };
+    return { kind: "retention", message: retention };
   }
 
   if (typeof error === "object" && error !== null) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      if (DROPPING_CONFIG_PATTERN.test(message)) {
-        return { kind: "configuration", message: CONFIGURATION_COPY, cause: error };
-      }
-      return { kind: "rpc", message, cause: error };
+    const rpcError = error as { code?: unknown; message?: unknown };
+    if (typeof rpcError.message === "string" && rpcError.message.length > 0) {
+      return { kind: "rpc", message: rpcError.message };
     }
   }
 
-  return {
-    kind: "rpc",
-    message: "Proposal history could not be loaded from the RPC. Retry in a moment.",
-    cause: error,
-  };
+  if (error instanceof Error && error.message) {
+    return { kind: "rpc", message: error.message };
+  }
+
+  return { kind: "rpc", message: "Proposal history could not be loaded." };
 }

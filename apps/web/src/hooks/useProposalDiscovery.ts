@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Server as RpcServer } from "@stellar/stellar-sdk/rpc";
+import { Server as RpcServer } from  @stellar/stellar-sdk/rpc";
 import type { Api } from "@stellar/stellar-sdk/rpc";
 import { config, requireContractIds, requireGovernorStartLedger } from "@/lib/stellar";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/lib/proposal-events";
 import {
   resolveEventStartLedger,
-  mapDiscoveryError,
+  mapDiscoveryFailure,
   type DiscoveryFailure,
 } from "@/lib/proposal-events/retention";
 import { getE2EBridge } from "@/lib/e2eMock";
@@ -23,8 +23,6 @@ export type DiscoveredProposal = {
   voteSnapshot?: number | null;
   voteEnd?: number | null;
 };
-
-export type DiscoveryErrorState = DiscoveryFailure;
 
 function extractProposalFields(event: Api.EventResponse): Pick<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd"> {
   const decoded = decodeProposalEvent({
@@ -59,7 +57,7 @@ export function useProposalDiscovery(governorContractId?: string) {
   const [proposals, setProposals] = useState<DiscoveredProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorKind, setErrorKind] = useState<DiscoveryErrorState["kind"] | null>(null);
+  const [errorKind, setErrorKind] = useState<DiscoveryFailure["kind"] | null>(null);
   const [empty, setEmpty] = useState(false);
   const [freshnessMeta, setFreshnessMeta] = useState<{
     latestLedger: number | null;
@@ -108,7 +106,7 @@ export function useProposalDiscovery(governorContractId?: string) {
       let lastEventLedger: number | null = null;
       let hadError = false;
       let errorMessage: string | null = null;
-      let errorFailureKind: DiscoveryErrorState["kind"] | null = null;
+      let errorFailureKind: DiscoveryFailure["kind"] | null = null;
 
       for (;;) {
         // Topic filters against current testnet RPC return empty for OZ
@@ -141,7 +139,7 @@ export function useProposalDiscovery(governorContractId?: string) {
         try {
           response = await server.getEvents(request);
         } catch (err: unknown) {
-          const failure = mapDiscoveryError(err);
+          const failure = mapDiscoveryFailure(err);
           errorMessage = failure.message;
           errorFailureKind = failure.kind;
           hadError = true;
@@ -199,9 +197,9 @@ export function useProposalDiscovery(governorContractId?: string) {
         hadError,
         retentionClamped: clamped,
       });
-      return !hadError;
+      return true;
     } catch (err: unknown) {
-      const failure = mapDiscoveryError(err);
+      const failure = mapDiscoveryFailure(err);
       setError(failure.message);
       setErrorKind(failure.kind);
       setFreshnessMeta({ latestLedger: null, lastEventLedger: null, discoveredCount: 0, hadError: true, retentionClamped: false });
@@ -221,7 +219,7 @@ export function useProposalDiscovery(governorContractId?: string) {
 
   const proposalIds = proposals.map((proposal) => proposal.id);
 
-  const freshness: FreshnessResult = useMemo(
+  const freshness : FreshnessResult = useMemo(
     () => evaluateDiscoveryFreshness(freshnessMeta),
     [freshnessMeta],
   );

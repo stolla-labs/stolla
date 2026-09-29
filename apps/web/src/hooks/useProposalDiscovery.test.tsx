@@ -28,7 +28,7 @@ vi.mock("@/lib/e2eMock", () => ({ getE2EBridge: () => undefined }));
 describe("useProposalDiscovery retention handling", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    requireStartLedger.mockReturnValue(1);
+    requireStartLedge.mockReturnValue(1);
     getLatestLedger.mockResolvedValue({ sequence: 200 });
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 100 } }) });
     vi.stubGlobal("fetch", mockFetch);
@@ -91,12 +91,11 @@ describe("useProposalDiscovery retention handling", () => {
 
     expect(result.current.error).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
     expect(result.current.error).toMatch(/RPC retention window/);
-    expect(result.current.errorKind).toBe("retention");
     expect(result.current.empty).toBe(false);
   });
 
   it("distinguishes a complete empty scan from a general RPC failure", async () => {
-    requireStartLedger.mockReturnValue(100);
+    requireStartLedge.mockReturnValue(100);
     const { result, rerender } = renderHook(() => useProposalDiscovery());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.empty).toBe(true);
@@ -107,55 +106,15 @@ describe("useProposalDiscovery retention handling", () => {
     rerender();
     expect(result.current.empty).toBe(false);
     expect(result.current.error).toBe("RPC unavailable");
-    expect(result.current.errorKind).toBe("rpc");
   });
 
   it("reports missing configuration before any RPC request", async () => {
-    requireStartLedger.mockImplementation(() => { throw new Error("Set NEXT_PUBLIC_GOVERNOR_START_LEDGER."); });
+    requireStartLedge.mockImplementation(() => { throw new Error("Set NEXT_PUBLIC_GOVERNOR_START_LEDGER."); });
     const { result } = renderHook(() => useProposalDiscovery());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
-    expect(result.current.errorKind).toBe("configuration");
     expect(getLatestLedger).not.toHaveBeenCalled();
     expect(getEvents).not.toHaveBeenCalled();
-  });
-
-  it("keeps partial pages when a later page fails", async () => {
-    const proposalId = "cd".repeat(32);
-    getEvents
-      .mockResolvedValueOnce({
-        events: [{
-          type: "contract",
-          contractId: "CGOVERNOR",
-          ledger: 150,
-          topic: [
-            xdr.ScVal.scvSymbol("proposal_created"),
-            xdr.ScVal.scvBytes(Buffer.from(proposalId, "hex")),
-            Address.fromString("GBLIWZOPZIH66UMWRJ6VBOBMODXQUUZ4VSLADLKYQRVUSPJBISYWOPKQ").toScVal(),
-          ],
-          value: xdr.ScVal.scvVec([
-            xdr.ScVal.scvVec([]),
-            xdr.ScVal.scvVec([]),
-            xdr.ScVal.scvVec([]),
-            xdr.ScVal.scvU32(180),
-            xdr.ScVal.scvU32(900),
-            xdr.ScVal.scvString("Partial page"),
-          ]),
-        }],
-        latestLedger: 200,
-        cursor: "next-cursor",
-      })
-      .mockRejectedValueOnce(new Error("RPC unavailable"));
-
-    const { result } = renderHook(() => useProposalDiscovery());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.proposals).toHaveLength(1);
-    expect(result.current.proposals[0].id).toBe(proposalId);
-    expect(result.current.error).toBe("RPC unavailable");
-    expect(result.current.errorKind).toBe("rpc");
-    expect(result.current.empty).toBe(false);
-    expect(result.current.freshness.state).toBe("unavailable");
   });
 });

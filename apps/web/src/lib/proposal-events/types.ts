@@ -1,9 +1,7 @@
-import type { ProposalMetadataV1 } from "@/lib/proposal-metadata";
-
 /**
  * Canonical application model for a created proposal.
  *
- * Consumed by both direct RPC discovery and future indexer adapters.
+ * Consumed by both direct APC discovery and future indexer adapters.
  * This type is React-independent and has no localStorage dependency.
  *
  * Fields that require a later contract read (e.g. proposal state, vote
@@ -41,7 +39,7 @@ export interface ProposalSummary {
 
   /**
    * Stellar transaction hash (hex) of the transaction that included the
-   * proposal-creation event.  Sourced from RPC transaction metadata.
+   * proposal-creation event.  Sourced from RC transaction metadata.
    */
   txHash: string;
 
@@ -70,12 +68,12 @@ export interface ProposalSummary {
   description: string;
 
   /** Parsed structured metadata when the description contains a valid v1 envelope. */
-  metadata?: ProposalMetadataV1 | null;
+  metadata?: import("@/lib/proposal-metadata").ProposalMetadataV1 | null;
 }
 
-// ---------------------------------------------------------------------------
-// Typed representation of a decoded ProposalCreated contract event
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+ // Typed representation of a decoded ProposalCreated contract event
+// --------------------------------------------------------------------------
 
 /**
  * Decoded body of a ProposalCreated Soroban event as emitted by the
@@ -113,7 +111,7 @@ export interface ProposalCreatedEventData {
 }
 
 /**
- * RPC metadata accompanying the transaction that contained the event.
+ * RFC metadata accompanying the transaction that contained the event.
  * Sourced from `SorobanRpc.GetTransactionResponse` or an indexer response.
  */
 export interface ProposalEventRpcMetadata {
@@ -128,131 +126,159 @@ export interface ProposalEventRpcMetadata {
   cursor: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// Typed discovery failure model
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------
+ // Typed discovery failures and error mapping
+// --------------------------------------------------------------------------
 
 /**
- * Discriminator for the kind of failure encountered during proposal
- * discovery.  Each variant maps to a stable, user-facing sentence so the
- * UI never collapses distinct root causes into a single generic string.
- *
- * - `config_missing`   — required environment configuration is absent.
- * - `retention_clamp`  — the requested start ledger falls outside the
- *                        RPC node's retained ledger window.
- * - `rpc_network`      — transport, timeout, or non-2xx RPC response.
- * - `decode_partial`   — one or more pages decoded successfully but a
- *                        later page failed; partial results are retained.
- * - `unknown`          — unclassified failure; message is preserved.
+ * Environment variable that must be set to discover proposal events.
+ * Named explicitly so the UI can tell operators what to configure.
  */
-export type ProposalDiscoveryErrorKind =
+export const GOVERNOR_START_LEDGER_ENV_VAR = "NEXT_PUBLIC_GOVERNOR_START_LEDGER" as const;
+
+/**
+ * Categories of discovery failure. These are typed so the UI can render
+ * a stable, actionable message instead of a generic "Discovery failed".
+ */
+export type DiscoveryErrorCode =
+  /** Required configuration (e.g. start ledger) is missing or invalid. */
   | "config_missing"
+  /** Requested ledger window is outside RPC retention / clamped. */
   | "retention_clamp"
+  /** RPC or network failure (timeout, 5xx, 500, network error). */
   | "rpc_network"
+  /** Event decode failure or partial page decode failure. */
   | "decode_partial"
+  /** Unknown/unclassified failure. */
   | "unknown";
 
 /**
- * Typed discovery failure surfaced to the UI.  `message` is always a
- * concrete, actionable sentence — never the generic "Discovery failed".
+ * Typed discovery failure propagated from `useProposalDiscovery` to the UI.
  */
-export interface ProposalDiscoveryError {
-  kind: ProposalDiscoveryErrorKind;
-  /** Concrete, user-facing sentence describing the failure. */
+export interface DiscoveryError {
+  /** Stable category code for programmatic handling. */
+  code: DiscoveryErrorCode;
+  /** Stable, human-readable sentence for the UI fallback. */
   message: string;
-  /**
-   * Raw underlying error message (e.g. the RPC string) when available.
-   * Preserved for diagnostics and logging; may be shown in a details
-   * disclosure but is not required by the primary UI.
-   */
-  cause?: string;
-  /**
-   * Number of proposals successfully decoded before the failure.
-   * Non-zero only for `decode_partial`, so the UI can honestly report
-   * that some results are available.
-   */
-  partialCount?: number;
+  /** Raw underlying message (e.g. RPC error) when available. */
+  detail?: string;
+  /** Environment variable name when configuration is missing. */
+  envVar?: string;
 }
 
 /**
- * Environment variable name that must be set for discovery to run.
- * Exported so error mapping and tests share a single source of truth.
+ * Maps a raw RPC / network / decode error into a typed discovery failure.
+ *
+ * Retention-window errors (e.g. "startLedger must be within the
+ * ledger range") are classified as `retention_clamp` so the UI can explain
+ * the configuration problem instead of collapsing to "Discovery failed".
  */
-export const GOVERNOR_START_LEDGER_ENV = "NEXT_PUBLIC_GOVERNOR_START_LEDGER";
-
-/**
- * Map an arbitrary thrown value / RPC error string to a typed
- * {@link ProposalDiscoveryError}.  Pure and deterministic so it can be
- * unit-tested without touching the network.
- */
-export function mapDiscoveryError(
-  error: unknown,
-  context: { partialCount?: number } = {},
-): ProposalDiscoveryError {
-  const raw =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : error == null
-          ? ""
-          : String(error);
-
+export function mapDiscoveryError(error: unknown, options?: { envVar?: string }): DiscoveryError {
+  const raw = extractErrorMessage(error);
   const lower = raw.toLowerCase();
-  const partialCount = context.partialCount ?? 0;
 
-  if (lower.includes("startledger must be within the ledger range")) {
+  if (looksLikeRetentionError(lower)) {
     return {
-      kind: "retention_clamp",
+      code: "retention_clamp",
       message:
-        "The configured start ledger is older than this RPC node retains. " +
-        "Raise the start ledger or use an archival RPC endpoint.",
-      cause: raw,
+        "The configured start ledger is outside the RFC retention window. " +
+        "Update the start ledger configuration to a recent ledger and retry.",
+      detail: raw,
+      envVar: options?.envVar,
     };
   }
 
-  if (
-    lower.includes("next_public_governor_start_ledger") ||
-    lower.includes("start ledger is not configured") ||
-    lower.includes("missing governor start ledger")
-  ) {
+  if (looksLikeDecodeError(lower)) {
     return {
-      kind: "config_missing",
-      message: `Missing required configuration: ${GOVERNOR_START_LEDGER_ENV}.`,
-      cause: raw,
+      code: "decode_partial",
+      message:
+        "Some proposal events could not be decoded. Partial results are shown.",
+      detail: raw,
     };
   }
 
-  if (
-    lower.includes("fetch failed") ||
-    lower.includes("network") ||
-    lower.includes("timeout") ||
-    lower.includes("econnrefused") ||
-    lower.includes("429") ||
-    lower.includes("503")
-  ) {
+  if (looksLikeRpcError(lower)) {
     return {
-      kind: "rpc_network",
+      code: "rpc_network",
       message:
-        "Could not reach the Soroban RPC endpoint. Check connectivity and retry.",
-      cause: raw,
-    };
-  }
-
-  if (partialCount > 0) {
-    return {
-      kind: "decode_partial",
-      message:
-        `Loaded ${partialCount} proposal${partialCount === 1 ? "" : "s"} ` +
-        "before a later page failed. Results shown may be incomplete.",
-      cause: raw,
-      partialCount,
+        "Could not reach the Stellar RPC endpoint. Check your network and RFC URL and retry.",
+      detail: raw,
     };
   }
 
   return {
-    kind: "unknown",
-    message: raw.length > 0 ? raw : "Proposal discovery failed.",
-    cause: raw.length > 0 ? raw : undefined,
+    code: "unknown",
+    message: "Proposal discovery failed.",
+    detail: raw,
   };
+}
+
+/**
+ * Builds a typed configuration-missing failure that names the expected
+ * environment variable so operators know what to set.
+ */
+export function configMissingError(
+  envVar: string = GOVERNOR_START_LEDGER_ENV_VAR,
+  detail?: string,
+): DiscoveryError {
+  return {
+    code: "config_missing",
+    message: `Missing required configuration: ${envVar}. Set it and retry.`,
+    detail,
+    envVar,
+  };
+}
+
+/**
+ * Returns the most actionable human-message for a discovery error.
+ * Prefers the concrete `detail` when present, falling back to the stable
+ * mapped `message`.
+ */
+export function discoveryErrorMessage(error: DiscoveryError): string {
+  if (error.detail && error.detail.trim().length > 0) {
+    return error.detail;
+  }
+  return error.message;
+}
+
+function extractErrorMessage(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const candidate = (error as { message?: unknown; error?: unknown });
+    if (typeof candidate.message === "string") return candidate.message;
+    if (typeof candidate.error === "string") return candidate.error;
+  }
+  return "";
+}
+
+function looksLikeRetentionError(lower: string): boolean {
+  return (
+    lower.includes("startledger") ||
+    lower.includes("start ledger") ||
+    lower.includes("ledger range") ||
+    lower.includes("out of range") ||
+    lower.includes("retention") ||
+    lower.includes("clamped")
+  );
+}
+
+function looksLikeDecodeError(lower: string): boolean {
+  return (
+    lower.includes("decode") ||
+    lower.includes("decoding") ||
+    lower.includes("xdr") ||
+    lower.includes("parse")
+  );
+}
+
+function looksLikeRpcError(lower: string): boolean {
+  return (
+    lower.includes("fetch") ||
+    lower.includes("network") ||
+    lower.includes("timeout") ||
+    lower.includes("rpc") ||
+    lower.includes("http") ||
+    /\b5\d{2}\b/.test(lower)
+  );
 }
