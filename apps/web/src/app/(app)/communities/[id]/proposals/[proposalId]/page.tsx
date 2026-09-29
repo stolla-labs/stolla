@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import ProposalDetailPage from "@/app/(app)/proposals/[id]/page";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
-import { getCommunity } from "@/lib/community/registry";
+import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
 import type { CommunityView } from "@/lib/community/types";
 import { parseProposalId } from "@/lib/proposals";
 
@@ -18,6 +18,7 @@ export default function CommunityProposalDetailPage() {
     id: string;
     proposalId: string;
   }>();
+  const registry = useCommunityRegistry();
   const [community, setCommunity] = useState<CommunityView | null>(null);
   const [status, setStatus] = useState<
     "loading" | "community-not-found" | "invalid-contracts" | "error"
@@ -28,7 +29,7 @@ export default function CommunityProposalDetailPage() {
     const timeout = window.setTimeout(() => {
       setCommunity(null);
       setStatus("loading");
-      void getCommunity(id)
+      void registry.get(id)
         .then((result) => {
           if (!active) return;
           if (result.status !== "found") {
@@ -52,7 +53,7 @@ export default function CommunityProposalDetailPage() {
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [id]);
+  }, [id, registry]);
 
   if (community) {
     return (

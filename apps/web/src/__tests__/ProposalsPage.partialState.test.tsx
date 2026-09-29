@@ -107,7 +107,9 @@ describe("ProposalsPage partial state failures", () => {
         screen.getByRole("link", { name: /Succeeded/i }),
       ).toHaveAttribute("href", `/proposals/${FAILED_ID}`);
     });
-    expect(screen.queryByText("Unavailable")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Unavailable/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Active/i }),
     ).toBeInTheDocument();
@@ -131,7 +133,9 @@ describe("ProposalsPage partial state failures", () => {
     const ProposalsPage = (await import("@/app/(app)/proposals/page")).default;
     render(<ProposalsPage />);
 
-    expect(await screen.findByText("Unavailable")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: /Unavailable/i }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Active/i }),
     ).toHaveAttribute("href", `/proposals/${SUCCESS_ID}`);
@@ -146,7 +150,9 @@ describe("ProposalsPage partial state failures", () => {
     await waitFor(() => {
       expect(proposalState.mock.calls.length).toBeGreaterThan(callsBeforeRetry);
     });
-    expect(screen.getByText("Unavailable")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /Unavailable/i }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Active/i }),
     ).toHaveAttribute("href", `/proposals/${SUCCESS_ID}`);

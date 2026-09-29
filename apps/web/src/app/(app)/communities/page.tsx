@@ -6,7 +6,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { listCommunities } from "@/lib/community/registry";
+import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
 import type { CommunityView } from "@/lib/community/types";
 
 const PAGE_SIZE = 9;
@@ -41,6 +41,7 @@ function writeListUrlState(
 }
 
 export default function CommunitiesPage() {
+  const registry = useCommunityRegistry();
   const [communities, setCommunities] = useState<CommunityView[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -62,7 +63,7 @@ export default function CommunitiesPage() {
       setError(null);
 
       try {
-        const page = await listCommunities(cursor, PAGE_SIZE);
+        const page = await registry.list(cursor, PAGE_SIZE);
         if (sequence !== requestSequence.current) return;
         if (page.nextCursor !== null && page.nextCursor === cursor) {
           throw new Error(
@@ -111,7 +112,7 @@ export default function CommunitiesPage() {
         if (sequence === requestSequence.current) setLoading(false);
       }
     },
-    [],
+    [registry],
   );
 
   useEffect(() => {

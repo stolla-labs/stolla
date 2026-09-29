@@ -10,7 +10,7 @@ const tones: AppButtonTone[] = ["primary", "secondary", "danger", "success"];
 
 const toneClassExpectations: Record<AppButtonTone, string> = {
   primary: "bg-indigo-500",
-  secondary: "border-slate-700",
+  secondary: "border-slate-600",
   danger: "border-rose-700",
   success: "bg-emerald-600",
 };
