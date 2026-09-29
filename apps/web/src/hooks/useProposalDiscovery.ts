@@ -7,10 +7,13 @@ import { config, requireContractIds, requireGovernorStartLedger } from "@/lib/st
 import {
   decodeProposalEvent,
   evaluateDiscoveryFreshness,
-  mapDiscoveryError,
   type FreshnessResult,
 } from "@/lib/proposal-events";
-import { resolveEventStartLedger } from "@/lib/proposal-events/retention";
+import {
+  resolveEventStartLedger,
+  mapDiscoveryError,
+  type DiscoveryFailure,
+} from "@/lib/proposal-events/retention";
 import { getE2EBridge } from "@/lib/e2eMock";
 
 export type DiscoveredProposal = {
@@ -21,7 +24,9 @@ export type DiscoveredProposal = {
   voteEnd?: number | null;
 };
 
-function extractProposalFields(event: Api.EventResponse): Pick)<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd">> {
+export type DiscoveryErrorState = DiscoveryFailure;
+
+function extractProposalFields(event: Api.EventResponse): Pick<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd"> {
   const decoded = decodeProposalEvent({
     type: event.type,
     contractId: event.contractId,
@@ -42,8 +47,8 @@ function extractProposalFields(event: Api.EventResponse): Pick)<DiscoveredPropos
     const descriptionVal = fields?.[5];
     return {
       description: descriptionVal?.switch().name === "scvString" ? descriptionVal.str() as string : null,
-      voteSnapshot: fields[/3]?.switch().name === "scvU32" ? fields[3].u32() : null,
-      voteEnd: fields[/4]?.switch().name === "scvU32" ? fields[4].u32() : null,
+      voteSnapshot: fields?.[3]?.switch().name === "scvU32" ? fields[3].u32() : null,
+      voteEnd: fields?.[4]?.switch().name === "scvU32" ? fields[4].u32() : null,
     };
   } catch {
     return { description: null };
@@ -54,8 +59,9 @@ export function useProposalDiscovery(governorContractId?: string) {
   const [proposals, setProposals] = useState<DiscoveredProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<DiscoveryErrorState["kind"] | null>(null);
   const [empty, setEmpty] = useState(false);
-  const [freshnessMeta, setFreshnessMeta] = useState< {
+  const [freshnessMeta, setFreshnessMeta] = useState<{
     latestLedger: number | null;
     lastEventLedger: number | null;
     discoveredCount: number;
@@ -72,6 +78,7 @@ export function useProposalDiscovery(governorContractId?: string) {
   const discover = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setErrorKind(null);
     setEmpty(false);
 
     try {
@@ -101,6 +108,7 @@ export function useProposalDiscovery(governorContractId?: string) {
       let lastEventLedger: number | null = null;
       let hadError = false;
       let errorMessage: string | null = null;
+      let errorFailureKind: DiscoveryErrorState["kind"] | null = null;
 
       for (;;) {
         // Topic filters against current testnet RPC return empty for OZ
@@ -133,8 +141,9 @@ export function useProposalDiscovery(governorContractId?: string) {
         try {
           response = await server.getEvents(request);
         } catch (err: unknown) {
-          const mapped = mapDiscoveryError(err);
-          errorMessage = mapped.message;
+          const failure = mapDiscoveryError(err);
+          errorMessage = failure.message;
+          errorFailureKind = failure.kind;
           hadError = true;
           break;
         }
@@ -180,7 +189,8 @@ export function useProposalDiscovery(governorContractId?: string) {
 
       discovered.reverse();
       setProposals(discovered);
-      setError(hadError ? errorMessage : null);
+      setError(errorMessage);
+      setErrorKind(errorFailureKind);
       setEmpty(discovered.length === 0 && !hadError && !clamped);
       setFreshnessMeta({
         latestLedger,
@@ -189,10 +199,11 @@ export function useProposalDiscovery(governorContractId?: string) {
         hadError,
         retentionClamped: clamped,
       });
-      return true;
+      return !hadError;
     } catch (err: unknown) {
-      const mapped = mapDiscoveryError(err);
-      setError(mapped.message);
+      const failure = mapDiscoveryError(err);
+      setError(failure.message);
+      setErrorKind(failure.kind);
       setFreshnessMeta({ latestLedger: null, lastEventLedger: null, discoveredCount: 0, hadError: true, retentionClamped: false });
       return false;
     } finally {
@@ -220,6 +231,7 @@ export function useProposalDiscovery(governorContractId?: string) {
     proposalIds,
     loading,
     error,
+    errorKind,
     empty,
     freshness,
     latestLedger: freshnessMeta.latestLedger,

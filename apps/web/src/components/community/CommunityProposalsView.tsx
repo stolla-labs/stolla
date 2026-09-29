@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import type { Community, CommunityRegistry } from "@/lib/community/types";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
 import { getStoredProposalIdsFor } from "@/lib/contracts";
@@ -25,6 +26,96 @@ const stateLabels: Record<ProposalState, string> = {
   [ProposalState.Expired]: "Expired",
   [ProposalState.Executed]: "Executed",
 };
+
+type DiscoveryFailureKind =
+  | "config"
+  | "retention"
+  | "rpc"
+  | "decode"
+  | "partial"
+  | "unknown";
+
+type DiscoveryFailure = {
+  kind: DiscoveryFailureKind;
+  message: string;
+};
+
+const START_LEDGER_ENV = "NEXT_PUBLIC_GOVERNOR_START_LEDGER";
+
+function mapDiscoveryFailure(error: unknown): DiscoveryFailure {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
+  const message = raw.trim();
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("startledger") ||
+    lower.includes("start ledger") ||
+    lower.includes("ledger range") ||
+    lower.includes("retention")
+  ) {
+    return {
+      kind: "retention",
+      message:
+        message ||
+        "The configured start ledger is outside the RPC retention window.",
+    };
+  }
+  if (
+    lower.includes("next_public_governor_start_ledger") ||
+    lower.includes("start ledger is not configured") ||
+    lower.includes("missing start ledger")
+  ) {
+    return {
+      kind: "config",
+      message:
+        message ||
+        `Missing ${START_LEDGER_ENV}. Configure it to enable proposal discovery.`,
+    };
+  }
+  if (
+    lower.includes("network") ||
+    lower.includes("fetch") ||
+    lower.includes("timeout") ||
+    lower.includes("rpc")
+  ) {
+    return {
+      kind: "rpc",
+      message: message || "The RPC endpoint could not be reached.",
+    };
+  }
+  if (lower.includes("decode") || lower.includes("deserialize")) {
+    return {
+      kind: "decode",
+      message: message || "A proposal event could not be decoded.",
+    };
+  }
+  return {
+    kind: "unknown",
+    message: message || "Discovery failed.",
+  };
+}
+
+function describeDiscoveryFailure(failure: DiscoveryFailure): string {
+  switch (failure.kind) {
+    case "config":
+      return `Discovery is not configured: ${failure.message}`;
+    case "retention":
+      return `Discovery is outside the RPC retention window: ${failure.message}`;
+    case "rpc":
+      return `Discovery RPC error: ${failure.message}`;
+    case "decode":
+      return `Discovery decode error: ${failure.message}`;
+    case "partial":
+      return `Discovery partially failed: ${failure.message}`;
+    default:
+      return failure.message;
+  }
+}
 
 export type CommunityProposalsViewProps = {
   communityId: string;
@@ -84,6 +175,19 @@ function CommunityProposalsPanel({
     getReader,
   );
 
+  const discoveryFailure = useMemo<DiscoveryFailure | null>(() => {
+    if (resolution.status !== "ready") {
+      return null;
+    }
+    const errored = resolution.entries.find(
+      (entry) => entry.status === "error",
+    );
+    if (!errored || errored.status !== "error") {
+      return null;
+    }
+    return mapDiscoveryFailure(errored.error);
+  }, [resolution]);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <CommunityBreadcrumbs
@@ -107,10 +211,18 @@ function CommunityProposalsPanel({
 
       {resolution.status === "ready" && proposalIds.length > 0 && (
         <>
-          {resolution.entries.some((entry) => entry.status === "error") && (
+          {discoveryFailure && (
             <FreshnessNotice className="mt-6">
-              Some proposal states are unavailable. Successful proposals remain
-              visible.
+              <span role="alert">
+                {describeDiscoveryFailure(discoveryFailure)}
+              </span>
+              {resolution.entries.some(
+                (entry) => entry.status === "ready",
+              ) && (
+                <span className="block text-slate-400">
+                  Successful proposals remain visible.
+                </span>
+              )}
             </FreshnessNotice>
           )}
           <ul className="mt-6 space-y-2">
@@ -126,7 +238,11 @@ function CommunityProposalsPanel({
                   >
                     {entry.status === "ready"
                       ? stateLabels[entry.state]
-                      : "Unavailable"}
+                      : entry.status === "error"
+                        ? describeDiscoveryFailure(
+                            mapDiscoveryFailure(entry.error),
+                          )
+                        : "Unavailable"}
                   </span>
                 </Link>
               </li>
@@ -137,3 +253,5 @@ function CommunityProposalsPanel({
     </div>
   );
 }
+
+export { mapDiscoveryFailure, describeDiscoveryFailure };

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { clampEventStartLedger, resolveEventStartLedge, retentionErrorMessage } from "./retention";
+import { clampEventStartLedger, resolveEventStartLedger, retentionErrorMessage } from "./retention";
 import type { rpc } from "@stellar/stellar-sdk";
 
 describe("event retention boundary", () => {
@@ -11,10 +11,10 @@ describe("event retention boundary", () => {
 
   it("uses a recent ledger query to read the RPC boundary", async () => {
     const server = {
-      getLatestLedger: vi.fn().mockResolvedValue({ sequence: 200 }),
+      getLatestLedger: vi.fn().mockResolved({ sequence: 200 }),
       serverURL: "https://test.rpc.url",
     } as unknown as rpc.Server;
-    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 100 } }) });
+    const mockFetch = vi.fn().mockResolved({ ok: true, json: async () => ({ result: { oldestLedger: 100 } }) });
     vi.stubGlobal("fetch", mockFetch);
 
     await expect(resolveEventStartLedger(server, 1)).resolves.toEqual({ startLedger: 100, clamped: true });

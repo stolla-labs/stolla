@@ -82,8 +82,10 @@ export {
 } from "./freshness";
 
 export {
+  clampEventStartLedger,
+  resolveEventStartLedger,
+  retentionErrorMessage,
   mapDiscoveryError,
-  mapDecodeFailure,
-  type DiscoveryError,
-  type DiscoveryErrorKind,
-} from "./discovery-errors";
+  type DiscoveryFailure,
+  type DiscoveryFailureKind,
+} from "./retention";

@@ -91,44 +91,7 @@ describe("useProposalDiscovery retention handling", () => {
 
     expect(result.current.error).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
     expect(result.current.error).toMatch(/RPC retention window/);
-    expect(result.current.error).not.toBe("Discovery failed");
-    expect(result.current.empty).toBe(false);
-  });
-
-  it("keeps partially discovered proposals when a later page fails", async () => {
-    const proposalId = "cd".repeat(32);
-    const proposer = "GBLIWZOPZIH66QMWRJ6VBOBMODXQUUZ4VSLADLKYQRVUSPJBISYWOPKQ";
-    getEvents.mockResolvedOnce().mockResolvedOnce();
-    getEvents.mockResolvedValueOnce({
-      events: [{
-        type: "contract",
-        contractId: "CGOVERNOR",
-        ledger: 150,
-        topic: [
-          xdr.ScVal.scvSymbol("proposal_created"),
-          xdr.ScVal.scvBytes(Buffer.from(proposalId, "hex")),
-          Address.fromString(proposer).toScVal(),
-        ],
-        value: xdr.ScVal.scvVec([
-          xdr.ScVal.scvVec([]),
-          xdr.ScVal.scvVec([]),
-          xdr.ScVal.scvVec([]),
-          xdr.ScVal.scvU32(180),
-          xdr.ScVal.scvU32(900),
-          xdr.ScVal.scvString("Partial"),
-        ]),
-      }],
-      latestLedger: 200,
-      cursor: "next-cursor",
-    });
-    getEvents.mockRejectedValueOnce(new Error("RPC unavailable"));
-
-    const { result } = renderHook(() => useProposalDiscovery());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(result.current.proposals).length).toBe(1);
-    expect(result.current.proposals[0].id).toBe(proposalId);
-    expect(result.current.error).toBe("RPC unavailable");
+    expect(result.current.errorKind).toBe("retention");
     expect(result.current.empty).toBe(false);
   });
 
@@ -143,7 +106,8 @@ describe("useProposalDiscovery retention handling", () => {
     await result.current.refresh();
     rerender();
     expect(result.current.empty).toBe(false);
-    expect(result.current.error).toBe(\"RPC unavailable\");
+    expect(result.current.error).toBe("RPC unavailable");
+    expect(result.current.errorKind).toBe("rpc");
   });
 
   it("reports missing configuration before any RPC request", async () => {
@@ -152,7 +116,46 @@ describe("useProposalDiscovery retention handling", () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
+    expect(result.current.errorKind).toBe("configuration");
     expect(getLatestLedger).not.toHaveBeenCalled();
     expect(getEvents).not.toHaveBeenCalled();
+  });
+
+  it("keeps partial pages when a later page fails", async () => {
+    const proposalId = "cd".repeat(32);
+    getEvents
+      .mockResolvedValueOnce({
+        events: [{
+          type: "contract",
+          contractId: "CGOVERNOR",
+          ledger: 150,
+          topic: [
+            xdr.ScVal.scvSymbol("proposal_created"),
+            xdr.ScVal.scvBytes(Buffer.from(proposalId, "hex")),
+            Address.fromString("GBLIWZOPZIH66UMWRJ6VBOBMODXQUUZ4VSLADLKYQRVUSPJBISYWOPKQ").toScVal(),
+          ],
+          value: xdr.ScVal.scvVec([
+            xdr.ScVal.scvVec([]),
+            xdr.ScVal.scvVec([]),
+            xdr.ScVal.scvVec([]),
+            xdr.ScVal.scvU32(180),
+            xdr.ScVal.scvU32(900),
+            xdr.ScVal.scvString("Partial page"),
+          ]),
+        }],
+        latestLedger: 200,
+        cursor: "next-cursor",
+      })
+      .mockRejectedValueOnce(new Error("RPC unavailable"));
+
+    const { result } = renderHook(() => useProposalDiscovery());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.proposals).toHaveLength(1);
+    expect(result.current.proposals[0].id).toBe(proposalId);
+    expect(result.current.error).toBe("RPC unavailable");
+    expect(result.current.errorKind).toBe("rpc");
+    expect(result.current.empty).toBe(false);
+    expect(result.current.freshness.state).toBe("unavailable");
   });
 });
