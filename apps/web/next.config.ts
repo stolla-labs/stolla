@@ -21,6 +21,15 @@ const nextConfig: NextConfig = {
     root: repositoryRoot,
   },
   outputFileTracingRoot: repositoryRoot,
+  async redirects() {
+    return [
+      {
+        source: "/community/new",
+        destination: "/communities/create",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -24,4 +24,18 @@ describe("community/new redirect", () => {
     expect(navigation.redirect).toHaveBeenCalledTimes(1);
     expect(navigation.redirect).toHaveBeenCalledWith("/communities/create");
   });
+
+  it("configures a permanent redirect in next.config.ts", async () => {
+    const nextConfig = (await import("../../next.config")).default;
+    const redirects = await nextConfig.redirects?.();
+    expect(redirects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "/community/new",
+          destination: "/communities/create",
+          permanent: true,
+        }),
+      ]),
+    );
+  });
 });

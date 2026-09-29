@@ -153,8 +153,10 @@ test("submits once when the deploy button is clicked repeatedly", async ({
 test("redirects the legacy /community/new route to the canonical wizard", async ({
   page,
 }) => {
-  await page.goto("/community/new");
+  const response = await page.goto("/community/new");
+  expect(response?.status()).toBeLessThan(400);
   await expect(page).toHaveURL(/\/communities\/create\/?$/);
+  await expect(page.getByText("This page could not be found")).not.toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Describe your community" }),
   ).toBeVisible();
