@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { ProposalSummary } from "@/lib/proposal-events";
 import { truncateMiddle } from "@/lib/truncate";
 import { parseProposalDescription } from "@/lib/proposal-metadata";
+import { LEDGER_TIME_ASSUMPTION_NOTE } from "@/lib/community/governanceDisplay";
+import { formatProposalDeadlineEstimate } from "@/lib/proposalDeadline";
 
 export type ProposalSummaryCardStateStatus =
   | "loading"
@@ -15,16 +17,17 @@ export type ProposalSummaryCardProps = {
    * Shared proposal summary model. Only `proposalId` is required; optional
    * metadata uses explicit placeholders when missing.
    */
-  summary: Pick<ProposalSummary, "proposalId"> &
-    Partial<
-      Pick<ProposalSummary, "proposer" | "voteSnapshot" | "voteEnd">
-    > & {
+  summary: Pick<ProposalSummary, "proposalId"> & {
+      proposer?: string | null;
+      voteSnapshot?: number | null;
+      voteEnd?: number | null;
       /** Null means discovery could not provide a description. */
       description?: string | null;
     };
   stateStatus: ProposalSummaryCardStateStatus;
   /** Human-readable state label when `stateStatus` is `ready`. */
   stateLabel?: string;
+  currentLedger?: number | null;
   /**
    * When true, render the proposal description (or an explicit unavailable
    * fallback). Description text is plain — never nested interactive controls.
@@ -104,6 +107,7 @@ export function ProposalSummaryCard({
   summary,
   stateStatus,
   stateLabel,
+  currentLedger,
   showDescription = false,
   onRetryState,
   isRetryingState = false,
@@ -117,6 +121,11 @@ export function ProposalSummaryCard({
       : stateStatus === "unavailable"
         ? "Unavailable"
         : (stateLabel ?? "Unknown");
+  const deadlineEstimate = formatProposalDeadlineEstimate(
+    summary.voteEnd,
+    currentLedger,
+    summary.voteSnapshot,
+  );
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80">
@@ -144,6 +153,20 @@ export function ProposalSummaryCard({
         )}
         {"proposer" in summary && (
           <OptionalMeta label="Proposer" value={summary.proposer} />
+        )}
+        {"voteEnd" in summary && (
+          <p className="mt-1 min-w-0 text-xs text-slate-500">
+            <span className="text-slate-600">Voting end ledger: </span>
+            <span className="font-mono">{summary.voteEnd ?? "Unavailable"}</span>
+            {deadlineEstimate && (
+              <>
+                {" "}
+                <span title={LEDGER_TIME_ASSUMPTION_NOTE}>
+                  ({deadlineEstimate}; assumes ~5s/ledger)
+                </span>
+              </>
+            )}
+          </p>
         )}
       </Link>
       <div className="flex shrink-0 items-center gap-1">

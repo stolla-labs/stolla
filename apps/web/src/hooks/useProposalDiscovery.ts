@@ -16,9 +16,11 @@ export type DiscoveredProposal = {
   id: string;
   /** Proposal description from the created event, or null when unavailable. */
   description: string | null;
+  voteSnapshot?: number | null;
+  voteEnd?: number | null;
 };
 
-function extractDescription(event: Api.EventResponse): string | null {
+function extractProposalFields(event: Api.EventResponse): Pick<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd"> {
   const decoded = decodeProposalEvent({
     type: event.type,
     contractId: event.contractId,
@@ -26,19 +28,24 @@ function extractDescription(event: Api.EventResponse): string | null {
     value: event.value,
   });
   if (decoded.ok && decoded.event.kind === "proposal_created") {
-    return decoded.event.description;
+    return {
+      description: decoded.event.description,
+      voteSnapshot: decoded.event.voteSnapshot,
+      voteEnd: decoded.event.voteEnd,
+    };
   }
 
   try {
-    if (event.value.switch().name !== "scvVec") return null;
+    if (event.value.switch().name !== "scvVec") return { description: null };
     const fields = event.value.vec();
     const descriptionVal = fields?.[5];
-    if (!descriptionVal || descriptionVal.switch().name !== "scvString") {
-      return null;
-    }
-    return descriptionVal.str() as string;
+    return {
+      description: descriptionVal?.switch().name === "scvString" ? descriptionVal.str() as string : null,
+      voteSnapshot: fields?.[3]?.switch().name === "scvU32" ? fields[3].u32() : null,
+      voteEnd: fields?.[4]?.switch().name === "scvU32" ? fields[4].u32() : null,
+    };
   } catch {
-    return null;
+    return { description: null };
   }
 }
 
@@ -151,7 +158,7 @@ export function useProposalDiscovery(governorContractId?: string) {
           if (!proposalIdBytes) continue;
           discovered.push({
             id: Buffer.from(proposalIdBytes).toString("hex"),
-            description: extractDescription(event),
+            ...extractProposalFields(event),
           });
 
           // Track the highest ledger sequence from event metadata.
@@ -211,6 +218,7 @@ export function useProposalDiscovery(governorContractId?: string) {
     error,
     empty,
     freshness,
+    latestLedger: freshnessMeta.latestLedger,
     refresh: discover,
   };
 }

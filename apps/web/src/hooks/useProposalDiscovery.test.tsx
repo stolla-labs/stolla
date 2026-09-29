@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
+import { Address, xdr } from "@stellar/stellar-sdk";
+import { Buffer } from "buffer";
 import { useProposalDiscovery } from "./useProposalDiscovery";
 
 const { getEvents, getLatestLedger, mockFetch, requireStartLedger } = vi.hoisted(() => ({
@@ -41,6 +43,44 @@ describe("useProposalDiscovery retention handling", () => {
     expect(result.current.error).toBeNull();
     expect(result.current.freshness.state).toBe("stale");
     expect(result.current.freshness.explanation).toMatch(/RPC retention window/);
+  });
+
+  it("keeps deadline and snapshot ledgers from a proposal-created event", async () => {
+    const proposalId = "ab".repeat(32);
+    const proposer = "GBLIWZOPZIH66UMWRJ6VBOBMODXQUUZ4VSLADLKYQRVUSPJBISYWOPKQ";
+    getEvents.mockResolvedValue({
+      events: [{
+        type: "contract",
+        contractId: "CGOVERNOR",
+        ledger: 150,
+        topic: [
+          xdr.ScVal.scvSymbol("proposal_created"),
+          xdr.ScVal.scvBytes(Buffer.from(proposalId, "hex")),
+          Address.fromString(proposer).toScVal(),
+        ],
+        value: xdr.ScVal.scvVec([
+          xdr.ScVal.scvVec([]),
+          xdr.ScVal.scvVec([]),
+          xdr.ScVal.scvVec([]),
+          xdr.ScVal.scvU32(180),
+          xdr.ScVal.scvU32(900),
+          xdr.ScVal.scvString("Test proposal"),
+        ]),
+      }],
+      latestLedger: 200,
+      cursor: "",
+    });
+
+    const { result } = renderHook(() => useProposalDiscovery());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.proposals).toEqual([{
+      id: proposalId,
+      description: "Test proposal",
+      voteSnapshot: 180,
+      voteEnd: 900,
+    }]);
+    expect(result.current.latestLedger).toBe(200);
   });
 
   it("shows actionable copy for a JSON-RPC retention error", async () => {

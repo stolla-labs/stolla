@@ -68,6 +68,7 @@ export default function ProposalsPage() {
     error,
     empty,
     freshness,
+    latestLedger,
     refresh,
   } =
     useProposalDiscovery();
@@ -492,6 +493,7 @@ export default function ProposalsPage() {
             )}
             <ul className="mt-3 space-y-2">
               {visibleIds.map((id) => {
+                const discovered = proposals.find((proposal) => proposal.id === id);
                 const state = states[id];
                 const stateFailed = failedProposalIds.includes(id);
                 const isRetrying = retryingIds.includes(id);
@@ -510,7 +512,10 @@ export default function ProposalsPage() {
                       summary={{
                         proposalId: id,
                         description: descriptionsById[id] ?? null,
+                        voteEnd: discovered?.voteEnd,
+                        voteSnapshot: discovered?.voteSnapshot,
                       }}
+                      currentLedger={latestLedger}
                       showDescription
                       stateStatus={stateStatus}
                       stateLabel={stateLabel}

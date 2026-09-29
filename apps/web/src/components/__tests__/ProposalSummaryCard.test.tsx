@@ -6,11 +6,15 @@ import type { ProposalSummary } from "@/lib/proposal-events";
 const FULL_ID = "ab".repeat(32);
 
 function baseSummary(
-  overrides: Partial<
-    Omit<ProposalSummary, "description"> & { description?: string | null }
-  > = {},
-): Pick<ProposalSummary, "proposalId"> &
-  Partial<Pick<ProposalSummary, "proposer" | "voteSnapshot" | "voteEnd">> & {
+  overrides: Partial<Omit<ProposalSummary, "voteEnd" | "voteSnapshot" | "description">> & {
+    voteEnd?: number | null;
+    voteSnapshot?: number | null;
+    description?: string | null;
+  } = {},
+): Pick<ProposalSummary, "proposalId"> & {
+    proposer?: string | null;
+    voteSnapshot?: number | null;
+    voteEnd?: number | null;
     description?: string | null;
   } {
   return {
@@ -20,6 +24,46 @@ function baseSummary(
 }
 
 describe("ProposalSummaryCard", () => {
+  it("shows an exact deadline and approximate time at the last known ledger", () => {
+    render(
+      <ProposalSummaryCard
+        summary={baseSummary({ voteSnapshot: 10_000, voteEnd: 20_000 })}
+        currentLedger={19_280}
+        stateStatus="ready"
+        stateLabel="Active"
+      />,
+    );
+
+    expect(screen.getByText("Voting end ledger:").parentElement).toHaveTextContent(
+      "Voting end ledger: 20000 (Approx. ~1h remaining at last scan; assumes ~5s/ledger)",
+    );
+    expect(screen.getByText(/Approx\. ~1h remaining/)).toHaveAttribute(
+      "title",
+      expect.stringMatching(/~5s per ledger/),
+    );
+  });
+
+  it("shows a window estimate without a head ledger and none without a deadline", () => {
+    const { rerender } = render(
+      <ProposalSummaryCard
+        summary={baseSummary({ voteSnapshot: 19_280, voteEnd: 20_000 })}
+        stateStatus="ready"
+      />,
+    );
+    expect(screen.getByText(/Approx\. voting window: ~1h/)).toBeInTheDocument();
+
+    rerender(
+      <ProposalSummaryCard
+        summary={baseSummary({ voteSnapshot: 19_280, voteEnd: null })}
+        stateStatus="ready"
+      />,
+    );
+    expect(screen.getByText("Voting end ledger:").parentElement).toHaveTextContent(
+      "Voting end ledger: Unavailable",
+    );
+    expect(screen.queryByText(/Approx\./)).not.toBeInTheDocument();
+  });
+
   it("renders a complete summary with accessible detail link", () => {
     render(
       <ProposalSummaryCard
@@ -134,10 +178,11 @@ describe("ProposalSummaryCard", () => {
         summary={baseSummary()}
         stateStatus="ready"
         stateLabel="Active"
+        onCopyId={() => void navigator.clipboard.writeText(FULL_ID)}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Copy Proposal ID" }));
+    fireEvent.click(screen.getByRole("button", { name: `Copy proposal ID ${FULL_ID}` }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(FULL_ID);
   });
 

@@ -214,6 +214,9 @@ describe("ProposalDetailPage", () => {
 
     expect(await screen.findByText("1500000")).toBeInTheDocument();
     expect(screen.getByText("2000000")).toBeInTheDocument();
+    expect(screen.getByText(/Approx\. voting window: ~28d 22h/)).toHaveTextContent(
+      "Estimate assumes ~5s per ledger; the deadline ledger is authoritative.",
+    );
     expect(snapshot).toHaveBeenCalledTimes(1);
     expect(deadline).toHaveBeenCalledTimes(1);
     const snapshotArg = snapshot.mock.calls[0][0];
@@ -223,6 +226,19 @@ describe("ProposalDetailPage", () => {
     expect(deadlineArg.proposal_id).toBeInstanceOf(Uint8Array);
     expect(Buffer.from(snapshotArg.proposal_id).toString("hex")).toBe(VALID_ID);
     expect(Buffer.from(deadlineArg.proposal_id).toString("hex")).toBe(VALID_ID);
+  });
+
+  it("shows approximate time remaining when the latest ledger is known", async () => {
+    mocks.useParams.mockReturnValue({ id: VALID_ID });
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [],
+      latestLedger: 1_990_000,
+    });
+
+    render(<ProposalDetailPage />);
+
+    expect(await screen.findByText("2000000")).toBeInTheDocument();
+    expect(screen.getByText(/Approx\. ~13h 53m remaining at last scan/)).toBeInTheDocument();
   });
 
   it("keeps proposal state visible when deadline read fails", async () => {
@@ -236,6 +252,18 @@ describe("ProposalDetailPage", () => {
     expect(await screen.findByText("Active")).toBeInTheDocument();
     expect(await screen.findByText("Unavailable")).toBeInTheDocument();
     expect(screen.getByText("1500000")).toBeInTheDocument();
+    expect(screen.queryByText(/Approx\. voting window/)).not.toBeInTheDocument();
+  });
+
+  it("does not estimate a missing deadline ledger", async () => {
+    mocks.useParams.mockReturnValue({ id: VALID_ID });
+    mockReadOnly({ proposal_deadline: vi.fn().mockResolvedValue({ result: null }) });
+
+    render(<ProposalDetailPage />);
+
+    expect(await screen.findByText("Active")).toBeInTheDocument();
+    expect(await screen.findByText("Unavailable")).toBeInTheDocument();
+    expect(screen.queryByText(/Approx\./)).not.toBeInTheDocument();
   });
 
   it("ignores a stale response after navigating to another proposal", async () => {

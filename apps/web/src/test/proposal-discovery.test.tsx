@@ -89,6 +89,7 @@ describe("ProposalsPage - localStorage not required for proposals", () => {
         explanation: "Proposal history is partial: earlier events are outside the RPC retention window.",
         ledgerGap: null,
       },
+      latestLedger: null,
       refresh: vi.fn(),
     });
     const ProposalsPage = (await import("@/app/(app)/proposals/page")).default;

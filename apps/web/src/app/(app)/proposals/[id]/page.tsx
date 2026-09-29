@@ -31,6 +31,8 @@ import { fetchVoteTotals, type VoteTotals } from "@/lib/proposal-events";
 import { fmt, pct } from "@/lib/voteDisplay";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { ProposalMetadataDisplay } from "@/components/proposal/ProposalMetadataDisplay";
+import { LEDGER_TIME_ASSUMPTION_NOTE } from "@/lib/community/governanceDisplay";
+import { formatProposalDeadlineEstimate } from "@/lib/proposalDeadline";
 
 
 type ProposalResult = {
@@ -58,7 +60,7 @@ export default function ProposalDetailPage({
     community?.metadata?.name ??
     (community ? `Community ${truncateMiddle(community.record.id)}` : null);
   const isValidId = parseProposalId(proposalIdHex) !== null;
-  const { proposals: discoveredProposals } = useProposalDiscovery(
+  const { proposals: discoveredProposals, latestLedger } = useProposalDiscovery(
     governorContractId || undefined,
   );
   const proposalDescription = discoveredProposals.find(
@@ -77,6 +79,11 @@ export default function ProposalDetailPage({
   const [totalsIncomplete, setTotalsIncomplete] = useState(false);
   const [snapshotLedger, setSnapshotLedger] = useState<number | null>(null);
   const [deadlineLedger, setDeadlineLedger] = useState<number | null>(null);
+  const deadlineEstimate = formatProposalDeadlineEstimate(
+    deadlineLedger,
+    latestLedger,
+    snapshotLedger,
+  );
   const [snapshotStatus, setSnapshotStatus] = useState<
     "loading" | "ready" | "unavailable"
   >("loading");
@@ -468,6 +475,11 @@ export default function ProposalDetailPage({
                 ? String(deadlineLedger)
                 : "Unavailable"}
           </dd>
+          {deadlineStatus === "ready" && deadlineEstimate && (
+            <p className="mt-1 text-xs text-slate-400" title={LEDGER_TIME_ASSUMPTION_NOTE}>
+              {deadlineEstimate}. Estimate assumes ~5s per ledger; the deadline ledger is authoritative.
+            </p>
+          )}
         </div>
         <div className="sm:col-span-2">
           <dt className="text-slate-500">Proposer</dt>
