@@ -344,7 +344,7 @@ export function CommunityCreationWizard() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-3xl px-4 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
         <Link
           href="/communities"
           className="text-sm text-indigo-300 hover:text-indigo-200"
@@ -352,75 +352,94 @@ export function CommunityCreationWizard() {
           ← Communities
         </Link>
         {!hasSubmittedRecovery && (
-          <AppButton tone="secondary" onClick={discardDraft}>
+          <button
+            type="button"
+            onClick={discardDraft}
+            className="ml-auto text-sm text-slate-500 hover:text-slate-300"
+          >
             {dirty ? "Discard draft" : "Restart wizard"}
-          </AppButton>
+          </button>
         )}
       </div>
 
       <div className="mt-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-300">
-          Community creation
-        </p>
         <h1
           ref={pageTitleRef}
           tabIndex={-1}
-          className="mt-2 text-2xl font-bold text-slate-100 outline-none"
+          className="text-2xl font-bold text-slate-100 outline-none"
         >
           {step === 1
-            ? "Describe your community"
+            ? "Name your community"
             : step === 2
               ? "Configure governance"
-              : "Review deployment inputs"}
+              : "Review and deploy"}
         </h1>
         <p className="mt-2 text-slate-400">
           {step === 1
-            ? "Step 1 collects version-1 public metadata. Stolla generates and pins the metadata documents for you; no wallet signature or deployment occurs here."
+            ? "Choose a name, symbol, and description. No wallet needed yet — you'll review and sign everything in step 3."
             : step === 2
-              ? "Choose the immutable parameters that initialize this community's Governor contract."
-              : "Verify the public, wallet, network, and factory values before deployment."}
+              ? "Set the voting rules for your community's on-chain Governor. You can review these before deploying."
+              : "Confirm your community details, pin the metadata, then sign and deploy."}
         </p>
       </div>
 
+      {/* Slim step progress strip */}
       <ol
         aria-label="Community creation progress"
-        className="mt-6 grid grid-cols-1 gap-2 text-sm sm:grid-cols-3"
+        className="mt-5 flex items-center gap-0 text-xs"
       >
-        <li
-          aria-current={step === 1 ? "step" : undefined}
-          className={`rounded-lg border p-3 ${
-            step === 1
-              ? "border-indigo-500 bg-indigo-950/50 text-indigo-200"
-              : "border-emerald-800 bg-emerald-950/30 text-emerald-200"
-          }`}
-        >
-          <span className="block text-xs opacity-70">Step 1</span>
-          Public metadata
-        </li>
-        <li
-          aria-current={step === 2 ? "step" : undefined}
-          className={`rounded-lg border p-3 ${
-            step === 2
-              ? "border-indigo-500 bg-indigo-950/50 text-indigo-200"
-              : step > 2
-                ? "border-emerald-800 bg-emerald-950/30 text-emerald-200"
-                : "border-slate-800 bg-[#151b2b] text-slate-400"
-          }`}
-        >
-          <span className="block text-xs opacity-70">Step 2</span>
-          Governance
-        </li>
-        <li
-          aria-current={step === 3 ? "step" : undefined}
-          className={`rounded-lg border p-3 ${
-            step === 3
-              ? "border-indigo-500 bg-indigo-950/50 text-indigo-200"
-              : "border-slate-800 bg-[#151b2b] text-slate-400"
-          }`}
-        >
-          <span className="block text-xs opacity-70">Step 3</span>
-          Review
-        </li>
+        {(
+          [
+            { n: 1, label: "Identity" },
+            { n: 2, label: "Governance" },
+            { n: 3, label: "Review" },
+          ] as const
+        ).map(({ n, label }, idx) => {
+          const done = step > n;
+          const active = step === n;
+          return (
+            <li
+              key={n}
+              aria-current={active ? "step" : undefined}
+              className="flex min-w-0 flex-1 items-center"
+            >
+              {idx > 0 && (
+                <span
+                  aria-hidden
+                  className={`h-px flex-1 ${done || active ? "bg-indigo-500" : "bg-slate-700"}`}
+                />
+              )}
+              <span
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${
+                  active
+                    ? "bg-indigo-950 text-indigo-300 ring-1 ring-indigo-500"
+                    : done
+                      ? "text-emerald-400"
+                      : "text-slate-500"
+                }`}
+              >
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                    active
+                      ? "bg-indigo-500 text-white"
+                      : done
+                        ? "bg-emerald-800 text-emerald-200"
+                        : "bg-slate-700 text-slate-400"
+                  }`}
+                >
+                  {done ? "✓" : n}
+                </span>
+                {label}
+              </span>
+              {idx < 2 && (
+                <span
+                  aria-hidden
+                  className={`h-px flex-1 ${done ? "bg-indigo-500" : "bg-slate-700"}`}
+                />
+              )}
+            </li>
+          );
+        })}
       </ol>
 
       {step === 3 ? (
@@ -678,7 +697,7 @@ export function CommunityCreationWizard() {
               tone="secondary"
               onClick={() => setStep(1)}
             >
-              Back to metadata
+              Back to identity
             </AppButton>
             <AppButton type="submit" tone="primary">
               Review community
@@ -890,12 +909,11 @@ export function CommunityCreationWizard() {
           </section>
 
           <aside className="rounded-lg border border-indigo-800/70 bg-indigo-950/30 p-4 text-sm leading-6 text-indigo-100">
-            <strong className="font-semibold">Before continuing:</strong> name,
-            symbol, and schema version become immutable contract values. The
-            collection URI, metadata URI, and metadata hash are generated when
-            Stolla pins your documents in the review step and are immutable
-            once deployed. Description, logo, and links are public and
-            committed by that hash.
+            <strong className="font-semibold">Before you continue:</strong>{" "}
+            name and symbol are locked once the community is deployed and
+            cannot be changed. Everything else — description, logo, and links
+            — becomes publicly visible but is saved to your draft until you
+            deploy in step 3.
           </aside>
 
           <AppButton

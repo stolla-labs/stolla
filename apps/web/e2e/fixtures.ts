@@ -175,7 +175,7 @@ export async function installCreationFixtures(
 export async function completeWizardToReview(page: Page) {
   await page.goto("/communities/create");
   await expect(
-    page.getByRole("heading", { name: "Describe your community" }),
+    page.getByRole("heading", { name: "Name your community" }),
   ).toBeVisible();
   // Allow the wizard hydration timeout to settle before editing controlled inputs.
   await page.waitForTimeout(50);
@@ -193,7 +193,7 @@ export async function completeWizardToReview(page: Page) {
   ).toBeVisible();
   await page.getByRole("button", { name: "Review community" }).click();
   await expect(
-    page.getByRole("heading", { name: "Review deployment inputs" }),
+    page.getByRole("heading", { name: "Review and deploy" }),
   ).toBeVisible();
   // The review step pins the generated documents through the bridge's pin
   // client; deployment stays locked until that succeeds.

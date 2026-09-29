@@ -199,7 +199,7 @@ describe("CreateCommunityPage", () => {
     expect(screen.getByLabelText(/Proposal threshold/)).toHaveValue("1");
     expect(screen.getByLabelText(/Voting period/)).toHaveValue("10000");
 
-    fireEvent.click(screen.getByRole("button", { name: "Back to metadata" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to identity" }));
     expect(screen.getByLabelText(/Community name/)).toHaveValue(
       "Builders Guild",
     );
@@ -432,7 +432,7 @@ describe("CreateCommunityPage", () => {
     await waitFor(() =>
       expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull(),
     );
-    expect(screen.getByRole("heading", { name: "Describe your community" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Name your community" })).toHaveFocus();
   });
 
   it("cancels destructive discard without changing dirty values", async () => {

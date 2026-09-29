@@ -158,6 +158,6 @@ test("redirects the legacy /community/new route to the canonical wizard", async 
   await expect(page).toHaveURL(/\/communities\/create\/?$/);
   await expect(page.getByText("This page could not be found")).not.toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Describe your community" }),
+    page.getByRole("heading", { name: "Name your community" }),
   ).toBeVisible();
 });
