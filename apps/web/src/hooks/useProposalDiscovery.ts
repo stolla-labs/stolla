@@ -125,7 +125,7 @@ export function useProposalDiscovery(governorContractId?: string) {
           response = await server.getEvents(request);
         } catch (err: unknown) {
           const retentionMessage = retentionErrorMessage(err);
-          if (retentionMessage) setError(retentionMessage);
+          setError(retentionMessage ?? (err instanceof Error ? err.message : "Proposal history could not be loaded."));
           hadError = true;
           break;
         }
@@ -171,7 +171,7 @@ export function useProposalDiscovery(governorContractId?: string) {
 
       discovered.reverse();
       setProposals(discovered);
-      setEmpty(discovered.length === 0);
+      setEmpty(discovered.length === 0 && !hadError && !clamped);
       setFreshnessMeta({
         latestLedger,
         lastEventLedger,

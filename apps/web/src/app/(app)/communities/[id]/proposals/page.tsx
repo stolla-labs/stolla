@@ -9,6 +9,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ScopedProposalEmptyState } from "@/components/community/ScopedProposalEmptyState";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { getCommunity } from "@/lib/community/registry";
 import type { CommunityView } from "@/lib/community/types";
@@ -184,8 +185,12 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
         )}
 
         {!loading && !error && empty && (
-          <LiveStatus className="mt-3 rounded-lg border border-dashed border-slate-700 p-5 text-sm text-slate-400">
-            This community has no public proposals yet.
+          <ScopedProposalEmptyState key={community.record.id} community={community} refresh={refresh} />
+        )}
+
+        {!loading && !error && !empty && proposals.length === 0 && (
+          <LiveStatus className="mt-3 rounded-lg border border-amber-800/70 bg-amber-950/40 p-5 text-sm text-amber-200">
+            Proposal history is incomplete. Earlier events are outside the RPC retention window, so the full history is unavailable here.
           </LiveStatus>
         )}
 

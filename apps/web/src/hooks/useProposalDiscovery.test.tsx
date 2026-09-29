@@ -39,6 +39,7 @@ describe("useProposalDiscovery retention handling", () => {
 
     expect(getEvents).toHaveBeenCalledWith(expect.objectContaining({ startLedger: 100 }));
     expect(result.current.error).toBeNull();
+    expect(result.current.empty).toBe(false);
     expect(result.current.freshness.state).toBe("stale");
     expect(result.current.freshness.explanation).toMatch(/RPC retention window/);
   });
@@ -50,6 +51,21 @@ describe("useProposalDiscovery retention handling", () => {
 
     expect(result.current.error).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
     expect(result.current.error).toMatch(/RPC retention window/);
+    expect(result.current.empty).toBe(false);
+  });
+
+  it("distinguishes a complete empty scan from a general RPC failure", async () => {
+    requireStartLedger.mockReturnValue(100);
+    const { result, rerender } = renderHook(() => useProposalDiscovery());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.empty).toBe(true);
+    expect(result.current.error).toBeNull();
+
+    getEvents.mockRejectedValue(new Error("RPC unavailable"));
+    await result.current.refresh();
+    rerender();
+    expect(result.current.empty).toBe(false);
+    expect(result.current.error).toBe("RPC unavailable");
   });
 
   it("reports missing configuration before any RPC request", async () => {

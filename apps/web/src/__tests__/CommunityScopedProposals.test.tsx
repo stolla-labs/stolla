@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommunityDetailResult } from "@/lib/community/types";
 import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProvider";
@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   useProposalDiscovery: vi.fn(),
   createReadOnlyGovernorClient: vi.fn(),
   refresh: vi.fn(),
+  useWallet: vi.fn(),
+  createReadOnlyNftClient: vi.fn(),
+  createNftClient: vi.fn(),
+  createGovernorClient: vi.fn(),
+  storeProposalIdFor: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -19,9 +24,20 @@ vi.mock("@/hooks/useProposalDiscovery", () => ({
   useProposalDiscovery: mocks.useProposalDiscovery,
 }));
 
+vi.mock("@/lib/community/registry", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/community/registry")>(),
+  getCommunity: mocks.getCommunity,
+}));
+
 vi.mock("@/lib/contracts", () => ({
   createReadOnlyGovernorClient: mocks.createReadOnlyGovernorClient,
+  createReadOnlyNftClient: mocks.createReadOnlyNftClient,
+  createNftClient: mocks.createNftClient,
+  createGovernorClient: mocks.createGovernorClient,
+  storeProposalIdFor: mocks.storeProposalIdFor,
 }));
+
+vi.mock("@/context/WalletProvider", () => ({ useWallet: mocks.useWallet }));
 
 import { ProposalState } from "@/lib/proposalState";
 import CommunityProposalHistoryPage from "@/app/(app)/communities/[id]/proposals/page";
@@ -108,6 +124,127 @@ describe("community-scoped proposal history", () => {
         result: ProposalState.Active,
       }),
     });
+    mocks.refresh.mockResolvedValue(true);
+    mocks.useWallet.mockReturnValue({
+      address: "GWALLET",
+      connect: vi.fn(),
+      isConnecting: false,
+      signTransaction: vi.fn(),
+    });
+    mocks.createReadOnlyNftClient.mockReturnValue({
+      get_votes: vi.fn().mockResolvedValue({ result: 1n }),
+    });
+  });
+
+  it("offers a scoped create action only after successful empty discovery and sufficient voting power", async () => {
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: null, empty: true, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    const action = await screen.findByRole("button", { name: "Create first proposal" });
+    expect(screen.getByText("No proposals yet")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mocks.createReadOnlyNftClient).toHaveBeenCalledWith(MOCK_NFT_CONTRACT_ID);
+    fireEvent.click(action);
+    expect(screen.getByRole("heading", { name: "Create proposal" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create proposal" })).toBeInTheDocument();
+  });
+
+  it("submits the first proposal to this community's Governor", async () => {
+    const propose = vi.fn().mockResolvedValue({
+      sign: async () => undefined,
+      send: async () => ({ result: Uint8Array.from(Array(32).fill(0xaa)), hash: "ab".repeat(32) }),
+    });
+    mocks.createGovernorClient.mockReturnValue({ propose });
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: null, empty: true, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Create first proposal" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Title (required)" }), { target: { value: "First decision" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Summary (required)" }), { target: { value: "Approve the first decision." } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Body (required)" }), { target: { value: "The community will vote on this decision." } });
+    fireEvent.click(screen.getByRole("button", { name: "Create proposal" }));
+
+    await waitFor(() => expect(propose).toHaveBeenCalledOnce());
+    expect(mocks.createGovernorClient).toHaveBeenCalledWith(expect.objectContaining({
+      contractId: FIRST_GOVERNOR,
+      publicKey: "GWALLET",
+    }));
+    expect(propose).toHaveBeenCalledWith(expect.objectContaining({ proposer: "GWALLET" }));
+    await waitFor(() => expect(mocks.storeProposalIdFor).toHaveBeenCalledWith(FIRST_GOVERNOR, PROPOSAL_ID));
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
+  it("offers wallet connection when empty discovery succeeds but the wallet is disconnected", async () => {
+    const connect = vi.fn();
+    mocks.useWallet.mockReturnValue({ address: null, connect, isConnecting: false, signTransaction: vi.fn() });
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: null, empty: true, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    const action = await screen.findByRole("button", { name: "Connect wallet to propose" });
+    expect(screen.queryByRole("button", { name: "Create first proposal" })).not.toBeInTheDocument();
+    fireEvent.click(action);
+    expect(connect).toHaveBeenCalledOnce();
+  });
+
+  it("offers scoped delegation when voting power is below the threshold", async () => {
+    const delegate = vi.fn().mockResolvedValue({
+      sign: async () => undefined,
+      send: async () => ({ result: null, hash: "ab".repeat(32) }),
+    });
+    mocks.createNftClient.mockReturnValue({ delegate });
+    mocks.createReadOnlyNftClient.mockReturnValue({ get_votes: vi.fn().mockResolvedValue({ result: 0n }) });
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: null, empty: true, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Delegate voting power" }));
+    await waitFor(() => expect(delegate).toHaveBeenCalledWith({ account: "GWALLET", delegatee: "GWALLET" }));
+    expect(mocks.createNftClient).toHaveBeenCalledWith(expect.objectContaining({
+      contractId: MOCK_NFT_CONTRACT_ID,
+      publicKey: "GWALLET",
+    }));
+    expect(await screen.findByText("Delegate confirmed")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create first proposal" })).not.toBeInTheDocument();
+  });
+
+  it("keeps discovery failure in the error and retry state", async () => {
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: "RPC unavailable", empty: false, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("RPC unavailable");
+    expect(screen.getByRole("button", { name: "Retry proposal history" })).toBeInTheDocument();
+    expect(screen.queryByText("No proposals yet")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create first proposal" })).not.toBeInTheDocument();
+  });
+
+  it("shows loading without an empty action", async () => {
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: true, error: null, empty: false, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    await screen.findByRole("heading", { name: "First DAO proposals" });
+    expect(screen.getByText("Loading community proposal history…")).toBeInTheDocument();
+    expect(screen.queryByText("No proposals yet")).not.toBeInTheDocument();
+  });
+
+  it("labels incomplete retained history without an empty action", async () => {
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: null, empty: false, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    expect(await screen.findByText(/Proposal history is incomplete/)).toBeInTheDocument();
+    expect(screen.queryByText("No proposals yet")).not.toBeInTheDocument();
   });
 
   it("uses the route community Governor and keeps colliding IDs scoped", async () => {
