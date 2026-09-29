@@ -37,6 +37,7 @@ vi.mock("@/lib/stellar", () => ({
 }));
 
 import ProposalDetailPage from "@/app/(app)/proposals/[id]/page";
+import { atlasCommunity } from "@/test/fixtures/communities";
 
 const VALID_ID = "ab".repeat(32);
 
@@ -491,5 +492,71 @@ describe("ProposalDetailPage", () => {
         .length,
     ).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("Vote confirmed!")).not.toBeInTheDocument();
+  });
+
+  it("copies the canonical community-scoped proposal URL", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+    mocks.useParams.mockReturnValue({
+      id: atlasCommunity.record.id,
+      proposalId: VALID_ID,
+    });
+
+    render(
+      <ProposalDetailPage proposalId={VALID_ID} community={atlasCommunity} />,
+    );
+    expect(await screen.findByText("Active")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Share proposal page link" }),
+    );
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/communities/${atlasCommunity.record.id}/proposals/${VALID_ID}`,
+    );
+    expect(
+      await screen.findByText("Proposal link copied."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Share proposal page link" }),
+    ).toBeInTheDocument();
+  });
+
+  it("uses native share when available for the proposal URL", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: share,
+    });
+    mocks.useParams.mockReturnValue({
+      id: atlasCommunity.record.id,
+      proposalId: VALID_ID,
+    });
+
+    render(
+      <ProposalDetailPage proposalId={VALID_ID} community={atlasCommunity} />,
+    );
+    expect(await screen.findByText("Active")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Share proposal page link" }),
+    );
+    await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+    expect(share.mock.calls[0][0].url).toBe(
+      `${window.location.origin}/communities/${atlasCommunity.record.id}/proposals/${VALID_ID}`,
+    );
+    expect(
+      await screen.findByText("Proposal page shared."),
+    ).toBeInTheDocument();
+  });
+
+  it("hides share control without community context", async () => {
+    mocks.useParams.mockReturnValue({ id: VALID_ID });
+    render(<ProposalDetailPage />);
+    expect(await screen.findByText("Active")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Share proposal page link" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@/context/WalletProvider";
+import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { VoteActions } from "@/components/VoteActions";
 import type { VoteType } from "@/components/voteOptions.mjs";
@@ -71,6 +72,7 @@ export default function ProposalDetailPage({
   const [status, setStatus] = useState<string | null>(null);
   const [proposer, setProposer] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [shareStatus, setShareStatus] = useState("");
   const [totals, setTotals] = useState<VoteTotals | null>(null);
   const [quorum, setQuorum] = useState<bigint | null>(null);
   const [totalsError, setTotalsError] = useState<string | null>(null);
@@ -372,6 +374,39 @@ export default function ProposalDetailPage({
   const quorumPct =
     quorum !== null && totals ? pct(totals.total, quorum) : null;
 
+  async function copyProposalUrl(url: string) {
+    setShareStatus("");
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus("Proposal link copied.");
+    } catch {
+      setShareStatus("Could not copy proposal link.");
+    }
+  }
+
+  async function shareProposalUrl() {
+    if (!community) {
+      setShareStatus("Proposal link unavailable without community context.");
+      return;
+    }
+    setShareStatus("");
+    const canonicalUrl = `${window.location.origin}/communities/${community.record.id}/proposals/${proposalIdHex}`;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: `Proposal on ${communityName ?? "Stolla"}`,
+          text: "View this proposal on Stolla.",
+          url: canonicalUrl,
+        });
+        setShareStatus("Proposal page shared.");
+      } catch {
+        setShareStatus("Could not share the proposal page.");
+      }
+      return;
+    }
+    await copyProposalUrl(canonicalUrl);
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       {community && (
@@ -391,7 +426,7 @@ export default function ProposalDetailPage({
         </nav>
       )}
       <h1 className="text-2xl font-bold text-slate-100">Proposal</h1>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <p
           className="truncate font-mono text-sm text-slate-400"
           title={proposalIdHex}
@@ -407,7 +442,21 @@ export default function ProposalDetailPage({
         >
           Copy
         </button>
+        {community ? (
+          <AppButton
+            type="button"
+            tone="secondary"
+            size="sm"
+            onClick={() => void shareProposalUrl()}
+            aria-label="Share proposal page link"
+          >
+            Share link
+          </AppButton>
+        ) : null}
       </div>
+      <LiveStatus className="mt-2 text-sm text-slate-400">
+        {shareStatus}
+      </LiveStatus>
 
       <dl className="mt-6 grid gap-3 rounded-xl border border-slate-800 bg-[#151b2b] p-5 text-sm sm:grid-cols-2">
         <div>
