@@ -82,13 +82,11 @@ export {
 } from "./freshness";
 
 export {
-  classifyDiscoveryError,
-  describeDiscoveryError,
-  getDiscoveryErrorMessage,
-  isRetentionWindowError,
-  isConfigurationError,
-  isRetryableDiscoveryError,
-  type DiscoveryErrorClass,
-  type DiscoveryErrorInfo,
-  type DiscoveryErrorMappingOptions,
+  classifyProposalDiscoveryError,
+  describeProposalDiscoveryError,
+  mapProposalDiscoveryError,
+  type ProposalDiscoveryError,
+  type ProposalDiscoveryErrorCode,
+  type ProposalDiscoveryErrorKind,
+  type ProposalDiscoveryErrorMapping,
 } from "./errors";

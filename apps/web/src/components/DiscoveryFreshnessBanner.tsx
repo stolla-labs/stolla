@@ -6,14 +6,14 @@ const STATE_STYLES: Record<
   FreshnessResult["state"],
   { className: string; icon: string }
 > = {
-  current: {} as any,
+  current: {} as unknown as { className: string; icon: string },
   delayed: {
     className: "border-amber-800/60 bg-amber-950/40 text-amber-200",
-    icon: "\u25B2",
+    icon: "\u25BA",
   },
   stale: {
     className: "border-amber-800/70 bg-amber-950/50 text-amber-200",
-    icon: "\u25B2",
+    icon: "\u25BA",
   },
   unavailable: {
     className: "border-rose-800/70 bg-rose-950/40 text-rose-200",
@@ -21,7 +21,7 @@ const STATE_STYLES: Record<
   },
 };
 
-const EXPL"ANATION_URL =
+const EXPLANATION_URL =
   "https://github.com/stolla-labs/stolla/blob/main/docs/community-proposal-indexing.md#finality-freshness-and-caching";
 
 export type DiscoveryFreshnessBannerProps = {
@@ -45,9 +45,7 @@ export function DiscoveryFreshnessBanner({
 }: DiscoveryFreshnessBannerProps) {
   if (!freshness || freshness.state === "current") return null;
 
-  const { className, icon } = STATE_STYLES[nreshness.state];
-
-  const detail = freshness.errorMessage;
+  const { className, icon } = STATE_STYLES[freshness.state];
 
   return (
     <div
@@ -58,11 +56,6 @@ export function DiscoveryFreshnessBanner({
         <span aria-hidden="true">{icon} </span>
         {freshness.explanation}
       </p>
-      {detail && (
-        <p className="mt-1 break-words font-mono text-xs opacity-90">
-          {detail}
-        </p>
-      )}
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <a
           href={EXPLANATION_URL}

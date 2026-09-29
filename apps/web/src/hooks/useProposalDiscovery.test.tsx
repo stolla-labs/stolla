@@ -3,6 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { Address, xdr } from "@stellar/stellar-sdk";
 import { Buffer } from "buffer";
 import { useProposalDiscovery } from "./useProposalDiscovery";
+import { mapDiscoveryError } from "./useProposalDiscovery";
 
 const { getEvents, getLatestLedger, mockFetch, requireStartLedger } = vi.hoisted(() => ({
   getEvents: vi.fn(),
@@ -28,7 +29,7 @@ vi.mock("@/lib/e2eMock", () => ({ getE2EBridge: () => undefined }));
 describe("useProposalDiscovery retention handling", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    requireStartLedge.mockReturnValue(1);
+    requireStartLedger.mockReturnValue(1);
     getLatestLedger.mockResolvedValue({ sequence: 200 });
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 100 } }) });
     vi.stubGlobal("fetch", mockFetch);
@@ -84,6 +85,22 @@ describe("useProposalDiscovery retention handling", () => {
     expect(result.current.latestLedger).toBe(200);
   });
 
+  it("maps a retention-window RPC error to actionable copy", () => {
+    const mapped = mapDiscoveryError({
+      code: -32600,
+      message: "startLedger must be within the ledger range: 101 - 200",
+    });
+    expect(mapped.kind).toBe("retention");
+    expect(mapped.message).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
+    expect(mapped.message).toMatch(/RPC retention window/);
+  });
+
+  it("maps a missing configuration error to the env var name", () => {
+    const mapped = mapDiscoveryError(new Error("Set NEXT_PUBLIC_GOVERNOR_START_LEDGER."));
+    expect(mapped.kind).toBe("config");
+    expect(mapped.message).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
+  });
+
   it("shows actionable copy for a JSON-RPC retention error", async () => {
     getEvents.mockRejectedValue({ code: -32600, message: "startLedger must be within the ledger range: 101 - 200" });
     const { result } = renderHook(() => useProposalDiscovery());
@@ -95,7 +112,7 @@ describe("useProposalDiscovery retention handling", () => {
   });
 
   it("distinguishes a complete empty scan from a general RPC failure", async () => {
-    requireStartLedge.mockReturnValue(100);
+    requireStartLedger.mockReturnValue(100);
     const { result, rerender } = renderHook(() => useProposalDiscovery());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.empty).toBe(true);
@@ -109,7 +126,7 @@ describe("useProposalDiscovery retention handling", () => {
   });
 
   it("reports missing configuration before any RPC request", async () => {
-    requireStartLedge.mockImplementation(() => { throw new Error("Set NEXT_PUBLIC_GOVERNOR_START_LEDGER."); });
+    requireStartLedger.mockImplementation(() => { throw new Error("Set NEXT_PUBLIC_GOVERNOR_START_LEDGER."); });
     const { result } = renderHook(() => useProposalDiscovery());
     await waitFor(() => expect(result.current.loading).toBe(false));
 

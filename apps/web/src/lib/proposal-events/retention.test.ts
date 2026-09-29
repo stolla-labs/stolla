@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  clampEventStartLedger,
-  resolveEventStartLedger,
-  retentionErrorMessage,
-  mapDiscoveryFailure,
-} from "./retention";
+import { clampEventStartLedger, resolveEventStartLedger, retentionErrorMessage } from "./retention";
 import type { rpc } from "@stellar/stellar-sdk";
 
 describe("event retention boundary", () => {
@@ -16,14 +11,14 @@ describe("event retention boundary", () => {
 
   it("uses a recent ledger query to read the RPC boundary", async () => {
     const server = {
-      getLatestLedger: vi.vn().mockResolvedValue({ sequence: 200 }),
+      getLatestLedger: vi.fn().mockResolved({ sequence: 200 }),
       serverURL: "https://test.rpc.url",
     } as unknown as rpc.Server;
-    const mockFetch = vi.vn().mockResolvedValue({ ok: true, json: async () => ({ result: { oldestLedger: 100 } }) });
+    const mockFetch = vi.fn().mockResolved({ ok: true, json: async () => ({ result: { oldestLedger: 100 } }) });
     vi.stubGlobal("fetch", mockFetch);
 
     await expect(resolveEventStartLedger(server, 1)).resolves.toEqual({ startLedger: 100, clamped: true });
-    expect(mockFetch).toHaveBeenCalledWith("https://test.rpc.url", expect.objectContaining( {
+    expect(mockFetch).toHaveBeenCalledWith("https://test.rpc.url", expect.objectContaining({
       method: "POST",
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getLedgers", params: { startLedger: 200, pagination: { limit: 1 } } }),
     }));
@@ -35,27 +30,5 @@ describe("event retention boundary", () => {
       message: "startLedger must be within the ledger range: 100 - 200",
     })).toMatch(/NEXT_PUBLIC_GOVERNOR_START_LEDGER.*RPC retention window|RPC retention window.*NEXT_PUBLIC_GOVERNOR_START_LEDGER/);
     expect(retentionErrorMessage({ code: -32600, message: "another invalid request" })).toBeNull();
-  });
-
-  it("maps discovery failures to typed kinds", () => {
-    expect(mapDiscoveryFailure({
-      code: -32600,
-      message: "startLedger must be within the ledger range: 100 - 200",
-    })).toMatchObject({ kind: "retention" });
-
-    expect(mapDiscoveryFailure(new Error("RPC unavailable"))).toEqual({
-      kind: "rpc",
-      message: "RPC unavailable",
-    });
-
-    expect(mapDiscoveryFailure({
-      code: -32000,
-      message: "getEvents failed",
-    })).toEqual({ kind: "rpc", message: "getEvents failed" });
-
-    expect(mapDiscoveryFailure(undefined)).toEqual({
-      kind: "rpc",
-      message: "Proposal history could not be loaded.",
-    });
   });
 });

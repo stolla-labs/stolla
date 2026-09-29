@@ -1,7 +1,7 @@
 /**
  * Canonical application model for a created proposal.
  *
- * Consumed by both direct APC discovery and future indexer adapters.
+ * Consumed by both direct RPC discovery and future indexer adapters.
  * This type is React-independent and has no localStorage dependency.
  *
  * Fields that require a later contract read (e.g. proposal state, vote
@@ -39,7 +39,7 @@ export interface ProposalSummary {
 
   /**
    * Stellar transaction hash (hex) of the transaction that included the
-   * proposal-creation event.  Sourced from RC transaction metadata.
+   * proposal-creation event.  Sourced from RPC transaction metadata.
    */
   txHash: string;
 
@@ -71,9 +71,9 @@ export interface ProposalSummary {
   metadata?: import("@/lib/proposal-metadata").ProposalMetadataV1 | null;
 }
 
-// --------------------------------------------------------------------------
- // Typed representation of a decoded ProposalCreated contract event
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Typed representation of a decoded ProposalCreated contract event
+// ---------------------------------------------------------------------------
 
 /**
  * Decoded body of a ProposalCreated Soroban event as emitted by the
@@ -111,7 +111,7 @@ export interface ProposalCreatedEventData {
 }
 
 /**
- * RFC metadata accompanying the transaction that contained the event.
+ * RPC metadata accompanying the transaction that contained the event.
  * Sourced from `SorobanRpc.GetTransactionResponse` or an indexer response.
  */
 export interface ProposalEventRpcMetadata {
@@ -126,159 +126,97 @@ export interface ProposalEventRpcMetadata {
   cursor: string | null;
 }
 
-// --------------------------------------------------------------------------
- // Typed discovery failures and error mapping
-// --------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Typed discovery failures
+// ---------------------------------------------------------------------------
 
 /**
- * Environment variable that must be set to discover proposal events.
- * Named explicitly so the UI can tell operators what to configure.
+ * Discriminator for the kind of failure encountered during proposal
+ * discovery.  Each variant maps to a stable, user-facing sentence so the
+ * UI never has to fall back to a generic "Discovery failed" string.
  */
-export const GOVERNOR_START_LEDGER_ENV_VAR = "NEXT_PUBLIC_GOVERNOR_START_LEDGER" as const;
+export type ProposalDiscoveryErrorKind =
+  | "config-missing"
+  | "retention-clamp"
+  | "rpc-network"
+  | "decode-partial";
 
 /**
- * Categories of discovery failure. These are typed so the UI can render
- * a stable, actionable message instead of a generic "Discovery failed".
+ * Structured discovery failure surfaced by `useProposalDiscovery`.
+ *
+ * `message` is always populated with a concrete, actionable sentence
+ * (either the raw RPC message or a stable mapped sentence).  `cause` is
+ * retained for logging/telemetry but must never be rendered directly.
  */
-export type DiscoveryErrorCode =
-  /** Required configuration (e.g. start ledger) is missing or invalid. */
-  | "config_missing"
-  /** Requested ledger window is outside RPC retention / clamped. */
-  | "retention_clamp"
-  /** RPC or network failure (timeout, 5xx, 500, network error). */
-  | "rpc_network"
-  /** Event decode failure or partial page decode failure. */
-  | "decode_partial"
-  /** Unknown/unclassified failure. */
-  | "unknown";
-
-/**
- * Typed discovery failure propagated from `useProposalDiscovery` to the UI.
- */
-export interface DiscoveryError {
-  /** Stable category code for programmatic handling. */
-  code: DiscoveryErrorCode;
-  /** Stable, human-readable sentence for the UI fallback. */
+export interface ProposalDiscoveryError {
+  kind: ProposalDiscoveryErrorKind;
+  /** Concrete, user-facing message. Never generic. */
   message: string;
-  /** Raw underlying message (e.g. RPC error) when available. */
-  detail?: string;
-  /** Environment variable name when configuration is missing. */
-  envVar?: string;
+  /** Original thrown value, if any, for logging. */
+  cause?: unknown;
 }
 
 /**
- * Maps a raw RPC / network / decode error into a typed discovery failure.
- *
- * Retention-window errors (e.g. "startLedger must be within the
- * ledger range") are classified as `retention_clamp` so the UI can explain
- * the configuration problem instead of collapsing to "Discovery failed".
+ * Map an arbitrary thrown value from `getEvents` / RPC into a typed
+ * discovery failure.  Retention-window errors (e.g. "startLedger must be
+ * within the ledger range") are classified as `retention-clamp` so the UI
+ * can explain the configuration problem rather than showing a generic
+ * failure.
  */
-export function mapDiscoveryError(error: unknown, options?: { envVar?: string }): DiscoveryError {
-  const raw = extractErrorMessage(error);
+export function mapProposalDiscoveryError(
+  error: unknown,
+  fallbackKind: ProposalDiscoveryErrorKind = "rpc-network",
+): ProposalDiscoveryError {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : error == null
+          ? ""
+          : String(error);
+
   const lower = raw.toLowerCase();
 
-  if (looksLikeRetentionError(lower)) {
-    return {
-      code: "retention_clamp",
-      message:
-        "The configured start ledger is outside the RFC retention window. " +
-        "Update the start ledger configuration to a recent ledger and retry.",
-      detail: raw,
-      envVar: options?.envVar,
-    };
-  }
-
-  if (looksLikeDecodeError(lower)) {
-    return {
-      code: "decode_partial",
-      message:
-        "Some proposal events could not be decoded. Partial results are shown.",
-      detail: raw,
-    };
-  }
-
-  if (looksLikeRpcError(lower)) {
-    return {
-      code: "rpc_network",
-      message:
-        "Could not reach the Stellar RPC endpoint. Check your network and RFC URL and retry.",
-      detail: raw,
-    };
-  }
-
-  return {
-    code: "unknown",
-    message: "Proposal discovery failed.",
-    detail: raw,
-  };
-}
-
-/**
- * Builds a typed configuration-missing failure that names the expected
- * environment variable so operators know what to set.
- */
-export function configMissingError(
-  envVar: string = GOVERNOR_START_LEDGER_ENV_VAR,
-  detail?: string,
-): DiscoveryError {
-  return {
-    code: "config_missing",
-    message: `Missing required configuration: ${envVar}. Set it and retry.`,
-    detail,
-    envVar,
-  };
-}
-
-/**
- * Returns the most actionable human-message for a discovery error.
- * Prefers the concrete `detail` when present, falling back to the stable
- * mapped `message`.
- */
-export function discoveryErrorMessage(error: DiscoveryError): string {
-  if (error.detail && error.detail.trim().length > 0) {
-    return error.detail;
-  }
-  return error.message;
-}
-
-function extractErrorMessage(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error instanceof Error) return error.message;
-  if (error && typeof error === "object") {
-    const candidate = (error as { message?: unknown; error?: unknown });
-    if (typeof candidate.message === "string") return candidate.message;
-    if (typeof candidate.error === "string") return candidate.error;
-  }
-  return "";
-}
-
-function looksLikeRetentionError(lower: string): boolean {
-  return (
+  if (
     lower.includes("startledger") ||
-    lower.includes("start ledger") ||
     lower.includes("ledger range") ||
-    lower.includes("out of range") ||
-    lower.includes("retention") ||
-    lower.includes("clamped")
-  );
+    lower.includes("retention")
+  ) {
+    return {
+      kind: "retention-clamp",
+      message:
+        raw ||
+        "Start ledger is outside the RPC retention window. Adjust NEXT_PUBLIC_GOVERNOR_START_LEDGER or use a provider with a wider history.",
+      cause: error,
+    };
+  }
+
+  if (lower.includes("decode") || lower.includes("xdr")) {
+    return {
+      kind: "decode-partial",
+      message:
+        raw ||
+        "Some proposal events could not be decoded. Partial results are shown.",
+      cause: error,
+    };
+  }
+
+  return {
+    kind: fallbackKind,
+    message: raw || "Proposal discovery failed due to an RPC or network error.",
+    cause: error,
+  };
 }
 
-function looksLikeDecodeError(lower: string): boolean {
-  return (
-    lower.includes("decode") ||
-    lower.includes("decoding") ||
-    lower.includes("xdr") ||
-    lower.includes("parse")
-  );
-}
-
-function looksLikeRpcError(lower: string): boolean {
-  return (
-    lower.includes("fetch") ||
-    lower.includes("network") ||
-    lower.includes("timeout") ||
-    lower.includes("rpc") ||
-    lower.includes("http") ||
-    /\b5\d{2}\b/.test(lower)
-  );
+/**
+ * Stable, actionable message for a missing start-ledger configuration.
+ * Names the exact environment variable so operators can fix it.
+ */
+export function missingStartLedgerError(): ProposalDiscoveryError {
+  return {
+    kind: "config-missing",
+    message:
+      "Missing NEXT_PUBLIC_GOVERNOR_START_LEDGER. Set it to the first ledger to scan for proposals.",
+  };
 }
