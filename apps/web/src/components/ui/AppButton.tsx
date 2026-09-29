@@ -10,19 +10,32 @@ export type AppButtonSize = "sm" | "md";
  * call sites pass only layout classes (margins, width, responsive positioning)
  * via `className`. Native attributes, handlers, `disabled`, `aria-*`, `data-*`,
  * and the forwarded `ref` pass straight through to the underlying <button>.
+ *
+ * Disabled primary buttons use `btn-disabled-primary` (opacity 0.45 + grayscale 0.6)
+ * so they are clearly distinguishable from the active brand-purple.
+ * Non-primary tones fall back to `disabled:opacity-50 disabled:pointer-events-none`.
+ *
+ * Focus rings use `focus-visible:outline-[3px]` to match the 3 px global rule in
+ * globals.css rather than the Tailwind default of 2 px.
  */
 
 export const appButtonBaseClass =
-  "inline-flex items-center justify-center rounded-lg font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-lg font-medium transition focus-visible:outline-[3px] focus-visible:outline-offset-2";
 
+/** Tone-specific classes. Disabled appearance is handled per-tone (see below). */
 export const appButtonToneClass: Record<AppButtonTone, string> = {
-  primary: "bg-indigo-500 text-white hover:bg-indigo-400 focus-visible:outline-indigo-400",
+  primary:
+    "bg-indigo-500 text-white hover:bg-indigo-400 focus-visible:outline-indigo-400 " +
+    "disabled:btn-disabled-primary",
   secondary:
-    "border border-slate-700 text-slate-200 hover:bg-slate-800 focus-visible:outline-slate-400",
+    "border border-slate-600 text-slate-200 hover:bg-slate-800 focus-visible:outline-slate-400 " +
+    "disabled:pointer-events-none disabled:opacity-50",
   danger:
-    "border border-rose-700 text-rose-100 hover:bg-rose-900/60 focus-visible:outline-rose-300",
+    "border border-rose-700 text-rose-100 hover:bg-rose-900/60 focus-visible:outline-rose-300 " +
+    "disabled:pointer-events-none disabled:opacity-50",
   success:
-    "bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:outline-emerald-400",
+    "bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:outline-emerald-400 " +
+    "disabled:pointer-events-none disabled:opacity-50",
 };
 
 export const appButtonSizeClass: Record<AppButtonSize, string> = {

@@ -97,12 +97,12 @@ function ProposalField({
 }) {
   const describedBy = `${id}-help${error ? ` ${id}-error` : ""}`;
   const className =
-    "mt-1 box-border w-full min-w-0 rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600";
+    "input-field mt-1 box-border w-full min-w-0 rounded-lg border bg-[#0b0f19] px-3 py-2 text-sm text-slate-100";
   return (
     <div>
       <label htmlFor={id} className="block text-sm text-slate-300">
         {label}{" "}
-        <span className="text-slate-500">
+        <span className="text-slate-400">
           ({optional ? "optional" : "required"})
         </span>
       </label>
@@ -134,10 +134,10 @@ function ProposalField({
         />
       )}
       <div className="mt-1 flex items-start justify-between gap-3 text-xs">
-        <p id={`${id}-help`} className="text-slate-500">
+        <p id={`${id}-help`} className="text-slate-400">
           {help}
         </p>
-        <span className="shrink-0 text-slate-600" aria-label={`${label} character count`}>
+        <span className="shrink-0 text-slate-500" aria-label={`${label} character count`}>
           {Array.from(value).length}/{maxLength}
         </span>
       </div>

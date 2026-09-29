@@ -71,7 +71,7 @@ function ErrorMessage({
 }
 
 const inputClassName =
-  "mt-1 block min-h-11 w-full min-w-0 rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600";
+  "input-field mt-1 block min-h-11 w-full min-w-0 rounded-lg border bg-[#0b0f19] px-3 py-2 text-sm text-slate-100";
 
 export function CommunityCreationWizard() {
   const network = resolveStellarNetworkId();
