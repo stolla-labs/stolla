@@ -5,11 +5,19 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
 import type { Community } from "@/lib/community/types";
+import { activeCapabilities } from "@/lib/stellar";
 import { truncateMiddle } from "@/lib/truncate";
 
 const COMMUNITY_ROUTE = /^\/communities\/([0-9a-fA-F]{64})(?:\/|$)/;
 
-export function CommunitySwitcher() {
+export type CommunitySwitcherProps = {
+  /** Override factory capability for tests; defaults to live network matrix. */
+  factoryAvailable?: boolean;
+};
+
+export function CommunitySwitcher({
+  factoryAvailable = activeCapabilities.communityFactory.available,
+}: CommunitySwitcherProps = {}) {
   const pathname = usePathname();
   const registry = useCommunityRegistry();
   const selectedId = pathname.match(COMMUNITY_ROUTE)?.[1]?.toLowerCase() ?? null;
@@ -23,7 +31,7 @@ export function CommunitySwitcher() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !factoryAvailable) return;
     searchRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -34,10 +42,10 @@ export function CommunitySwitcher() {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [factoryAvailable, open]);
 
   useEffect(() => {
-    if (!open || loaded) return;
+    if (!open || loaded || !factoryAvailable) return;
     let active = true;
     const load = async () => {
       setLoading(true);
@@ -70,7 +78,7 @@ export function CommunitySwitcher() {
     return () => {
       active = false;
     };
-  }, [loaded, open, registry]);
+  }, [factoryAvailable, loaded, open, registry]);
 
   const selected = communities.find(
     (community) => community.record.id === selectedId,
@@ -91,6 +99,20 @@ export function CommunitySwitcher() {
         .includes(normalized),
     );
   }, [communities, query]);
+
+  if (!factoryAvailable) {
+    return (
+      <div className="relative shrink-0">
+        <Link
+          href="/communities"
+          className="flex min-h-10 max-w-56 items-center gap-2 rounded-lg border border-amber-800/70 bg-amber-950/40 px-3 py-2 text-left text-sm text-amber-100 hover:bg-amber-950/60"
+          aria-label="Community registry unavailable. Open communities for configuration details."
+        >
+          <span className="truncate">Registry unavailable</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="relative shrink-0">

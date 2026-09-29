@@ -24,10 +24,10 @@ const registry = {
   get: vi.fn(),
 } satisfies CommunityRegistry;
 
-function renderSwitcher() {
+function renderSwitcher(factoryAvailable = true) {
   return render(
     <CommunityRegistryProvider registry={registry}>
-      <CommunitySwitcher />
+      <CommunitySwitcher factoryAvailable={factoryAvailable} />
     </CommunityRegistryProvider>,
   );
 }
@@ -73,5 +73,26 @@ describe("CommunitySwitcher", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
     expect(trigger).toHaveTextContent("Unknown community");
+  });
+
+  it("replaces the switcher when the factory registry is unavailable", () => {
+    renderSwitcher(false);
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const link = screen.getByRole("link", {
+      name: /Community registry unavailable/i,
+    });
+    expect(link).toHaveAttribute("href", "/communities");
+    expect(link).toHaveTextContent("Registry unavailable");
+    expect(mocks.listCommunities).not.toHaveBeenCalled();
+  });
+
+  it("keeps the switcher menu when the factory registry is available", async () => {
+    renderSwitcher(true);
+    fireEvent.click(screen.getByRole("button"));
+    expect(
+      await screen.findByRole("dialog", { name: "Choose a community" }),
+    ).toBeInTheDocument();
+    expect(mocks.listCommunities).toHaveBeenCalled();
   });
 });
