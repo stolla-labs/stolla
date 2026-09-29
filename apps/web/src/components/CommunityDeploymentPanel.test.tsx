@@ -300,4 +300,23 @@ describe("CommunityDeploymentPanel", () => {
     expect(deployment.readFactoryOwner).toHaveBeenCalledTimes(2);
     expect(screen.queryByText("Retry owner check")).not.toBeInTheDocument();
   });
+
+  it("explains why simulate stays disabled when pinned URIs are missing", async () => {
+    const deployment = adapter();
+    mocks.getE2EBridge.mockReturnValue({ deployment });
+    render(<CommunityDeploymentPanel {...props} payload={null} />);
+
+    const simulate = await screen.findByRole("button", {
+      name: "Simulate deployment",
+    });
+    expect(simulate).toBeDisabled();
+    expect(simulate).toHaveAttribute(
+      "aria-describedby",
+      "deployment-pin-required",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /Pin the metadata documents above to unlock simulation/,
+    );
+    expect(deployment.simulate).not.toHaveBeenCalled();
+  });
 });

@@ -539,6 +539,7 @@ export function CommunityDeploymentPanel({
 
       {!transactionHash && !payload && (
         <LiveStatus
+          id="deployment-pin-required"
           tone="routine"
           className="mt-3 rounded-lg border border-slate-700 bg-[#0b0f19] p-4 text-sm text-slate-300"
         >
@@ -563,6 +564,7 @@ export function CommunityDeploymentPanel({
               authorization !== "ready" ||
               stage === "simulating"
             }
+            aria-describedby={!payload ? "deployment-pin-required" : undefined}
             className="min-h-11 rounded-lg border border-indigo-500 px-4 py-2 text-sm font-medium text-indigo-200 hover:bg-indigo-950/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {simulation ? "Rebuild simulation" : "Simulate deployment"}
