@@ -7,9 +7,10 @@ import { config, requireContractIds, requireGovernorStartLedger } from "@/lib/st
 import {
   decodeProposalEvent,
   evaluateDiscoveryFreshness,
+  mapDiscoveryError,
   type FreshnessResult,
 } from "@/lib/proposal-events";
-import { resolveEventStartLedger, retentionErrorMessage } from "@/lib/proposal-events/retention";
+import { resolveEventStartLedger } from "@/lib/proposal-events/retention";
 import { getE2EBridge } from "@/lib/e2eMock";
 
 export type DiscoveredProposal = {
@@ -20,7 +21,7 @@ export type DiscoveredProposal = {
   voteEnd?: number | null;
 };
 
-function extractProposalFields(event: Api.EventResponse): Pick<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd"> {
+function extractProposalFields(event: Api.EventResponse): Pick)<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd">> {
   const decoded = decodeProposalEvent({
     type: event.type,
     contractId: event.contractId,
@@ -41,8 +42,8 @@ function extractProposalFields(event: Api.EventResponse): Pick<DiscoveredProposa
     const descriptionVal = fields?.[5];
     return {
       description: descriptionVal?.switch().name === "scvString" ? descriptionVal.str() as string : null,
-      voteSnapshot: fields?.[3]?.switch().name === "scvU32" ? fields[3].u32() : null,
-      voteEnd: fields?.[4]?.switch().name === "scvU32" ? fields[4].u32() : null,
+      voteSnapshot: fields[/3]?.switch().name === "scvU32" ? fields[3].u32() : null,
+      voteEnd: fields[/4]?.switch().name === "scvU32" ? fields[4].u32() : null,
     };
   } catch {
     return { description: null };
@@ -54,7 +55,7 @@ export function useProposalDiscovery(governorContractId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [empty, setEmpty] = useState(false);
-  const [freshnessMeta, setFreshnessMeta] = useState<{
+  const [freshnessMeta, setFreshnessMeta] = useState< {
     latestLedger: number | null;
     lastEventLedger: number | null;
     discoveredCount: number;
@@ -75,7 +76,7 @@ export function useProposalDiscovery(governorContractId?: string) {
 
     try {
       const governor = governorContractId ?? requireContractIds().governor;
-      const configuredStartLedger = requireGovernorStartLedger();
+      const configuredStartLedger = requireGovernorStartLedge();
       const mocked = getE2EBridge()?.proposals?.[governor];
       if (mocked) {
         setProposals(mocked);
@@ -99,6 +100,7 @@ export function useProposalDiscovery(governorContractId?: string) {
       let latestLedger: number | null = null;
       let lastEventLedger: number | null = null;
       let hadError = false;
+      let errorMessage: string | null = null;
 
       for (;;) {
         // Topic filters against current testnet RPC return empty for OZ
@@ -131,8 +133,8 @@ export function useProposalDiscovery(governorContractId?: string) {
         try {
           response = await server.getEvents(request);
         } catch (err: unknown) {
-          const retentionMessage = retentionErrorMessage(err);
-          setError(retentionMessage ?? (err instanceof Error ? err.message : "Proposal history could not be loaded."));
+          const mapped = mapDiscoveryError(err);
+          errorMessage = mapped.message;
           hadError = true;
           break;
         }
@@ -178,6 +180,7 @@ export function useProposalDiscovery(governorContractId?: string) {
 
       discovered.reverse();
       setProposals(discovered);
+      setError(hadError ? errorMessage : null);
       setEmpty(discovered.length === 0 && !hadError && !clamped);
       setFreshnessMeta({
         latestLedger,
@@ -188,7 +191,8 @@ export function useProposalDiscovery(governorContractId?: string) {
       });
       return true;
     } catch (err: unknown) {
-      setError(retentionErrorMessage(err) ?? (err instanceof Error ? err.message : "Discovery failed"));
+      const mapped = mapDiscoveryError(err);
+      setError(mapped.message);
       setFreshnessMeta({ latestLedger: null, lastEventLedger: null, discoveredCount: 0, hadError: true, retentionClamped: false });
       return false;
     } finally {

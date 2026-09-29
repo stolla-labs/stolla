@@ -1,4 +1,5 @@
 import type { rpc } from "@stellar/stellar-sdk";
+import { mapDiscoveryError } from "./discovery-errors";
 
 /** Resolve the first event page against the RPC's current retention boundary. */
 export function clampEventStartLedger(configured: number, oldest: number | undefined) {
@@ -38,16 +39,12 @@ export async function resolveEventStartLedger(
   return clampEventStartLedger(configured, oldestLedger);
 }
 
-/** The SDK throws JSON-RPC errors as plain { code, message } objects. */
+/**
+ * Return a stable, actionable message when the error is a JSON-RPC
+ * retention-window failure. Other errors return null so callers can fall
+ * back to their own mapping.
+ */
 export function retentionErrorMessage(error: unknown): string | null {
-  if (typeof error !== "object" || error === null) return null;
-  const rpcError = error as { code?: unknown; message?: unknown };
-  if (
-    rpcError.code !== -32600 ||
-    typeof rpcError.message !== "string" ||
-    !/startLedger.*(?:ledger range|oldest|latest|retention)/i.test(rpcError.message)
-  ) {
-    return null;
-  }
-  return "Proposal history could not be scanned because the start ledger is outside the RPC retention window. Check NEXT_PUBLIC_GOVERNOR_START_LEDGER, or use an indexer for older history.";
+  const mapped = mapDiscoveryError(error);
+  return mapped.kind === "retention_error" ? mapped.message : null;
 }

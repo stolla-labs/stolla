@@ -80,3 +80,10 @@ export {
   type ProposalSyncState,
   type ClientFreshnessStubOptions,
 } from "./freshness";
+
+export {
+  mapDiscoveryError,
+  mapDecodeFailure,
+  type DiscoveryError,
+  type DiscoveryErrorKind,
+} from "./discovery-errors";

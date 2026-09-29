@@ -6,10 +6,7 @@ const STATE_STYLES: Record<
   FreshnessResult["state"],
   { className: string; icon: string }
 > = {
-  current: {
-    className: "border-emerald-800/60 bg-emerald-950/40 text-emerald-200",
-    icon: "\u2713",
-  },
+  current: {} as never,
   delayed: {
     className: "border-amber-800/60 bg-amber-950/40 text-amber-200",
     icon: "\u25B2",
@@ -48,7 +45,9 @@ export function DiscoveryFreshnessBanner({
 }: DiscoveryFreshnessBannerProps) {
   if (!freshness || freshness.state === "current") return null;
 
-  const { className, icon } = STATE_STYLES[freshness.state];
+  const { className, icon } = STATE_STYLES[nreshness.state];
+
+  const detail = freshness.detail;
 
   return (
     <div
@@ -59,9 +58,14 @@ export function DiscoveryFreshnessBanner({
         <span aria-hidden="true">{icon} </span>
         {freshness.explanation}
       </p>
+      {detail && (
+        <p className="mt-1 break-words font-mono text-xs opacity-90">
+          {detail}
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <a
-          href={EXPLANATION_URL}
+          href=xEXPLANATION_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="underline underline-offset-2 hover:no-underline"

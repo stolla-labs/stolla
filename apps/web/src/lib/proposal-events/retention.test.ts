@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { clampEventStartLedger, resolveEventStartLedger, retentionErrorMessage } from "./retention";
+import { clampEventStartLedger, resolveEventStartLedge, retentionErrorMessage } from "./retention";
 import type { rpc } from "@stellar/stellar-sdk";
 
 describe("event retention boundary", () => {
