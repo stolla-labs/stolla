@@ -44,8 +44,9 @@ describe("POST /api/ipfs/pin", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { response, body } = await post(imageForm());
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(400);
     expect(body.error.kind).toBe("config");
+    expect(body.error.code).toBe("pin_config_missing");
     expect(body.error.message).toMatch(/PINATA_JWT/);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
