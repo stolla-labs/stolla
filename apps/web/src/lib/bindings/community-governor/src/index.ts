@@ -223,6 +223,10 @@ export interface Client {
 
   /**
    * Construct and simulate a cancel transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Cancels a proposal and returns its unique identifier.
+   *
+   * Only the proposer may cancel, and only while the proposal is in a
+   * cancellable state (`Pending` or `Active`).
    */
   cancel: ({targets, functions, args, description_hash, operator}: {targets: Array<string>, functions: Array<string>, args: Array<Array<any>>, description_hash: Buffer, operator: string}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
 
@@ -256,6 +260,10 @@ export interface Client {
 
   /**
    * Construct and simulate a execute transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Executes a succeeded proposal and returns its unique identifier.
+   *
+   * Execution is permissionless: any account may execute a proposal once
+   * it has reached the `Succeeded` state.
    */
   execute: ({targets, functions, args, description_hash, executor}: {targets: Array<string>, functions: Array<string>, args: Array<Array<any>>, description_hash: Buffer, executor: string}, options?: MethodOptions) => Promise<AssembledTransaction<Buffer>>
 

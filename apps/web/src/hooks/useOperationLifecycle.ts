@@ -17,7 +17,7 @@ export type OperationOutcomeKind =
   | "simulation_failed";
 
 /**
- * Shared operation lifecycle for non-vote flows (delegation, mint, propose).
+ * Shared operation lifecycle for non-vote flows (delegation, mint, propose, cancel, execute).
  */
 export function useOperationLifecycle() {
   const [stage, setStage] = useState<TransactionLifecycleStage>("idle");

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { mapTransactionError } from "@/lib/transactionErrors";
 
 /**
- * Transaction lifecycle stages for vote submission.
+ * Transaction lifecycle stages for governance actions.
  */
 export type TransactionStage =
   | "idle"
@@ -49,7 +49,7 @@ type UseTransactionLifecycleOptions = {
 };
 
 /**
- * Manages the full lifecycle of a vote transaction.
+ * Manages the full lifecycle of a governance transaction.
  *
  * Tracks stages from simulation through wallet approval, submission,
  * and confirmation. Handles wallet rejections, RPC failures, and
@@ -82,7 +82,7 @@ export function useTransactionLifecycle(options?: UseTransactionLifecycleOptions
   }, []);
 
   const execute = useCallback(
-    async (voteType: number, reason: string, fn: VoteTransactionFn) => {
+    async (voteType: number | null, reason: string, fn: VoteTransactionFn) => {
       if (inFlightRef.current) {
         return { started: false as const };
       }
@@ -129,7 +129,7 @@ export function useTransactionLifecycle(options?: UseTransactionLifecycleOptions
         }
 
         if (
-          mapped.diagnostic?.includes("AlreadyVoted") ||
+          mapped.diagnostic?.includes("AlreadyVoted")  ||
           mapped.diagnostic?.includes("already voted") ||
           mapped.diagnostic?.includes("5016")
         ) {

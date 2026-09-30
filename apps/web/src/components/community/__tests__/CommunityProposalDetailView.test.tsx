@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { CommunityProposalDetailView } from "@/components/community/CommunityProposalDetailView";

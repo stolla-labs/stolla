@@ -3,6 +3,8 @@
 import { type TransactionStage } from "@/hooks/useTransactionLifecycle";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 
+export type TransactionAction = "vote" | "cancel" | "execute";
+
 /**
  * Maps each lifecycle stage to a display label.
  */
@@ -12,7 +14,7 @@ const STAGE_LABELS: Record<TransactionStage, string> = {
   wallet_approval: "Waiting for wallet approval…",
   submitting: "Submitting to network…",
   confirming: "Confirming on ledger…",
-  confirmed: "Vote confirmed!",
+  confirmed: "Transaction confirmed!",
   wallet_rejected: "Wallet rejected",
   simulation_failed: "Simulation failed",
   submission_failed: "Submission failed",
@@ -35,23 +37,34 @@ const STAGE_COLORS: Record<TransactionStage, string> = {
   duplicate_vote: "bg-amber-500",
 };
 
-const FAILURE_STAGES = new Set<TransactionStage>([
+const FAILURE_STAGES = new Set<TransactionStage>(['
   "wallet_rejected",
   "simulation_failed",
   "submission_failed",
   "duplicate_vote",
 ]);
 
-function lifecycleAnnouncement(stage: TransactionStage, error: string | null) {
+const ACTION_LABELS: Record<TransactionAction, string> = {
+  vote: "Vote",
+  cancel: "Cancel",
+  execute: "Execute",
+};
+
+function lifecycleAnnouncement(
+  stage: TransactionStage,
+  error: string | null,
+  action: TransactionAction,
+) {
+  const actionLabel = ACTION_LABELS[action];
   switch (stage) {
     case "confirmed":
-      return "Vote successfully submitted and confirmed.";
+      return `${actionLabel} successfully submitted and confirmed.`;
     case "wallet_rejected":
-      return "Wallet rejected the transaction. Your vote was not submitted.";
+      return `Wallet rejected the transaction. Your ${actionLabel.toLowerCase()} was not submitted.`;
     case "duplicate_vote":
       return "You have already voted on this proposal.";
     case "submission_failed":
-      return `Vote submission failed: ${error ?? "unknown error"}. You can retry.`;
+      return `${actionLabel} submission failed: ${error ?? "unknown error"}. You can retry.`;
     case "simulation_failed":
       return `Transaction simulation failed: ${error ?? "unknown error"}.`;
     default:
@@ -144,6 +157,7 @@ const VOTE_TYPE_COLORS: Record<number, string> = {
 
 type TransactionLifecycleDisplayProps = {
   stage: TransactionStage;
+  action?: TransactionAction;
   voteType: number | null;
   reason: string;
   error: string | null;
@@ -151,11 +165,12 @@ type TransactionLifecycleDisplayProps = {
 };
 
 /**
- * Displays the transaction lifecycle with stage indicator, vote details,
+ * Displays the transaction lifecycle with stage indicator, action details,
  * and accessible announcements.
  */
 export function TransactionLifecycleDisplay({
   stage,
+  action = "vote",
   voteType,
   reason,
   error,
@@ -167,6 +182,7 @@ export function TransactionLifecycleDisplay({
   const label = STAGE_LABELS[stage];
   const isActive = !isTerminal;
   const isFailure = FAILURE_STAGES.has(stage);
+  const showVoteDetails = action === "vote" && voteType !== null;
 
   return (
     <div
@@ -187,7 +203,7 @@ export function TransactionLifecycleDisplay({
       </div>
 
       {/* Vote details visible during pending */}
-      {voteType !== null && (
+      {showVoteDetails && (
         <div className="mt-4 rounded-lg border border-slate-700 bg-[#0b0f19] p-3">
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between">
@@ -214,7 +230,7 @@ export function TransactionLifecycleDisplay({
       )}
 
       <LiveStatus tone={isFailure ? "error" : "routine"} className="sr-only">
-        {lifecycleAnnouncement(stage, error)}
+        {lifecycleAnnouncement(stage, error, action)}
       </LiveStatus>
     </div>
   );

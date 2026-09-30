@@ -1,4 +1,5 @@
 import {
+  isCancellableProposalState,
   isPendingTransactionLifecycleStage,
   type TransactionLifecycleStage,
 } from "@/lib/transactionLifecycle";
@@ -13,6 +14,8 @@ export type LifecycleAssembledTransaction = {
 export type RunTransactionLifecycleOptions = {
   assemble: () => Promise<LifecycleAssembledTransaction>;
   onStage: (stage: TransactionLifecycleStage) => void;
+  /** Optional guard invoked before assembling; return false to abort silently. */
+  canRun?: () => boolean;
 };
 
 export type TransactionLifecycleOutcome =
@@ -49,7 +52,11 @@ function extractTransactionHash(value: unknown): string | null {
 export async function runTransactionLifecycle({
   assemble,
   onStage,
+  canRun,
 }: RunTransactionLifecycleOptions): Promise<TransactionLifecycleOutcome> {
+  if (canRun && !canRun()) {
+    return { ok: false, kind: "send_failed", message: "Action not permitted." };
+  }
   try {
     onStage("simulating");
     const tx = await assemble();
@@ -117,4 +124,13 @@ export function isLifecycleInFlight(
   stage: TransactionLifecycleStage,
 ): boolean {
   return isPendingTransactionLifecycleStage(stage);
+}
+
+/**
+ * Returns true when the given proposal state permits a cancel action from the
+ * proposal detail UI. Mirrors Governor `cancel` semantics for the signaling
+ * model (Pending / Active proposals only).
+ */
+export function canCancelProposal(state: string | null | undefined): boolean {
+  return isCancellableProposalState(state);
 }
