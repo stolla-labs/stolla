@@ -34,6 +34,7 @@ import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { ProposalMetadataDisplay } from "@/components/proposal/ProposalMetadataDisplay";
 import { LEDGER_TIME_ASSUMPTION_NOTE } from "@/lib/community/governanceDisplay";
 import { formatProposalDeadlineEstimate } from "@/lib/proposalDeadline";
+import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
 
 
 type ProposalResult = {
@@ -93,6 +94,8 @@ export default function ProposalDetailPage({
     "loading" | "ready" | "unavailable"
   >("loading");
   const [votingPower, setVotingPower] = useState<bigint | null>(null);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
+  const [userDelegate, setUserDelegate] = useState<string | null>(null);
   const [votingPowerStatus, setVotingPowerStatus] = useState<
     "disconnected" | "loading" | "ready" | "unavailable"
   >("disconnected");
@@ -210,6 +213,8 @@ export default function ProposalDetailPage({
   const loadVotingPower = useCallback(async () => {
     if (!address || !nftContractId) {
       setVotingPower(null);
+      setUserBalance(null);
+      setUserDelegate(null);
       setVotingPowerStatus(address ? "unavailable" : "disconnected");
       return;
     }
@@ -219,11 +224,23 @@ export default function ProposalDetailPage({
 
     try {
       const client = createReadOnlyNftClient(nftContractId);
-      const tx = await client.get_votes({ account: address });
-      setVotingPower(tx.result ?? BigInt(0));
+      const [votesTx, balanceTx, delegateTx] = await Promise.all([
+        client.get_votes({ account: address }),
+        typeof client.balance === "function"
+          ? client.balance({ account: address }).catch(() => null)
+          : Promise.resolve(null),
+        typeof client.get_delegate === "function"
+          ? client.get_delegate({ account: address }).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+      setVotingPower(votesTx.result ?? BigInt(0));
+      setUserBalance(balanceTx?.result !== undefined && balanceTx?.result !== null ? Number(balanceTx.result) : null);
+      setUserDelegate(delegateTx?.result ?? null);
       setVotingPowerStatus("ready");
     } catch {
       setVotingPower(null);
+      setUserBalance(null);
+      setUserDelegate(null);
       setVotingPowerStatus("unavailable");
     }
   }, [address, nftContractId]);
@@ -235,6 +252,8 @@ export default function ProposalDetailPage({
       if (!address || !nftContractId) {
         if (!active) return;
         setVotingPower(null);
+        setUserBalance(null);
+        setUserDelegate(null);
         setVotingPowerStatus(address ? "unavailable" : "disconnected");
         return;
       }
@@ -244,13 +263,25 @@ export default function ProposalDetailPage({
 
       try {
         const client = createReadOnlyNftClient(nftContractId);
-        const tx = await client.get_votes({ account: address });
+        const [votesTx, balanceTx, delegateTx] = await Promise.all([
+          client.get_votes({ account: address }),
+          typeof client.balance === "function"
+            ? client.balance({ account: address }).catch(() => null)
+            : Promise.resolve(null),
+          typeof client.get_delegate === "function"
+            ? client.get_delegate({ account: address }).catch(() => null)
+            : Promise.resolve(null),
+        ]);
         if (!active) return;
-        setVotingPower(tx.result ?? BigInt(0));
+        setVotingPower(votesTx.result ?? BigInt(0));
+        setUserBalance(balanceTx?.result !== undefined && balanceTx?.result !== null ? Number(balanceTx.result) : null);
+        setUserDelegate(delegateTx?.result ?? null);
         setVotingPowerStatus("ready");
       } catch {
         if (!active) return;
         setVotingPower(null);
+        setUserBalance(null);
+        setUserDelegate(null);
         setVotingPowerStatus("unavailable");
       }
     })();
@@ -500,6 +531,16 @@ export default function ProposalDetailPage({
                     Delegate your membership NFT on the Community page to gain
                     voting power.
                   </p>
+                )}
+                {address && userBalance !== null && (
+                  <div className="mt-3">
+                    <VotingPowerCompositionDisplay
+                      account={address}
+                      balance={userBalance}
+                      totalVotes={votingPower}
+                      delegate={userDelegate}
+                    />
+                  </div>
                 )}
               </div>
             )}
