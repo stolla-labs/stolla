@@ -80,3 +80,13 @@ export {
   type ProposalSyncState,
   type ClientFreshnessStubOptions,
 } from "./freshness";
+
+export {
+  classifyProposalDiscoveryError,
+  describeProposalDiscoveryError,
+  mapProposalDiscoveryError,
+  type ProposalDiscoveryError,
+  type ProposalDiscoveryErrorCode,
+  type ProposalDiscoveryErrorKind,
+  type ProposalDiscoveryErrorMapping,
+} from "./errors";

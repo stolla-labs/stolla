@@ -5,6 +5,7 @@ import { Buffer } from "buffer";
 import { useWallet } from "@/context/WalletProvider";
 import { createGovernorClient, storeProposalId } from "@/lib/contracts";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
+import { describeDiscoveryError } from "@/lib/discoveryErrors";
 import {
   ProposalState,
   PROPOSAL_STATE_LABELS,
@@ -20,6 +21,7 @@ import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
 import { DiscoveryFreshnessBanner } from "@/components/DiscoveryFreshnessBanner";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
+import { contractIds as stellarContractIds } from "@/lib/stellar";
 import {
   hasProposalMetadataErrors,
   serializeProposalMetadata,
@@ -66,6 +68,7 @@ export default function ProposalsPage() {
     proposals: discoveredProposals,
     loading,
     error,
+    errorKind,
     empty,
     freshness,
     latestLedger,
@@ -73,6 +76,11 @@ export default function ProposalsPage() {
   } =
     useProposalDiscovery();
   const contractsConfigured = Boolean(contractIds.governor);
+
+  const discoveryErrorMessage = useMemo(
+    () => describeDiscoveryError(error, errorKind),
+    [error, errorKind],
+  );
 
   const proposals = useMemo(
     () =>
@@ -167,6 +175,10 @@ export default function ProposalsPage() {
     },
     [address, contractsConfigured, signTransaction],
   );
+
+  const handleRetryDiscovery = useCallback(() => {
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     // Async proposal-state fetch owns its loading/error sub-states.
@@ -314,6 +326,17 @@ export default function ProposalsPage() {
         </p>
       )}
 
+      {contractsConfigured && !stellarContractIds.governorStartLedger && (
+        <p className="mt-6 rounded-lg border border-amber-800/60 bg-amber-950/50 p-4 text-sm text-amber-200">
+          Set{" "}
+          <code className="font-mono">
+            NEXT_PUBLIC_GOVERNOR_START_LEDGER
+          </code>{" "}
+          in <code className="font-mono">.env.local</code> to bound proposal
+          discovery to a valid ledger range.
+        </p>
+      )}
+
       {contractsConfigured && (
         <section className="mt-6 min-w-0 rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5">
           <h2 className="font-semibold text-slate-100">Create proposal</h2>
@@ -450,10 +473,12 @@ export default function ProposalsPage() {
                 ? "More proposal history could not be loaded."
                 : "Proposal history is temporarily unavailable."}
             </p>
-            <p className="mt-1 text-sm text-rose-300/80">{error}</p>
+            <p className="mt-1 text-sm text-rose-300/80">
+              {discoveryErrorMessage}
+            </p>
             <AppButton
               tone="danger"
-              onClick={() => void refresh()}
+              onClick={handleRetryDiscovery}
               className="mt-3"
             >
               Retry loading proposals
@@ -464,7 +489,7 @@ export default function ProposalsPage() {
         {!loading && !error && (
           <DiscoveryFreshnessBanner
             freshness={freshness}
-            onRetry={() => void refresh()}
+            onRetry={handleRetryDiscovery}
           />
         )}
 

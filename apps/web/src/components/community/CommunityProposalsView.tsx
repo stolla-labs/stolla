@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Community, CommunityRegistry } from "@/lib/community/types";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
 import { getStoredProposalIdsFor } from "@/lib/contracts";
@@ -8,6 +9,7 @@ import {
   useCommunityProposals,
   type ProposalReaderFactory,
 } from "@/lib/communities/proposals";
+import { describeProposalDiscoveryError } from "@/lib/communities/proposalDiscoveryErrors";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
@@ -84,6 +86,21 @@ function CommunityProposalsPanel({
     getReader,
   );
 
+  const discoveryError =
+    resolution.status === "ready" && resolution.error
+      ? describeProposalDiscoveryError(resolution.error)
+      : null;
+
+  const partialError =
+    resolution.status === "ready"
+      ? resolution.entries.find((entry) => entry.status === "error")
+      : undefined;
+
+  const partialMessage =
+    partialError && partialError.status === "error"
+      ? describeProposalDiscoveryError(partialError.error)
+      : null;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <CommunityBreadcrumbs
@@ -101,6 +118,17 @@ function CommunityProposalsPanel({
         </AsyncState>
       )}
 
+      {resolution.status === "ready" && discoveryError && (
+        <FreshnessNotice className="mt-6" role="alert">
+          <span className="font-medium text-rose-300">
+            {discoveryError.title}
+          </span>
+          <span className="mt-1 block text-slate-300">
+            {discoveryError.message}
+          </span>
+        </FreshnessNotice>
+      )}
+
       {resolution.status === "ready" && proposalIds.length === 0 && (
         <EmptyState className="mt-6">No proposals yet.</EmptyState>
       )}
@@ -108,9 +136,14 @@ function CommunityProposalsPanel({
       {resolution.status === "ready" && proposalIds.length > 0 && (
         <>
           {resolution.entries.some((entry) => entry.status === "error") && (
-            <FreshnessNotice className="mt-6">
-              Some proposal states are unavailable. Successful proposals remain
-              visible.
+            <FreshnessNotice className="mt-6" role="alert">
+              <span className="font-medium text-amber-300">
+                {partialMessage?.title ?? "Some proposal states are unavailable"}
+              </span>
+              <span className="mt-1 block text-slate-300">
+                {partialMessage?.message ??
+                  "Successful proposals remain visible."}
+              </span>
             </FreshnessNotice>
           )}
           <ul className="mt-6 space-y-2">
@@ -126,7 +159,9 @@ function CommunityProposalsPanel({
                   >
                     {entry.status === "ready"
                       ? stateLabels[entry.state]
-                      : "Unavailable"}
+                      : entry.status === "error"
+                        ? describeProposalDiscoveryError(entry.error).shortLabel
+                        : "Unavailable"}
                   </span>
                 </Link>
               </li>

@@ -6,17 +6,14 @@ const STATE_STYLES: Record<
   FreshnessResult["state"],
   { className: string; icon: string }
 > = {
-  current: {
-    className: "border-emerald-800/60 bg-emerald-950/40 text-emerald-200",
-    icon: "\u2713",
-  },
+  current: {} as unknown as { className: string; icon: string },
   delayed: {
     className: "border-amber-800/60 bg-amber-950/40 text-amber-200",
-    icon: "\u25B2",
+    icon: "\u25BA",
   },
   stale: {
     className: "border-amber-800/70 bg-amber-950/50 text-amber-200",
-    icon: "\u25B2",
+    icon: "\u25BA",
   },
   unavailable: {
     className: "border-rose-800/70 bg-rose-950/40 text-rose-200",

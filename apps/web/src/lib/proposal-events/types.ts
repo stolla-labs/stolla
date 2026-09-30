@@ -125,3 +125,98 @@ export interface ProposalEventRpcMetadata {
    */
   cursor: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Typed discovery failures
+// ---------------------------------------------------------------------------
+
+/**
+ * Discriminator for the kind of failure encountered during proposal
+ * discovery.  Each variant maps to a stable, user-facing sentence so the
+ * UI never has to fall back to a generic "Discovery failed" string.
+ */
+export type ProposalDiscoveryErrorKind =
+  | "config-missing"
+  | "retention-clamp"
+  | "rpc-network"
+  | "decode-partial";
+
+/**
+ * Structured discovery failure surfaced by `useProposalDiscovery`.
+ *
+ * `message` is always populated with a concrete, actionable sentence
+ * (either the raw RPC message or a stable mapped sentence).  `cause` is
+ * retained for logging/telemetry but must never be rendered directly.
+ */
+export interface ProposalDiscoveryError {
+  kind: ProposalDiscoveryErrorKind;
+  /** Concrete, user-facing message. Never generic. */
+  message: string;
+  /** Original thrown value, if any, for logging. */
+  cause?: unknown;
+}
+
+/**
+ * Map an arbitrary thrown value from `getEvents` / RPC into a typed
+ * discovery failure.  Retention-window errors (e.g. "startLedger must be
+ * within the ledger range") are classified as `retention-clamp` so the UI
+ * can explain the configuration problem rather than showing a generic
+ * failure.
+ */
+export function mapProposalDiscoveryError(
+  error: unknown,
+  fallbackKind: ProposalDiscoveryErrorKind = "rpc-network",
+): ProposalDiscoveryError {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : error == null
+          ? ""
+          : String(error);
+
+  const lower = raw.toLowerCase();
+
+  if (
+    lower.includes("startledger") ||
+    lower.includes("ledger range") ||
+    lower.includes("retention")
+  ) {
+    return {
+      kind: "retention-clamp",
+      message:
+        raw ||
+        "Start ledger is outside the RPC retention window. Adjust NEXT_PUBLIC_GOVERNOR_START_LEDGER or use a provider with a wider history.",
+      cause: error,
+    };
+  }
+
+  if (lower.includes("decode") || lower.includes("xdr")) {
+    return {
+      kind: "decode-partial",
+      message:
+        raw ||
+        "Some proposal events could not be decoded. Partial results are shown.",
+      cause: error,
+    };
+  }
+
+  return {
+    kind: fallbackKind,
+    message: raw || "Proposal discovery failed due to an RPC or network error.",
+    cause: error,
+  };
+}
+
+/**
+ * Stable, actionable message for a missing start-ledger configuration.
+ * Names the exact environment variable so operators can fix it.
+ */
+export function missingStartLedgerError(): ProposalDiscoveryError {
+  return {
+    kind: "config-missing",
+    message:
+      "Missing NEXT_PUBLIC_GOVERNOR_START_LEDGER. Set it to the first ledger to scan for proposals.",
+  };
+}

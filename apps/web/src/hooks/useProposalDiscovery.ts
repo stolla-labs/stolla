@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { StrKey } from "@stellar/stellar-sdk";
 import { Server as RpcServer } from "@stellar/stellar-sdk/rpc";
 import type { Api } from "@stellar/stellar-sdk/rpc";
 import { config, requireContractIds, requireGovernorStartLedger } from "@/lib/stellar";
@@ -19,6 +20,103 @@ export type DiscoveredProposal = {
   voteSnapshot?: number | null;
   voteEnd?: number | null;
 };
+
+export type DiscoveryErrorKind =
+  | "config"
+  | "retention"
+  | "rpc"
+  | "decode"
+  | "partial"
+  | "unknown";
+
+export type DiscoveryError = {
+  kind: DiscoveryErrorKind;
+  message: string;
+  cause?: unknown;
+};
+
+const GOVERNOR_START_LEDGER_ENV = "NEXT_PUBLIC_GOVERNOR_START_LEDGER";
+
+/**
+ * Map an arbitrary thrown value into a typed, user-facing discovery error.
+ * Keeps the concrete RPC message when available so operators can distinguish
+ * configuration mistakes from transient RPC outages.
+ */
+export function mapDiscoveryError(err: unknown): DiscoveryError {
+  const rawMessage =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : "";
+  const message = rawMessage.trim();
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes("startledger must be within the ledger range") ||
+    lower.includes("start ledger") ||
+    lower.includes("ledger range") ||
+    lower.includes("retention") ||
+    lower.includes("oldest ledger")
+  ) {
+    return {
+      kind: "retention",
+      message:
+        message ||
+        "The configured start ledger is outside the RPC retention window.",
+      cause: err,
+    };
+  }
+
+  if (
+    lower.includes("network") ||
+    lower.includes("fetch") ||
+    lower.includes("timeout") ||
+    lower.includes("econnrefused") ||
+    lower.includes("rpc") ||
+    lower.includes("503") ||
+    lower.includes("502") ||
+    lower.includes("429")
+  ) {
+    return {
+      kind: "rpc",
+      message: message || "The RPC endpoint could not be reached.",
+      cause: err,
+    };
+  }
+
+  if (lower.includes("decode") || lower.includes("xdr")) {
+    return {
+      kind: "decode",
+      message: message || "Proposal events could not be decoded.",
+      cause: err,
+    };
+  }
+
+  return {
+    kind: "unknown",
+    message: message || "Proposal history could not be loaded.",
+    cause: err,
+  };
+}
+
+/**
+ * Map a missing/invalid start-ledger configuration into a typed error that
+ * names the exact environment variable operators must set.
+ */
+export function mapStartLedgerConfigError(err: unknown): DiscoveryError {
+  const rawMessage =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : "";
+  const message = rawMessage.trim();
+  const named = message.includes(GOVERNOR_START_LEDGER_ENV)
+    ? message
+    : `Missing or invalid ${GOVERNOR_START_LEDGER_ENV}. Set it to a ledger within the RPC retention window.`;
+  return { kind: "config", message: named, cause: err };
+}
 
 function extractProposalFields(event: Api.EventResponse): Pick<DiscoveredProposal, "description" | "voteSnapshot" | "voteEnd"> {
   const decoded = decodeProposalEvent({
@@ -53,6 +151,7 @@ export function useProposalDiscovery(governorContractId?: string) {
   const [proposals, setProposals] = useState<DiscoveredProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<DiscoveryErrorKind | null>(null);
   const [empty, setEmpty] = useState(false);
   const [freshnessMeta, setFreshnessMeta] = useState<{
     latestLedger: number | null;
@@ -71,6 +170,7 @@ export function useProposalDiscovery(governorContractId?: string) {
   const discover = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setErrorKind(null);
     setEmpty(false);
 
     try {
@@ -99,6 +199,7 @@ export function useProposalDiscovery(governorContractId?: string) {
       let latestLedger: number | null = null;
       let lastEventLedger: number | null = null;
       let hadError = false;
+      let partialError: DiscoveryError | null = null;
 
       for (;;) {
         // Topic filters against current testnet RPC return empty for OZ
@@ -131,8 +232,13 @@ export function useProposalDiscovery(governorContractId?: string) {
         try {
           response = await server.getEvents(request);
         } catch (err: unknown) {
+          const mapped = mapDiscoveryError(err);
           const retentionMessage = retentionErrorMessage(err);
-          setError(retentionMessage ?? (err instanceof Error ? err.message : "Proposal history could not be loaded."));
+          partialError = retentionMessage
+            ? { ...mapped, kind: "retention", message: retentionMessage }
+            : mapped;
+          setError(partialError.message);
+          setErrorKind(partialError.kind);
           hadError = true;
           break;
         }
@@ -186,9 +292,19 @@ export function useProposalDiscovery(governorContractId?: string) {
         hadError,
         retentionClamped: clamped,
       });
+      if (partialError && discovered.length > 0) {
+        setError(partialError.message);
+        setErrorKind(partialError.kind);
+      }
       return true;
     } catch (err: unknown) {
-      setError(retentionErrorMessage(err) ?? (err instanceof Error ? err.message : "Discovery failed"));
+      const mapped = mapDiscoveryError(err);
+      const retentionMessage = retentionErrorMessage(err);
+      const finalError = retentionMessage
+        ? { ...mapped, kind: "retention" as const, message: retentionMessage }
+        : mapped;
+      setError(finalError.message);
+      setErrorKind(finalError.kind);
       setFreshnessMeta({ latestLedger: null, lastEventLedger: null, discoveredCount: 0, hadError: true, retentionClamped: false });
       return false;
     } finally {
@@ -216,6 +332,7 @@ export function useProposalDiscovery(governorContractId?: string) {
     proposalIds,
     loading,
     error,
+    errorKind,
     empty,
     freshness,
     latestLedger: freshnessMeta.latestLedger,
