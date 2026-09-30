@@ -12,6 +12,19 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useParams: mocks.useParams,
 }));
+
+vi.mock("@/lib/community/registry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/community/registry")>();
+  return {
+    ...actual,
+    getCommunity: mocks.getCommunity,
+  };
+});
+
+vi.mock("@/components/community/CommunityMemberRoster", () => ({
+  CommunityMemberRoster: () => <div data-testid="community-member-roster">Member Roster</div>,
+}));
+
 import CommunityDetailPage from "@/app/(app)/communities/[id]/page";
 import {
   MOCK_ACCOUNT_CAROL,
@@ -115,13 +128,13 @@ describe("CommunityDetailPage", () => {
       `/communities/${COMMUNITY_ID}/proposals`,
     );
     expect(
-      screen.getAllByRole("button", { name: /^Copy .* contract$/ }),
+      screen.getAllByRole("button", { name: /^Copy full .* contract address$/ }),
     ).toHaveLength(2);
     expect(
-      screen.getAllByRole("link", { name: /Open .* contract in explorer/ }),
+      screen.getAllByRole("link", { name: /^View .* on Stellar Expert$/ }),
     ).toHaveLength(2);
     expect(
-      screen.getByRole("button", { name: "Copy Community owner" }),
+      screen.getByText("Community owner"),
     ).toBeInTheDocument();
   });
 
@@ -242,5 +255,11 @@ describe("CommunityDetailPage", () => {
     expect(
       await screen.findByText("Could not share the community page."),
     ).toBeInTheDocument();
+  });
+
+  it("renders member roster section", async () => {
+    mocks.getCommunity.mockResolvedValue(foundResult);
+    renderPage();
+    expect(await screen.findByTestId("community-member-roster")).toBeInTheDocument();
   });
 });

@@ -18,6 +18,7 @@ import {
   resolveStellarNetworkId,
 } from "@/lib/stellarExplorer";
 import { truncateMiddle } from "@/lib/truncate";
+import { CommunityMemberRoster } from "@/components/community/CommunityMemberRoster";
 
 function ContractAddress({
   label,
@@ -402,6 +403,8 @@ export default function CommunityDetailPage() {
           estimates.
         </p>
       </section>
+
+      <CommunityMemberRoster nftContractId={record.nftContract} />
 
       <section
         aria-labelledby="registry-title"

@@ -34,7 +34,11 @@ type WalletContextValue = {
   connectionError: WalletConnectionError | null;
 };
 
-const WalletContext = createContext<WalletContextValue | null>(null);
+export const WalletContext = createContext<WalletContextValue | null>(null);
+
+export function useOptionalWallet(): WalletContextValue | null {
+  return useContext(WalletContext);
+}
 
 let kitInitialized = false;
 const MODAL_DISMISSED_MESSAGE = "The user closed the modal.";
