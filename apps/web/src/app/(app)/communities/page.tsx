@@ -1,18 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isCommunityFactoryConfigured } from "@/lib/community/registry";
 import { CommunityCard } from "@/components/CommunityCard";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
+import { listCommunities } from "@/lib/community/registry";
 import type { CommunityView } from "@/lib/community/types";
 
 const PAGE_SIZE = 9;
 const MAX_QUERY_LENGTH = 100;
 const MAX_PAGE = 100;
+
+const FACTORY_UNAVAILABLE_MESSAGE =
+  "Community registry is not configured. Set NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID.";
 
 type ListUrlState = { query: string; page: number };
 
@@ -42,7 +45,6 @@ function writeListUrlState(
 }
 
 export default function CommunitiesPage() {
-  const registry = useCommunityRegistry();
   const [communities, setCommunities] = useState<CommunityView[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -51,6 +53,7 @@ export default function CommunitiesPage() {
   const [skippedRecords, setSkippedRecords] = useState(0);
   const [query, setQuery] = useState("");
   const [loadedPages, setLoadedPages] = useState(0);
+  const [factoryConfigured] = useState(() => isCommunityFactoryConfigured());
   const requestSequence = useRef(0);
   const seenIds = useRef(new Set<string>());
   const nextCursorRef = useRef<number | null>(null);
@@ -60,11 +63,18 @@ export default function CommunitiesPage() {
     async (replace: boolean, updateUrl = true) => {
       const sequence = ++requestSequence.current;
       const cursor = replace ? null : nextCursorRef.current;
+
+      if (!factoryConfigured) {
+        setLoading(false);
+        setError(FACTORY_UNAVAILABLE_MESSAGE);
+        return false;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        const page = await registry.list(cursor, PAGE_SIZE);
+        const page = await listCommunities(cursor, PAGE_SIZE);
         if (sequence !== requestSequence.current) return;
         if (page.nextCursor !== null && page.nextCursor === cursor) {
           throw new Error(
@@ -113,7 +123,7 @@ export default function CommunitiesPage() {
         if (sequence === requestSequence.current) setLoading(false);
       }
     },
-    [registry],
+    [factoryConfigured],
   );
 
   useEffect(() => {
@@ -157,6 +167,13 @@ export default function CommunitiesPage() {
     };
   }, [loadPage]);
 
+  useEffect(() => {
+    if (!factoryConfigured) {
+      setLoading(false);
+      setError(FACTORY_UNAVAILABLE_MESSAGE);
+    }
+  }, [factoryConfigured]);
+
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const visibleCommunities = useMemo(
     () =>
@@ -169,20 +186,6 @@ export default function CommunitiesPage() {
         : communities,
     [communities, normalizedQuery],
   );
-  const isRegistryEmpty =
-    hasLoaded &&
-    !loading &&
-    !error &&
-    communities.length === 0 &&
-    nextCursor === null &&
-    normalizedQuery.length === 0;
-  const isFilteredEmpty =
-    hasLoaded &&
-    !loading &&
-    !error &&
-    visibleCommunities.length === 0 &&
-    !isRegistryEmpty &&
-    (communities.length > 0 || normalizedQuery.length > 0);
 
   function updateQuery(value: string) {
     const nextQuery = value.slice(0, MAX_QUERY_LENGTH);
@@ -203,13 +206,14 @@ export default function CommunitiesPage() {
     skippedRecords > 0 ||
     metadataFailureCount > 0 ||
     governanceFailureCount > 0;
+  const factoryUnavailable = !factoryConfigured;
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-10">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="min-w-0 space-y-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-slate-100">Communities</h1>
-          <p className="max-w-2xl text-slate-400">
+          <p className="mt-2 max-w-2xl text-slate-400">
             Discover public governance communities registered on Stellar. No
             wallet connection is required.
           </p>
@@ -218,12 +222,12 @@ export default function CommunitiesPage() {
           href="/communities/create"
           tone="primary"
           className="shrink-0 w-full sm:w-auto"
+          aria-disabled={factoryUnavailable}
         >
           Create a community
         </AppLinkButton>
       </div>
 
-      {!isRegistryEmpty && (
       <div className="mt-6 max-w-xl">
         <label htmlFor="community-search" className="text-sm font-medium text-slate-300">
           Search communities by name
@@ -249,7 +253,6 @@ export default function CommunitiesPage() {
           )}
         </div>
       </div>
-      )}
 
       {hasPartialData && (
         <LiveStatus className="mt-6 rounded-lg border border-amber-800/70 bg-amber-950/40 p-4 text-sm text-amber-200">
@@ -310,35 +313,34 @@ export default function CommunitiesPage() {
           <p className="mt-2 break-words text-sm text-rose-200 [overflow-wrap:anywhere]">
             {error}
           </p>
-          <AppButton
-            tone="danger"
-            onClick={() => void loadPage(communities.length === 0)}
-            disabled={loading}
-            className="mt-4"
-          >
-            {loading ? "Retrying…" : "Retry registry request"}
-          </AppButton>
+          {!factoryUnavailable && (
+            <AppButton
+              tone="danger"
+              onClick={() => void loadPage(communities.length === 0)}
+              disabled={loading}
+              className="mt-4"
+            >
+              {loading ? "Retrying…" : "Retry registry request"}
+            </AppButton>
+          )}
         </section>
       )}
 
-      {isRegistryEmpty && (
-          <EmptyState
-            className="mt-6 p-6 text-center"
-            title="No communities yet"
-            action={
-              <AppLinkButton href="/communities/create" tone="primary">
-                Create a community
-              </AppLinkButton>
-            }
-          >
-            <p>
-              Communities will appear here once registered. Create the first
-              one to get started.
-            </p>
-          </EmptyState>
+      {!loading &&
+        !error &&
+        hasLoaded &&
+        communities.length === 0 &&
+        nextCursor === null && (
+          <LiveStatus className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
+            No communities are registered yet. You can prepare the first
+            community without connecting a wallet.
+          </LiveStatus>
         )}
 
-      {isFilteredEmpty && (
+      {!loading &&
+        !error &&
+        communities.length > 0 &&
+        visibleCommunities.length === 0 && (
           <LiveStatus className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
             No communities match “{query.trim()}”.
             <AppButton

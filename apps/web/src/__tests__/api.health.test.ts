@@ -58,6 +58,7 @@ describe("GET /api/health", () => {
       contracts: {
         nftConfigured: true,
         governorConfigured: true,
+        communityFactoryConfigured: true,
         allConfigured: true,
       },
       capabilities: {
@@ -84,6 +85,7 @@ describe("GET /api/health", () => {
     expect(body.contracts).toEqual({
       nftConfigured: false,
       governorConfigured: true,
+      communityFactoryConfigured: false,
       allConfigured: false,
     });
   });
@@ -109,6 +111,8 @@ describe("GET /api/health", () => {
       NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL: secretRpcUrl,
       NEXT_PUBLIC_NFT_CONTRACT_ID: secretNftId,
       NEXT_PUBLIC_GOVERNOR_CONTRACT_ID: secretGovernorId,
+      NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID:
+        contractIds.NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID,
     });
 
     expect(response.status).toBe(200);
@@ -125,10 +129,30 @@ describe("GET /api/health", () => {
       NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL: "   ",
       NEXT_PUBLIC_NFT_CONTRACT_ID: "\t",
       NEXT_PUBLIC_GOVERNOR_CONTRACT_ID: "\n",
+      NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID: "  ",
     });
 
     expect(response.status).toBe(503);
     expect(body.rpc.configured).toBe(false);
     expect(body.contracts.allConfigured).toBe(false);
+  });
+
+  it("returns degraded when the community factory contract id is missing", async () => {
+    const { response, body } = await requestHealth({
+      NEXT_PUBLIC_STELLAR_NETWORK: "testnet",
+      NEXT_PUBLIC_STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
+      NEXT_PUBLIC_NFT_CONTRACT_ID: contractIds.NEXT_PUBLIC_NFT_CONTRACT_ID,
+      NEXT_PUBLIC_GOVERNOR_CONTRACT_ID:
+        contractIds.NEXT_PUBLIC_GOVERNOR_CONTRACT_ID,
+      NEXT_PUBLIC_GOVERNOR_START_LEDGER:
+        contractIds.NEXT_PUBLIC_GOVERNOR_START_LEDGER,
+    });
+
+    expect(response.status).toBe(503);
+    expect(body.status).toBe("degraded");
+    expect(body.contracts.communityFactoryConfigured).toBe(false);
+    expect(body.contracts.allConfigured).toBe(false);
+    expect(body.capabilities.communityFactory).toBe(false);
+    expect(body.unavailableCapabilities).toContain("communityFactory");
   });
 });

@@ -11,7 +11,12 @@ type HealthResponse = {
   status: "ok" | "degraded";
   network: { selected: "testnet" | "mainnet"; passphraseConfigured: boolean };
   rpc: { configured: boolean };
-  contracts: { nftConfigured: boolean; governorConfigured: boolean; allConfigured: boolean };
+  contracts: {
+    nftConfigured: boolean;
+    governorConfigured: boolean;
+    communityFactoryConfigured: boolean;
+    allConfigured: boolean;
+  };
   capabilities: Record<NetworkCapabilityName, boolean>;
   unavailableCapabilities: NetworkCapabilityName[];
 };
@@ -22,7 +27,7 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
   const governorConfigured = Boolean(capabilities.contracts.legacyGovernor);
   const legacyConfigured = capabilities.legacyContracts.available;
   const factoryConfigured = capabilities.communityFactory.available;
-  const isReady = capabilities.rpc.available && (legacyConfigured || factoryConfigured);
+  const isReady = capabilities.rpc.available && factoryConfigured;
   const unavailableCapabilities = listUnavailableCapabilities(capabilities);
 
   return {
@@ -36,7 +41,8 @@ function buildResponse(): { response: HealthResponse; statusCode: number } {
       contracts: {
         nftConfigured,
         governorConfigured,
-        allConfigured: legacyConfigured,
+        communityFactoryConfigured: factoryConfigured,
+        allConfigured: legacyConfigured && factoryConfigured,
       },
       capabilities: {
         rpc: capabilities.rpc.available,
