@@ -56,3 +56,22 @@ stellar contract bindings typescript \
 Regenerate bindings whenever a public function, contract type, error, or event
 changes. Generated clients must preserve the contract's integer widths and use
 `bigint`/decimal strings for `u128` values.
+
+## Tests
+
+`src/test.rs` covers the registry end to end against the built NFT and
+Governor test WASM: a successful `create_community` and its `community_created`
+event, unauthorized-creator rejection, pause/validation failures that leave no
+registry writes behind, two-step ownership transfer (creation authority only
+moves after `accept_ownership`), and `list_communities` pagination boundaries
+(empty registry, a full page, the final partial page, and out-of-range
+cursors/limits).
+
+Run only this contract's suite from `contracts/`:
+
+```sh
+cargo test -p community-factory
+```
+
+or the whole contract workspace from the repository root with
+`npm run test:contracts` (see [CONTRIBUTING.md](../../../CONTRIBUTING.md)).
