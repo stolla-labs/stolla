@@ -125,16 +125,35 @@ export function LandingHeader() {
               {link.label}
             </button>
           ))}
+          {menuOpen ? (
+            <>
+              <p className="landing-nav-group-label">Explore the app</p>
+              <Link
+                href="/communities"
+                className="landing-nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
+                Communities
+              </Link>
+              <Link
+                href="/proposals"
+                className="landing-nav-link"
+                onClick={() => setMenuOpen(false)}
+              >
+                Proposals
+              </Link>
+            </>
+          ) : null}
           <Link
-            href="/community"
-            className="landing-nav-mobile-cta lp-btn"
+            href="/communities"
+            className="landing-nav-mobile-cta lp-btn-ghost"
             onClick={() => setMenuOpen(false)}
           >
             Enter app
           </Link>
         </nav>
 
-        <Link href="/community" className="lp-btn hidden lg:inline-flex">
+        <Link href="/communities" className="lp-btn-ghost hidden lg:inline-flex">
           Enter app
         </Link>
       </div>

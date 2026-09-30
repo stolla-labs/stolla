@@ -254,6 +254,14 @@
   width: 100%;
 }
 
+.landing-nav-group-label {
+  margin: 0.5rem 0 0.125rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--lp-accent-hover);
+}
+
 @media (min-width: 1024px) {
   .landing-menu-toggle,
   .landing-menu-backdrop,

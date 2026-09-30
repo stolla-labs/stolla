@@ -34,9 +34,9 @@ export function ShowcaseSection() {
       <div className="landing-container">
         <div className="landing-section-header-row">
           <LandingSectionHeader
-            eyebrow="Showcase"
+            eyebrow="Showcase · Illustrative demo"
             title="What communities are voting on"
-            description="From treasury decisions to membership updates. Every proposal is an on-chain vote with transparent outcomes."
+            description="Example proposals to show the voting experience. These illustrations are not live on-chain data."
           />
           <LinkButton href="/proposals" variant="ghost" className="shrink-0">
             View all
