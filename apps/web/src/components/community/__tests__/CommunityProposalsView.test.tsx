@@ -164,4 +164,23 @@ describe("CommunityProposalsView", () => {
     expect(await screen.findByText("Community not found")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /#01/ })).not.toBeInTheDocument();
   });
+
+  it("renders export buttons on community proposals page", async () => {
+    const getReader = createGovernorReaderFactory([
+      { contractId: atlasCommunity.record.governorContract, proposals: { "01": ProposalState.Active } },
+    ]);
+
+    render(
+      <CommunityProposalsView
+        communityId={atlasCommunity.record.id}
+        registry={multiCommunityRegistry}
+        proposalIds={["01"]}
+        getReader={getReader}
+      />,
+    );
+
+    await screen.findByRole("link", { name: /#01/ });
+    expect(screen.getByRole("button", { name: /Export proposals as CSV/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Export proposals as JSON/i })).toBeInTheDocument();
+  });
 });
