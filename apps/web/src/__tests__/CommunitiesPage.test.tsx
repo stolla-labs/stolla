@@ -6,6 +6,16 @@ import type { Community, CommunityRegistry } from "@/lib/community/types";
 
 const mocks = vi.hoisted(() => ({
   listCommunities: vi.fn(),
+  useWallet: vi.fn(),
+}));
+
+vi.mock("@/context/WalletProvider", () => ({
+  useWallet: mocks.useWallet,
+}));
+
+vi.mock("@/lib/community/registry", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/community/registry")>()),
+  listCommunities: mocks.listCommunities,
 }));
 
 vi.mock("@/context/WalletProvider", () => ({
@@ -76,6 +86,11 @@ function deferred<T>() {
 describe("CommunitiesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.useWallet.mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+      isConnecting: false,
+    });
     window.history.replaceState({}, "", "/communities");
   });
 
@@ -102,6 +117,11 @@ describe("CommunitiesPage", () => {
 
     expect(await screen.findByText("Builders Guild")).toBeInTheDocument();
     expect(screen.getByText(/17280 ledgers/)).toBeInTheDocument();
+    // Non-empty registry keeps search as secondary filter.
+    expect(
+      screen.getByLabelText("Search communities by name"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No communities yet")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", {
         name: "View Builders Guild community details",
@@ -121,11 +141,54 @@ describe("CommunitiesPage", () => {
 
     renderPage();
 
-    const empty = await screen.findByText(/No communities are registered yet/);
+    const empty = await screen.findByText("No communities yet");
     expect(empty.closest("[role='status']")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Create a community" }),
-    ).toHaveAttribute("href", "/communities/create");
+      screen.getByText(/Communities will appear here once registered/),
+    ).toBeInTheDocument();
+    // Empty registry demotes search: no interactive search as focal element.
+    expect(
+      screen.queryByLabelText("Search communities by name"),
+    ).not.toBeInTheDocument();
+    const createLinks = screen.getAllByRole("link", {
+      name: "Create a community",
+    });
+    expect(createLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of createLinks) {
+      expect(link).toHaveAttribute("href", "/communities/create");
+    }
+  });
+
+  it("keeps loading skeleton distinct from empty state", async () => {
+    const request = deferred<{
+      communities: Community[];
+      nextCursor: null;
+      malformedRecords: number;
+    }>();
+    mocks.listCommunities.mockReturnValue(request.promise);
+
+    renderPage();
+    expect(
+      screen.getByText("Loading registered communities…"),
+    ).toBeInTheDocument();
+    // No dashed empty chrome while still loading.
+    expect(screen.queryByText("No communities yet")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Search communities by name"),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      request.resolve({
+        communities: [],
+        nextCursor: null,
+        malformedRecords: 0,
+      });
+    });
+
+    expect(await screen.findByText("No communities yet")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Search communities by name"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows an RPC error and can retry", async () => {
@@ -239,6 +302,10 @@ describe("CommunitiesPage", () => {
 
     expect(
       await screen.findByText(/No communities match “missing”/),
+    ).toBeInTheDocument();
+    // Filtered empty keeps search visible with a clear action.
+    expect(
+      screen.getByLabelText("Search communities by name"),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
     expect(screen.getByText("Civic DAO")).toBeInTheDocument();

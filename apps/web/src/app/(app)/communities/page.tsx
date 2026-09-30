@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CommunityCard } from "@/components/CommunityCard";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
@@ -168,6 +169,20 @@ export default function CommunitiesPage() {
         : communities,
     [communities, normalizedQuery],
   );
+  const isRegistryEmpty =
+    hasLoaded &&
+    !loading &&
+    !error &&
+    communities.length === 0 &&
+    nextCursor === null &&
+    normalizedQuery.length === 0;
+  const isFilteredEmpty =
+    hasLoaded &&
+    !loading &&
+    !error &&
+    visibleCommunities.length === 0 &&
+    !isRegistryEmpty &&
+    (communities.length > 0 || normalizedQuery.length > 0);
 
   function updateQuery(value: string) {
     const nextQuery = value.slice(0, MAX_QUERY_LENGTH);
@@ -191,10 +206,10 @@ export default function CommunitiesPage() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-bold text-slate-100">Communities</h1>
-          <p className="mt-2 max-w-2xl text-slate-400">
+          <p className="max-w-2xl text-slate-400">
             Discover public governance communities registered on Stellar. No
             wallet connection is required.
           </p>
@@ -202,12 +217,13 @@ export default function CommunitiesPage() {
         <AppLinkButton
           href="/communities/create"
           tone="primary"
-          className="shrink-0"
+          className="shrink-0 w-full sm:w-auto"
         >
           Create a community
         </AppLinkButton>
       </div>
 
+      {!isRegistryEmpty && (
       <div className="mt-6 max-w-xl">
         <label htmlFor="community-search" className="text-sm font-medium text-slate-300">
           Search communities by name
@@ -233,6 +249,7 @@ export default function CommunitiesPage() {
           )}
         </div>
       </div>
+      )}
 
       {hasPartialData && (
         <LiveStatus className="mt-6 rounded-lg border border-amber-800/70 bg-amber-950/40 p-4 text-sm text-amber-200">
@@ -304,21 +321,24 @@ export default function CommunitiesPage() {
         </section>
       )}
 
-      {!loading &&
-        !error &&
-        hasLoaded &&
-        communities.length === 0 &&
-        nextCursor === null && (
-          <LiveStatus className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
-            No communities are registered yet. You can prepare the first
-            community without connecting a wallet.
-          </LiveStatus>
+      {isRegistryEmpty && (
+          <EmptyState
+            className="mt-6 p-6 text-center"
+            title="No communities yet"
+            action={
+              <AppLinkButton href="/communities/create" tone="primary">
+                Create a community
+              </AppLinkButton>
+            }
+          >
+            <p>
+              Communities will appear here once registered. Create the first
+              one to get started.
+            </p>
+          </EmptyState>
         )}
 
-      {!loading &&
-        !error &&
-        communities.length > 0 &&
-        visibleCommunities.length === 0 && (
+      {isFilteredEmpty && (
           <LiveStatus className="mt-6 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-center text-sm text-slate-400">
             No communities match “{query.trim()}”.
             <AppButton
