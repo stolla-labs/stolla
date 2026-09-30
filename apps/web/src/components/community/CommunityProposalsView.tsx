@@ -13,6 +13,8 @@ import { describeProposalDiscoveryError } from "@/lib/communities/proposalDiscov
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
+import { ProposalExportControls } from "./ProposalExportControls";
+import type { ExportableProposal } from "@/lib/proposal-export";
 import { AsyncState } from "@/components/ui/AsyncState";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FreshnessNotice } from "@/components/ui/FreshnessNotice";
@@ -101,16 +103,34 @@ function CommunityProposalsPanel({
       ? describeProposalDiscoveryError(partialError.error)
       : null;
 
+  const exportableProposals: ExportableProposal[] =
+    resolution.status === "ready"
+      ? resolution.entries.map((entry) => ({
+          id: entry.id,
+          state:
+            entry.status === "ready" ? stateLabels[entry.state] : "Unavailable",
+          discoveryStatus: entry.status === "ready" ? "ready" : "error",
+        }))
+      : [];
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <CommunityBreadcrumbs
         communityId={community.record.id}
         communityName={community.metadata?.name ?? community.record.id}
       />
-      <h1 className="mt-4 text-2xl font-bold text-slate-100">
-        {community.metadata?.name ??
-          `Community ${community.record.id.slice(0, 8)}`} proposals
-      </h1>
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-slate-100">
+          {community.metadata?.name ??
+            `Community ${community.record.id.slice(0, 8)}`} proposals
+        </h1>
+        <ProposalExportControls
+          communityId={community.record.id}
+          communityName={community.metadata?.name}
+          proposals={exportableProposals}
+          isLoading={resolution.status === "loading"}
+        />
+      </div>
 
       {resolution.status === "loading" && (
         <AsyncState className="mt-6 text-sm text-slate-500">
