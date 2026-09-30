@@ -69,6 +69,16 @@ pub struct CommunityRecord {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+
+#[contracttype]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum CommunityStatus {
+    Active = 0,
+    Paused = 1,
+    Archived = 2,
+}
+
 pub struct CommunityPage {
     pub records: Vec<CommunityRecord>,
     /// Exclusive cursor: the next unread creation index, or `None` at the end.
@@ -87,6 +97,7 @@ enum DataKey {
     CommunityCount,
     Community(BytesN<32>),
     CommunityAt(u32),
+    CommunityStatus(BytesN<32>),
 }
 
 #[contracterror]
@@ -109,6 +120,8 @@ pub enum FactoryError {
     InvalidOwnershipTransfer = 14,
     NoPendingOwner = 15,
     PendingOwnerExpired = 16,
+    CommunityNotFound = 17,
+    UnauthorizedCommunityOwner = 18,
 }
 
 #[contractevent]
@@ -153,6 +166,17 @@ pub struct OwnershipTransferStarted {
 
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CommunityStatusChanged {
+    #[topic]
+    pub community_id: BytesN<32>,
+    pub old_status: CommunityStatus,
+    pub new_status: CommunityStatus,
+}
+
+#[contractevent]
 pub struct OwnershipTransferred {
     pub old_owner: Address,
     pub new_owner: Address,
@@ -464,6 +488,60 @@ impl CommunityFactory {
         .publish(e);
         Ok(())
     }
+
+    pub fn get_community_status(e: &Env, community_id: BytesN<32>) -> CommunityStatus {
+        extend_instance_ttl(e);
+        let key = DataKey::CommunityStatus(community_id.clone());
+        let status = e
+            .storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or(CommunityStatus::Active);
+        if e.storage().persistent().has(&key) {
+            e.storage()
+                .persistent()
+                .extend_ttl(&key, FACTORY_TTL_THRESHOLD, FACTORY_TTL_EXTEND);
+        }
+        status
+    }
+
+    pub fn set_community_status(
+        e: &Env,
+        community_id: BytesN<32>,
+        new_status: CommunityStatus,
+    ) -> Result<(), FactoryError> {
+        let key = DataKey::Community(community_id.clone());
+        let record: CommunityRecord = e
+            .storage()
+            .persistent()
+            .get(&key)
+            .ok_or(FactoryError::CommunityNotFound)?;
+
+        // Authorization: Community owner must authorize status changes
+        record.community_owner.require_auth();
+
+        let status_key = DataKey::CommunityStatus(community_id.clone());
+        let old_status = e
+            .storage()
+            .persistent()
+            .get(&status_key)
+            .unwrap_or(CommunityStatus::Active);
+
+        e.storage().persistent().set(&status_key, &new_status);
+        e.storage()
+            .persistent()
+            .extend_ttl(&status_key, FACTORY_TTL_THRESHOLD, FACTORY_TTL_EXTEND);
+
+        CommunityStatusChanged {
+            community_id,
+            old_status,
+            new_status,
+        }
+        .publish(e);
+
+        Ok(())
+    }
+
 
     /// Permissionless keeper entry point for the bounded instance state.
     pub fn extend_instance_ttl(e: &Env) {

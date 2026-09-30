@@ -49,6 +49,22 @@ export function CommunityCard({ community }: { community: CommunityView }) {
                 {membershipText}
               </span>
             ) : null}
+            {record.status === "paused" ? (
+              <span
+                data-testid="community-status-badge"
+                className="inline-flex shrink-0 items-center rounded-md border border-amber-800/80 bg-amber-950/60 px-2 py-0.5 text-[11px] font-medium leading-4 text-amber-300"
+              >
+                Paused
+              </span>
+            ) : null}
+            {record.status === "archived" ? (
+              <span
+                data-testid="community-status-badge"
+                className="inline-flex shrink-0 items-center rounded-md border border-slate-700 bg-slate-800/70 px-2 py-0.5 text-[11px] font-medium leading-4 text-slate-400"
+              >
+                Archived
+              </span>
+            ) : null}
           </div>
           <p
             className="mt-0.5 break-all font-mono text-xs text-slate-500"

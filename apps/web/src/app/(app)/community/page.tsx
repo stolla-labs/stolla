@@ -742,6 +742,7 @@ export default function CommunityPage() {
                 tone="primary"
                 onClick={() => void handleMint()}
                 disabled={
+                  activeCommunity?.record.status === "paused" ||
                   !address ||
                   !tokenDraftValid ||
                   pinState.kind === "pinning" ||
@@ -751,12 +752,19 @@ export default function CommunityPage() {
                 }
                 className="w-full sm:w-auto"
               >
-                {pinState.kind === "pinning"
-                  ? "Uploading metadata…"
-                  : mintLifecycle.isInFlight
-                    ? "Mint in progress…"
-                    : "Mint NFT"}
+                {activeCommunity?.record.status === "paused"
+                  ? "Minting paused"
+                  : pinState.kind === "pinning"
+                    ? "Uploading metadata…"
+                    : mintLifecycle.isInFlight
+                      ? "Mint in progress…"
+                      : "Mint NFT"}
               </AppButton>
+              {activeCommunity?.record.status === "paused" && (
+                <p className="mt-2 text-sm text-amber-300" role="status">
+                  Minting is disabled because this community is currently paused by its owner.
+                </p>
+              )}
               <TransactionLifecycleStatus
                 stage={mintLifecycle.stage}
                 operationLabel="Mint"

@@ -11,6 +11,8 @@ export type CommunityMetadata = {
   externalLinks: CommunityExternalLink[];
 };
 
+export type CommunityStatus = "active" | "paused" | "archived";
+
 export type CommunityRegistryRecord = {
   id: string;
   nftContract: string;
@@ -22,6 +24,7 @@ export type CommunityRegistryRecord = {
   metadataUri: string;
   metadataHash: string;
   metadataSchemaVersion: number;
+  status?: CommunityStatus;
 };
 
 export type GovernanceSnapshot = {
