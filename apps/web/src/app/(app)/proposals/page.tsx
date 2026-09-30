@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Buffer } from "buffer";
+import Link from "next/link";
 import { useWallet } from "@/context/WalletProvider";
 import { createGovernorClient, storeProposalId } from "@/lib/contracts";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
@@ -63,6 +64,7 @@ export default function ProposalsPage() {
   const [failedProposalIds, setFailedProposalIds] = useState<string[]>([]);
   const [retryingIds, setRetryingIds] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(LOAD_MORE_PAGE_SIZE);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const {
     proposals: discoveredProposals,
@@ -339,27 +341,64 @@ export default function ProposalsPage() {
 
       {contractsConfigured && (
         <section className="mt-6 min-w-0 rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5">
-          <h2 className="font-semibold text-slate-100">Create proposal</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold text-slate-100">Create proposal</h2>
+            <button
+              type="button"
+              onClick={() => setCreateOpen((open) => !open)}
+              aria-expanded={createOpen}
+              aria-controls="create-proposal-form"
+              className="shrink-0 cursor-pointer rounded-lg bg-slate-800/80 px-2.5 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100 sm:px-3"
+            >
+              {createOpen ? "Hide proposal form" : "New proposal"}
+            </button>
+          </div>
+          <p className="mt-1 text-sm text-slate-400">
+            Submits to the global Governor. For community-scoped proposals,
+            visit{" "}
+            <Link
+              href="/communities"
+              className="underline decoration-slate-500 underline-offset-2 hover:text-slate-200"
+            >
+              Communities (/communities)
+            </Link>
+            .
+          </p>
           <p className="mt-1 text-sm text-slate-400">
             Structured Proposal Metadata v1 is serialized into the on-chain
             description. Older free-text proposals remain readable on detail
             pages.
           </p>
-          <ProposalMetadataFields
-            value={metadataDraft}
-            errors={metadataErrors}
-            onChange={updateMetadataField}
-          />
+          {createOpen && (
+            <div id="create-proposal-form" className="mt-3">
+              <ProposalMetadataFields
+                value={metadataDraft}
+                errors={metadataErrors}
+                onChange={updateMetadataField}
+              />
+            </div>
+          )}
           <AppButton
             tone="primary"
             onClick={() => void handleCreateProposal()}
             disabled={!address || proposeLifecycle.isInFlight}
+            aria-describedby={
+              !address ? "create-proposal-disabled-reason" : undefined
+            }
             className="mt-3 w-full sm:w-auto"
           >
             {proposeLifecycle.isInFlight
               ? "Creating proposal…"
               : "Create proposal"}
           </AppButton>
+          {!address && (
+            <p
+              id="create-proposal-disabled-reason"
+              className="mt-2 text-sm text-slate-200"
+            >
+              Connect your wallet to create a proposal.
+            </p>
+          )}
           <TransactionLifecycleStatus
             stage={proposeLifecycle.stage}
             operationLabel="Propose"

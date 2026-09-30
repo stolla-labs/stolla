@@ -46,7 +46,16 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+function ensureCreateOpen() {
+  if (
+    !screen.queryByRole("textbox", { name: "Title (required)" })
+  ) {
+    fireEvent.click(screen.getByRole("button", { name: "New proposal" }));
+  }
+}
+
 function fillDescription(value = "  Fund the grants program  ") {
+  ensureCreateOpen();
   fireEvent.change(screen.getByRole("textbox", { name: "Title (required)" }), {
     target: { value },
   });
@@ -81,6 +90,47 @@ describe("ProposalsPage create lifecycle", () => {
     });
   });
 
+  it("collapses the create form and explains the disconnected state", async () => {
+    mocks.useWallet.mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+      isConnecting: false,
+    });
+
+    render(<ProposalsPage />);
+
+    // Collapsed by default: fields hidden, toggle visible, order stable.
+    expect(
+      screen.getByRole("button", { name: "New proposal" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Title (required)" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Connect your wallet to create a proposal."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/For community-scoped proposals/),
+    ).toBeInTheDocument();
+
+    const createButton = screen.getByRole("button", {
+      name: "Create proposal",
+    });
+    expect(createButton).toBeDisabled();
+    expect(createButton).toHaveAttribute(
+      "aria-describedby",
+      "create-proposal-disabled-reason",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "New proposal" }));
+    expect(
+      screen.getByRole("textbox", { name: "Title (required)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create proposal" }),
+    ).toBeDisabled();
+  });
+
   it("does not call propose when disconnected or description is blank", async () => {
     const propose = vi.fn();
     mocks.createGovernorClient.mockReturnValue({
@@ -107,6 +157,7 @@ describe("ProposalsPage create lifecycle", () => {
     });
     render(<ProposalsPage />);
 
+    ensureCreateOpen();
     fireEvent.click(screen.getByRole("button", { name: "Create proposal" }));
     expect(
       await screen.findByText("Title is required."),
