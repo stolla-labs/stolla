@@ -587,4 +587,24 @@ describe("ProposalDetailPage", () => {
       screen.queryByRole("button", { name: "Share proposal page link" }),
     ).not.toBeInTheDocument();
   });
+
+  it("displays voting-power composition breakdown when balance and delegation are loaded", async () => {
+    mocks.useParams.mockReturnValue({ id: VALID_ID });
+    mockConnectedWallet("GWALLET_USER");
+    mockNft({
+      get_votes: vi.fn().mockResolvedValue({ result: BigInt(5) }),
+      balance: vi.fn().mockResolvedValue({ result: 2 }),
+      get_delegate: vi.fn().mockResolvedValue({ result: "GWALLET_USER" }),
+    });
+
+    render(<ProposalDetailPage />);
+
+    expect(
+      await screen.findByRole("group", { name: "Voting power breakdown" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Own tokens (self-delegated)")).toBeInTheDocument();
+    expect(
+      screen.getByText("Received from others (delegated-in)"),
+    ).toBeInTheDocument();
+  });
 });

@@ -3,6 +3,7 @@ export interface CollectionData {
   symbol: string;
   balance: number | null;
   votes: string | null;
+  delegate: string | null;
 }
 
 interface Result<T> {
@@ -17,6 +18,7 @@ export interface CollectionClient {
 export interface CommunityUserClient {
   balance(input: { account: string }): Promise<Result<unknown>>;
   get_votes(input: { account: string }): Promise<Result<unknown>>;
+  get_delegate?(input: { account: string }): Promise<Result<unknown>>;
 }
 
 interface LoadCommunityDataOptions {

@@ -40,6 +40,7 @@ import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleSta
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
+import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
 import {
   loadCommunityData,
   runCommunityRefresh,
@@ -83,6 +84,7 @@ export default function CommunityPage() {
   const [symbol, setSymbol] = useState("");
   const [balance, setBalance] = useState<number | null>(null);
   const [votes, setVotes] = useState<string | null>(null);
+  const [delegate, setDelegate] = useState<string | null>(null);
   const [recipient, setRecipient] = useState("");
   const [tokenName, setTokenName] = useState("");
   const [tokenDescription, setTokenDescription] = useState("");
@@ -215,6 +217,7 @@ export default function CommunityPage() {
           setSymbol(data.symbol);
           setBalance(data.balance);
           setVotes(data.votes);
+          setDelegate(data.delegate ?? null);
           setInitialLoading(false);
           setRefreshing(false);
         },
@@ -499,6 +502,12 @@ export default function CommunityPage() {
                   <dd>{votes ?? "—"}</dd>
                 </div>
               </dl>
+              <VotingPowerCompositionDisplay
+                account={address}
+                balance={balance}
+                totalVotes={votes}
+                delegate={delegate}
+              />
               <AppButton
                 tone="secondary"
                 onClick={() => void handleDelegate()}
