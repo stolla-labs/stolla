@@ -39,6 +39,7 @@ import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
+import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import {
   loadCommunityData,
   runCommunityRefresh,
@@ -472,6 +473,14 @@ export default function CommunityPage() {
           ) : (
             <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-5">
               <h2 className="font-semibold text-slate-100">Collection</h2>
+              <SelfDelegateCallout
+                balance={balance}
+                votes={votes}
+                nftContractId={activeNftContract}
+                onDelegate={() => void handleDelegate()}
+                isDelegating={delegationLifecycle.isInFlight}
+                className="mt-3"
+              />
               <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-slate-500">Name</dt>

@@ -34,6 +34,7 @@ import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { ProposalMetadataDisplay } from "@/components/proposal/ProposalMetadataDisplay";
 import { LEDGER_TIME_ASSUMPTION_NOTE } from "@/lib/community/governanceDisplay";
 import { formatProposalDeadlineEstimate } from "@/lib/proposalDeadline";
+import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 
 
 type ProposalResult = {
@@ -93,6 +94,7 @@ export default function ProposalDetailPage({
     "loading" | "ready" | "unavailable"
   >("loading");
   const [votingPower, setVotingPower] = useState<bigint | null>(null);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
   const [votingPowerStatus, setVotingPowerStatus] = useState<
     "disconnected" | "loading" | "ready" | "unavailable"
   >("disconnected");
@@ -222,8 +224,15 @@ export default function ProposalDetailPage({
       const tx = await client.get_votes({ account: address });
       setVotingPower(tx.result ?? BigInt(0));
       setVotingPowerStatus("ready");
+      try {
+        const balTx = await client.balance({ account: address });
+        setUserBalance(balTx.result ?? 0);
+      } catch {
+        setUserBalance(null);
+      }
     } catch {
       setVotingPower(null);
+      setUserBalance(null);
       setVotingPowerStatus("unavailable");
     }
   }, [address, nftContractId]);
@@ -496,10 +505,20 @@ export default function ProposalDetailPage({
                   {votingPower.toString()}
                 </span>
                 {votingPower === BigInt(0) && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Delegate your membership NFT on the Community page to gain
-                    voting power.
-                  </p>
+                  <div className="mt-2 space-y-2">
+                    <SelfDelegateCallout
+                      balance={userBalance}
+                      votes={votingPower}
+                      nftContractId={nftContractId}
+                      onDelegationSuccess={() => void loadVotingPower()}
+                    />
+                    {(!userBalance || userBalance <= 0) && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Delegate your membership NFT on the Community page to gain
+                        voting power.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
