@@ -22,9 +22,17 @@ const DEFAULT_PINATA_API_URL = "https://api.pinata.cloud";
 
 type PinErrorKind = "config" | "validation" | "network" | "provider";
 
+/** Stable machine-readable codes, one per `PinErrorKind`, for callers that key off a code rather than the human message. */
+const PIN_ERROR_CODES: Record<PinErrorKind, string> = {
+  config: "pin_config_missing",
+  validation: "pin_payload_invalid",
+  network: "pin_retryable_error",
+  provider: "pin_provider_error",
+};
+
 function errorResponse(status: number, kind: PinErrorKind, message: string) {
   return NextResponse.json(
-    { error: { kind, message } },
+    { error: { kind, code: PIN_ERROR_CODES[kind], message } },
     { status, headers: { "Cache-Control": "no-store" } },
   );
 }
@@ -57,7 +65,7 @@ export async function POST(request: Request) {
   const jwt = process.env.PINATA_JWT;
   if (!jwt) {
     return errorResponse(
-      503,
+      400,
       "config",
       "IPFS pinning is not configured on this server. Set PINATA_JWT before creating communities or minting.",
     );
