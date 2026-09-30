@@ -29,7 +29,7 @@ export function CommunitySearch() {
         onChange={(e) => updateQuery(e.target.value)}
         placeholder="Search communities by name..."
         data-testid="community-search-input"
-        className="w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+        className="input-field w-full rounded-lg border bg-[#0b0f19] px-3 py-2 text-sm text-slate-100"
       />
     </label>
   );

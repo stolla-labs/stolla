@@ -8,6 +8,17 @@ const mocks = vi.hoisted(() => ({
   listCommunities: vi.fn(),
 }));
 
+vi.mock("@/context/WalletProvider", () => ({
+  useWallet: () => ({
+    address: null,
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    signTransaction: vi.fn(),
+    isConnecting: false,
+    connectionError: null,
+  }),
+}));
+
 import CommunitiesPage from "@/app/(app)/communities/page";
 
 const registry = {

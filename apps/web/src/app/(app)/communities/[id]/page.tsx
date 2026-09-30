@@ -8,7 +8,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getCommunity } from "@/lib/community/registry";
+import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
 import type {
   CommunityDetailResult,
   CommunityRegistryRecord,
@@ -52,7 +52,7 @@ function ContractAddress({
             type="button"
             onClick={() => onCopy(label, contractId)}
             className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            aria-label={`Copy full ${label.toLowerCase()} address`}
+            aria-label={`Copy ${label}`}
           >
             Copy address
           </button>
@@ -62,7 +62,7 @@ function ContractAddress({
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-              aria-label={`View ${label.toLowerCase()} on Stellar Expert`}
+              aria-label={`Open ${label} in explorer`}
             >
               Open explorer
             </a>
@@ -77,6 +77,7 @@ function ContractAddress({
 export default function CommunityDetailPage() {
   const params = useParams<{ id: string }>();
   const communityId = params.id;
+  const registry = useCommunityRegistry();
   const [result, setResult] = useState<CommunityDetailResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +87,7 @@ export default function CommunityDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      setResult(await getCommunity(communityId));
+      setResult(await registry.get(communityId));
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -96,7 +97,7 @@ export default function CommunityDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [communityId]);
+  }, [communityId, registry]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void load(), 0);
@@ -420,11 +421,21 @@ export default function CommunityDetailPage() {
           </div>
           <div className="min-w-0">
             <dt className="text-slate-500">Community owner</dt>
-            <dd
-              title={record.communityOwner}
-              className="mt-1 break-all font-mono text-slate-200"
-            >
-              {truncateMiddle(record.communityOwner, 10, 8)}
+            <dd className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
+              <span
+                title={record.communityOwner}
+                className="break-all font-mono text-slate-200"
+              >
+                {truncateMiddle(record.communityOwner, 10, 8)}
+              </span>
+              <button
+                type="button"
+                onClick={() => void copyValue("Community owner", record.communityOwner)}
+                className="shrink-0 min-h-9 rounded-lg border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
+                aria-label="Copy Community owner"
+              >
+                Copy
+              </button>
             </dd>
           </div>
           <div className="min-w-0">

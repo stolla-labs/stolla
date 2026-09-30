@@ -74,7 +74,7 @@ describe("ProposalsPage public history", () => {
 
     expect(screen.getByText("Loading proposal history...")).toBeInTheDocument();
     expect(
-      screen.queryByText("No public proposals have been discovered yet."),
+      screen.queryByText("No public proposals were found in the scanned range."),
     ).not.toBeInTheDocument();
 
     mocks.useProposalDiscovery.mockReturnValue(
@@ -83,7 +83,7 @@ describe("ProposalsPage public history", () => {
     rerender(<ProposalsPage />);
 
     expect(
-      screen.getByText("No public proposals have been discovered yet."),
+      screen.getByText("No public proposals were found in the scanned range."),
     ).toBeInTheDocument();
     expect(
       screen.queryByText("Loading proposal history..."),
