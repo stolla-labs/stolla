@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/Button";
 import { LandingSectionHeader } from "@/components/landing/LandingSectionHeader";
 import { LANDING_IMAGES } from "@/lib/landingImages";
+import { activityHref, landingActivity } from "@/lib/landing-activity";
 
 const SHOWCASE_ITEMS = [
   {
@@ -28,7 +29,14 @@ const SHOWCASE_ITEMS = [
   },
 ] as const;
 
-export function ShowcaseSection() {
+export function ShowcaseSection({
+  live = null,
+  error = false,
+}: {
+  live?: { id: string; community: string; title: string }[] | null;
+  error?: boolean;
+}) {
+  const activity = landingActivity({ live, error });
   return (
     <section id="showcase" className="landing-section landing-section-alt">
       <div className="landing-container">
@@ -36,20 +44,24 @@ export function ShowcaseSection() {
           <LandingSectionHeader
             eyebrow="Showcase · Illustrative demo"
             title="What communities are voting on"
-            description="Example proposals to show the voting experience. These illustrations are not live on-chain data."
+            description="Example proposals stay labeled Demo. Registry rows are the only ones linked to a community proposal."
           />
           <LinkButton href="/proposals" variant="ghost" className="shrink-0">
             View all
           </LinkButton>
         </div>
 
+        <p className="text-xs uppercase tracking-wide">{activity.label}</p>
         <div className="landing-showcase-grid">
-          {SHOWCASE_ITEMS.map((item) => (
+          {SHOWCASE_ITEMS.map((item, index) => {
+            const row = activity.rows[index] ?? activity.rows[0];
+            const href = row ? activityHref(row, activity.mode) : "/proposals";
+            return (
             <Link
               key={item.title}
-              href="/proposals"
-              className="landing-showcase-card lp-card"
-              aria-label={`${item.title}. View proposals.`}
+              href={href}
+              className="landing-showcase-card lp-card min-w-0"
+              aria-label={`${item.title}. ${activity.label}.`}
             >
               <figure className="landing-showcase-image">
                 <Image
@@ -66,7 +78,8 @@ export function ShowcaseSection() {
                 <p className="landing-showcase-detail">{item.detail}</p>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
