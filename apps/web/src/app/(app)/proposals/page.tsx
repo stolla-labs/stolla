@@ -16,6 +16,7 @@ import { contractIds } from "@/lib/stellar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
 import { ProposalMetadataFields } from "@/components/proposal/ProposalMetadataFields";
+import { PreSubmitSummary } from "@/components/PreSubmitSummary";
 import { AppButton } from "@/components/ui/AppButton";
 import { truncateEnd } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
@@ -378,6 +379,7 @@ export default function ProposalsPage() {
               />
             </div>
           )}
+          <PreSubmitSummary simulation={null} onConfirm={() => void handleCreateProposal()} />
           <AppButton
             tone="primary"
             onClick={() => void handleCreateProposal()}
