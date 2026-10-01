@@ -250,9 +250,27 @@ export default function CommunityDetailPage() {
           size="detail"
         />
         <div className="min-w-0">
-          <h1 className="break-words text-2xl font-bold text-slate-100 [overflow-wrap:anywhere] sm:text-3xl">
-            {name}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="break-words text-2xl font-bold text-slate-100 [overflow-wrap:anywhere] sm:text-3xl">
+              {name}
+            </h1>
+            {record.status === "paused" ? (
+              <span
+                data-testid="community-status-badge"
+                className="inline-flex shrink-0 items-center rounded-md border border-amber-800/80 bg-amber-950/60 px-2.5 py-0.5 text-xs font-medium leading-4 text-amber-300"
+              >
+                Paused
+              </span>
+            ) : null}
+            {record.status === "archived" ? (
+              <span
+                data-testid="community-status-badge"
+                className="inline-flex shrink-0 items-center rounded-md border border-slate-700 bg-slate-800/70 px-2.5 py-0.5 text-xs font-medium leading-4 text-slate-400"
+              >
+                Archived
+              </span>
+            ) : null}
+          </div>
           <p className="mt-2 break-all font-mono text-xs text-slate-500">
             {record.id}
           </p>
@@ -274,6 +292,22 @@ export default function CommunityDetailPage() {
           </div>
         </div>
       </header>
+
+      {record.status === "paused" ? (
+        <section
+          role="status"
+          aria-label="Community status"
+          className="mt-6 rounded-xl border border-amber-800/70 bg-amber-950/40 p-4 sm:p-5"
+        >
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-amber-400" aria-hidden="true" />
+            <h2 className="font-semibold text-amber-200">Community is paused</h2>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-amber-300/90">
+            This community is currently paused by its owner. Minting and new proposals are disabled, while proposal history, member roster, and on-chain records remain fully accessible.
+          </p>
+        </section>
+      ) : null}
 
       <LiveStatus className="mt-3 text-sm text-slate-400">
         {copyStatus}

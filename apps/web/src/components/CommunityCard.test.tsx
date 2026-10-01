@@ -155,4 +155,48 @@ describe("CommunityCard membership indicator", () => {
     });
     expect(screen.getByText("Builders DAO")).toBeInTheDocument();
   });
+
+  it("renders a Paused badge when the community record status is paused", () => {
+    mocks.useWallet.mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+      isConnecting: false,
+    });
+
+    const pausedCommunity: CommunityView = {
+      ...community,
+      record: {
+        ...community.record,
+        status: "paused",
+      },
+    };
+
+    render(<CommunityCard community={pausedCommunity} />);
+
+    const badge = screen.getByTestId("community-status-badge");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent("Paused");
+  });
+
+  it("renders an Archived badge when the community record status is archived", () => {
+    mocks.useWallet.mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+      isConnecting: false,
+    });
+
+    const archivedCommunity: CommunityView = {
+      ...community,
+      record: {
+        ...community.record,
+        status: "archived",
+      },
+    };
+
+    render(<CommunityCard community={archivedCommunity} />);
+
+    const badge = screen.getByTestId("community-status-badge");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent("Archived");
+  });
 });

@@ -111,12 +111,18 @@ export function ScopedProposalEmptyState({
     await refresh();
   }
 
+  const isPaused = community.record.status === "paused";
+
   return (
     <EmptyState
       className="mt-3"
       title="No proposals yet"
       action={
-        !address ? (
+        isPaused ? (
+          <AppButton tone="primary" disabled aria-disabled="true">
+            Proposals paused
+          </AppButton>
+        ) : !address ? (
           <AppButton tone="primary" onClick={() => void connect()} disabled={isConnecting}>
             {isConnecting ? "Connecting…" : "Connect wallet to propose"}
           </AppButton>
@@ -135,7 +141,13 @@ export function ScopedProposalEmptyState({
         ) : null
       }
     >
-      <p>This community has no public proposals yet. Members with enough delegated voting power can create the first one.</p>
+      {isPaused ? (
+        <p className="text-amber-300">
+          This community is currently paused. New proposals cannot be created while paused.
+        </p>
+      ) : (
+        <p>This community has no public proposals yet. Members with enough delegated voting power can create the first one.</p>
+      )}
       {address && walletReadiness?.status === "loading" && <p>Checking voting power…</p>}
       {address && walletReadiness?.status === "ready" && !canPropose && threshold !== null && (
         <p>Delegate this community&apos;s membership NFT voting power to meet the proposal threshold.</p>
