@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
+import { PreSubmitSummary } from "@/components/PreSubmitSummary";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
@@ -547,6 +548,22 @@ export function CommunityDeploymentPanel({
           never uses hand-typed URIs.
         </LiveStatus>
       )}
+
+      <PreSubmitSummary
+        simulation={
+          stage === "failure"
+            ? { ok: false, message: message || "Simulation failed. The draft is unchanged." }
+            : simulation
+              ? {
+                  ok: true,
+                  message: "Simulation succeeded.",
+                  fee: `${simulation.feeStroops} stroops`,
+                  signers: address ? [address] : [],
+                }
+              : null
+        }
+        onConfirm={() => void submit()}
+      />
 
       {!transactionHash && (
         <div className="mt-4 flex flex-wrap gap-3">

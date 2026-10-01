@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { PreSubmitSummary } from "@/components/PreSubmitSummary";
 import { useWallet } from "@/context/WalletProvider";
 import { getE2EBridge } from "@/lib/e2eMock";
 import { formatBytes, IPFS_UPLOAD_LIMITS } from "@/lib/ipfs/limits";
@@ -553,6 +554,7 @@ export default function CommunityPage() {
 
           <section className="min-w-0 rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5">
             <h2 className="font-semibold text-slate-100">Mint NFT (owner only)</h2>
+            <PreSubmitSummary simulation={null} onConfirm={() => void handleMint()} />
             <div className="mt-4 min-w-0 space-y-4">
               <div>
                 <label
