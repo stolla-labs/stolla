@@ -123,6 +123,7 @@ describe("network capability matrix", () => {
       "communityFactory",
       "legacyContracts",
       "proposalDiscovery",
+      "privilegedWrites",
     ]);
     expect(() =>
       requireNetworkCapability(capabilities, "communityFactory"),
@@ -143,5 +144,22 @@ describe("network capability matrix", () => {
       NEXT_PUBLIC_GOVERNOR_START_LEDGER: "0",
     });
     expect(capabilities.proposalDiscovery.available).toBe(false);
+  });
+
+  it("allows testnet writes and blocks mainnet writes until the flag is set", () => {
+    expect(buildNetworkCapabilities("testnet", {}).privilegedWrites.available).toBe(true);
+    const blocked = buildNetworkCapabilities("mainnet", {
+      NEXT_PUBLIC_STELLAR_MAINNET_RPC_URL: "https://rpc.example",
+    });
+    expect(blocked.privilegedWrites.available).toBe(false);
+    expect(blocked.rpc.available).toBe(true);
+    if (!blocked.privilegedWrites.available) {
+      expect(blocked.privilegedWrites.reason).toContain("docs/testnet-to-mainnet-runbook.md");
+    }
+    expect(
+      buildNetworkCapabilities("mainnet", {
+        NEXT_PUBLIC_ALLOW_MAINNET_WRITES: "true",
+      }).privilegedWrites.available,
+    ).toBe(true);
   });
 });

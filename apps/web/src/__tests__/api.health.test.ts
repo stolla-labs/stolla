@@ -67,6 +67,7 @@ describe("GET /api/health", () => {
         communityFactory: true,
         legacyContracts: true,
         proposalDiscovery: true,
+        privilegedWrites: true,
       },
       unavailableCapabilities: [],
     });

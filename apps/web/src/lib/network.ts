@@ -132,7 +132,8 @@ export type NetworkCapabilityName =
   | "explorer"
   | "communityFactory"
   | "legacyContracts"
-  | "proposalDiscovery";
+  | "proposalDiscovery"
+  | "privilegedWrites";
 
 export type CapabilityAvailability =
   | { available: true }
@@ -150,6 +151,7 @@ export type NetworkCapabilities = {
   communityFactory: CapabilityAvailability & { contractId: string };
   legacyContracts: CapabilityAvailability & { nftContractId: string; governorContractId: string };
   proposalDiscovery: CapabilityAvailability & { governorContractId: string; startLedger: number | null };
+  privilegedWrites: CapabilityAvailability;
 };
 
 type CapabilityEnvironment = Record<string, string | undefined>;
@@ -161,6 +163,19 @@ function unavailable(reason: string, ...requiredEnvironment: string[]): Capabili
 
 function configured(value: string | undefined) {
   return value?.trim() ?? "";
+}
+
+export const MAINNET_RUNBOOK_PATH = "docs/testnet-to-mainnet-runbook.md";
+
+/** Testnet writes stay on. Mainnet writes require an explicit public flag. */
+export function mainnetWritesAllowed(
+  id: ActiveNetworkId,
+  environment: CapabilityEnvironment = process.env,
+): boolean {
+  if (id !== "mainnet") return true;
+  const flag =
+    environment.NEXT_PUBLIC_ALLOW_MAINNET_WRITES ?? environment.ALLOW_MAINNET_WRITES;
+  return flag?.trim().toLowerCase() === "true";
 }
 
 export function resolveActiveNetworkId(value?: string): ActiveNetworkId {
@@ -186,6 +201,7 @@ export function buildNetworkCapabilities(
   const legacyNft = configured(environment.NEXT_PUBLIC_NFT_CONTRACT_ID);
   const legacyGovernor = configured(environment.NEXT_PUBLIC_GOVERNOR_CONTRACT_ID);
   const startLedger = parsePositiveLedger(environment.NEXT_PUBLIC_GOVERNOR_START_LEDGER);
+  const writesAllowed = mainnetWritesAllowed(id, environment);
 
   return {
     network,
@@ -215,6 +231,12 @@ export function buildNetworkCapabilities(
       startLedger,
       ...(legacyGovernor && startLedger ? { available: true as const } : unavailable("Proposal discovery is unavailable for the active deployment.", "NEXT_PUBLIC_GOVERNOR_CONTRACT_ID", "NEXT_PUBLIC_GOVERNOR_START_LEDGER")),
     },
+    privilegedWrites: writesAllowed
+      ? { available: true as const }
+      : unavailable(
+          "Mainnet writes are off. You can still browse the registry and proposals. See docs/testnet-to-mainnet-runbook.md.",
+          "NEXT_PUBLIC_ALLOW_MAINNET_WRITES",
+        ),
   };
 }
 
@@ -242,6 +264,6 @@ export function requireNetworkCapability<K extends NetworkCapabilityName>(
 }
 
 export function listUnavailableCapabilities(capabilities: NetworkCapabilities) {
-  const names: NetworkCapabilityName[] = ["rpc", "explorer", "communityFactory", "legacyContracts", "proposalDiscovery"];
+  const names: NetworkCapabilityName[] = ["rpc", "explorer", "communityFactory", "legacyContracts", "proposalDiscovery", "privilegedWrites"];
   return names.filter((name) => !capabilities[name].available);
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
 import { PreSubmitSummary } from "@/components/PreSubmitSummary";
 import { AppButton } from "@/components/ui/AppButton";
+import { MainnetWriteGate, mainnetWritesBlocked } from "@/components/MainnetWriteGate";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { OnChainIdentifier } from "@/components/ui/OnChainIdentifier";
@@ -567,6 +568,7 @@ export function CommunityDeploymentPanel({
             type="button"
             onClick={() => void simulate()}
             disabled={
+              mainnetWritesBlocked() ||
               busy ||
               !confirmed ||
               !address ||
@@ -587,6 +589,7 @@ export function CommunityDeploymentPanel({
               tone="primary"
               onClick={() => void submit()}
               disabled={
+                mainnetWritesBlocked() ||
                 busy ||
                 !confirmed ||
                 networkMismatch ||
@@ -600,6 +603,7 @@ export function CommunityDeploymentPanel({
           )}
         </div>
       )}
+      <MainnetWriteGate />
 
       {transactionHash && registryState !== "verified" && (
         <div className="mt-4 flex flex-wrap gap-3">

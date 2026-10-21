@@ -173,6 +173,7 @@ Add these environment variables in the Vercel project settings:
 | `NEXT_PUBLIC_GOVERNOR_START_LEDGER` | Governor deploy ledger from deploy script output |
 | `NEXT_PUBLIC_IPFS_GATEWAY_URL` | Public IPFS gateway ending in `/ipfs/` |
 | `PINATA_JWT` | Server-only Pinata JWT used by `/api/ipfs/pin` (required for create and mint) |
+| `NEXT_PUBLIC_ALLOW_MAINNET_WRITES` | `true` only after the testnet-to-mainnet runbook. Default off. Mainnet create, mint, and propose stay disabled until this is set. Testnet is unchanged. |
 
 After the first production deployment, Vercel will redeploy automatically when
 new commits are pushed to the production branch.

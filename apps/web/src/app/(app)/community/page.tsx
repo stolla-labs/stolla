@@ -34,6 +34,7 @@ import {
 import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
 import type { Community } from "@/lib/community/types";
 import { contractIds } from "@/lib/stellar";
+import { MainnetWriteGate, mainnetWritesBlocked } from "@/components/MainnetWriteGate";
 import { Skeleton, SkeletonStat } from "@/components/ui/Skeleton";
 import { AppButton } from "@/components/ui/AppButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
@@ -747,6 +748,7 @@ export default function CommunityPage() {
                 tone="primary"
                 onClick={() => void handleMint()}
                 disabled={
+                  mainnetWritesBlocked() ||
                   !address ||
                   !tokenDraftValid ||
                   pinState.kind === "pinning" ||
@@ -762,6 +764,7 @@ export default function CommunityPage() {
                     ? "Mint in progress…"
                     : "Mint NFT"}
               </AppButton>
+              <MainnetWriteGate />
               <TransactionLifecycleStatus
                 stage={mintLifecycle.stage}
                 operationLabel="Mint"

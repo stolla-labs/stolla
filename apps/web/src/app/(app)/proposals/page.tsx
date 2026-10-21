@@ -18,6 +18,7 @@ import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
 import { ProposalMetadataFields } from "@/components/proposal/ProposalMetadataFields";
 import { PreSubmitSummary } from "@/components/PreSubmitSummary";
 import { AppButton } from "@/components/ui/AppButton";
+import { MainnetWriteGate, mainnetWritesBlocked } from "@/components/MainnetWriteGate";
 import { truncateEnd } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
@@ -385,7 +386,7 @@ export default function ProposalsPage() {
           <AppButton
             tone="primary"
             onClick={() => void handleCreateProposal()}
-            disabled={!address || proposeLifecycle.isInFlight}
+            disabled={mainnetWritesBlocked() || !address || proposeLifecycle.isInFlight}
             aria-describedby={
               !address ? "create-proposal-disabled-reason" : undefined
             }
@@ -395,6 +396,7 @@ export default function ProposalsPage() {
               ? "Creating proposal…"
               : "Create proposal"}
           </AppButton>
+          <MainnetWriteGate />
           {!address && (
             <p
               id="create-proposal-disabled-reason"
