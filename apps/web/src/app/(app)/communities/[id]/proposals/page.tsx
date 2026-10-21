@@ -20,9 +20,11 @@ import {
   PROPOSAL_STATE_LABELS,
   PROPOSAL_STATE_ORDER,
 } from "@/lib/proposalState";
+import { ALL_PROPOSAL_STATES } from "@/lib/proposals/state-filter";
+import { useProposalStateQuery } from "@/lib/proposals/useProposalStateQuery";
 
 const PAGE_SIZE = 10;
-const ALL_STATES = "all";
+const ALL_STATES = ALL_PROPOSAL_STATES;
 
 function ScopedProposalHistory({ community }: { community: CommunityView }) {
   const governorContract = community.record.governorContract;
@@ -46,9 +48,7 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
     Record<string, ProposalState | "unavailable">
   >({});
   const [retrying, setRetrying] = useState<string[]>([]);
-  const [filter, setFilter] = useState<typeof ALL_STATES | ProposalState>(
-    ALL_STATES,
-  );
+  const [filter, setFilter] = useProposalStateQuery();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const loadState = useCallback(

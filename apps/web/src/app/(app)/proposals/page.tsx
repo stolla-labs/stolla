@@ -12,6 +12,8 @@ import {
   PROPOSAL_STATE_LABELS,
   PROPOSAL_STATE_ORDER,
 } from "@/lib/proposalState";
+import { ALL_PROPOSAL_STATES } from "@/lib/proposals/state-filter";
+import { useProposalStateQuery } from "@/lib/proposals/useProposalStateQuery";
 import { contractIds } from "@/lib/stellar";
 import { SkeletonProposalRow } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
@@ -39,9 +41,8 @@ type ActionStatus = {
   tone: "routine" | "error";
 };
 
-const ALL_FILTER = "all" as const;
+const ALL_FILTER = ALL_PROPOSAL_STATES;
 const LOAD_MORE_PAGE_SIZE = 10;
-type StateFilter = typeof ALL_FILTER | ProposalState;
 
 const EMPTY_METADATA_DRAFT: ProposalMetadataDraft = {
   title: "",
@@ -59,7 +60,7 @@ export default function ProposalsPage() {
   );
   const [status, setStatus] = useState<ActionStatus | null>(null);
   const proposeLifecycle = useOperationLifecycle();
-  const [stateFilter, setStateFilter] = useState<StateFilter>(ALL_FILTER);
+  const [stateFilter, setStateFilter] = useProposalStateQuery();
   const [states, setStates] = useState<Record<string, ProposalState | "unknown">>(
     {},
   );
@@ -214,12 +215,13 @@ export default function ProposalsPage() {
   const canLoadMore = visibleCount < filteredIds.length;
 
   useEffect(() => {
+    if (Object.keys(states).length === 0) return;
     if (stateFilter !== ALL_FILTER && !availableStates.includes(stateFilter)) {
-      // Drop stale filter when the available set shrinks after a reload.
+      // Drop a filter that is not present after states have loaded.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStateFilter(ALL_FILTER);
     }
-  }, [availableStates, stateFilter]);
+  }, [availableStates, setStateFilter, stateFilter, states]);
 
 
   function updateMetadataField(field: ProposalMetadataField, value: string) {
