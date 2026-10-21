@@ -21,6 +21,7 @@ import {
 import { truncateMiddle } from "@/lib/truncate";
 import { CommunityMemberRoster } from "@/components/community/CommunityMemberRoster";
 import { GuardianControls } from "@/components/community/GuardianControls";
+import { readMetadataOverlay } from "@/lib/community/settings";
 
 function ContractAddress({
   label,
@@ -233,7 +234,9 @@ export default function CommunityDetailPage() {
 
   const { community } = result;
   const { metadata, metadataError, record, governance } = community;
-  const name = metadata?.name ?? `Community ${truncateMiddle(record.id, 8, 6)}`;
+  const overlay = readMetadataOverlay(record.id);
+  const name = overlay?.name ?? metadata?.name ?? `Community ${truncateMiddle(record.id, 8, 6)}`;
+  const metadataUri = overlay?.metadataUri ?? record.metadataUri;
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-10">
@@ -273,6 +276,9 @@ export default function CommunityDetailPage() {
             >
               Share page
             </AppButton>
+            <AppLinkButton href={`/communities/${record.id}/settings`} tone="secondary">
+              Settings
+            </AppLinkButton>
           </div>
         </div>
       </header>
@@ -450,10 +456,10 @@ export default function CommunityDetailPage() {
           <div className="min-w-0">
             <dt className="text-slate-500">Metadata URI</dt>
             <dd
-              title={record.metadataUri}
+              title={metadataUri}
               className="mt-1 break-all font-mono text-slate-200"
             >
-              {record.metadataUri}
+              {metadataUri}
             </dd>
           </div>
         </dl>
