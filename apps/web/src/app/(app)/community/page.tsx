@@ -39,6 +39,7 @@ import { AppButton } from "@/components/ui/AppButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
+import { BatchMintPanel } from "@/components/community/BatchMintPanel";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
@@ -352,6 +353,22 @@ export default function CommunityPage() {
       });
       await refresh();
     }
+  }
+
+  async function mintBatchRecipient(to: string) {
+    if (!address) throw new Error("Connect your wallet first.");
+    const published = await pinTokenMetadata();
+    if (!published) {
+      throw new Error("Metadata pin failed. The recipient list is unchanged.");
+    }
+    const uriError = validateMintTokenUri(published.tokenUri);
+    if (uriError) throw new Error(uriError);
+    const client = createNftClient({
+      publicKey: address,
+      signTransaction,
+      contractId: activeNftContract,
+    });
+    await client.mint({ to, token_uri: published.tokenUri });
   }
 
   async function handleDelegate() {
@@ -785,6 +802,15 @@ export default function CommunityPage() {
                       ]
                     : undefined,
                 }}
+              />
+              <BatchMintPanel
+                disabled={
+                  !address ||
+                  !tokenDraftValid ||
+                  pinState.kind === "pinning" ||
+                  mintLifecycle.isInFlight
+                }
+                onMintOne={mintBatchRecipient}
               />
             </div>
           </section> : <section className="rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5 text-sm text-slate-400">Minting is available to the current NFT owner. Connect that wallet to mint.</section>}
