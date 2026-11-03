@@ -99,12 +99,42 @@ describe("MainnetReadinessPage", () => {
 
   it("shows every gate as passing with no failure copy when the environment is complete", async () => {
     vi.stubEnv("NEXT_PUBLIC_SHOW_READINESS", "1");
-    stubFetch({ status: "ok", gates: [gate(), gate({ name: "explorer", label: "Explorer" })] });
+    stubFetch({
+      healthy: true,
+      status: "healthy",
+      gates: [gate(), gate({ name: "explorer", label: "Explorer" })],
+    });
 
     render(<MainnetReadinessPage />);
 
     expect(await screen.findByText(/Ready/)).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("renders an unhealthy banner when core readiness gates return HTTP 503 with gates", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SHOW_READINESS", "1");
+    stubFetch(
+      {
+        healthy: false,
+        status: "unhealthy",
+        gates: [
+          gate({
+            name: "communityFactory",
+            label: "CommunityFactory contract",
+            available: false,
+            reason: "CommunityFactory is unavailable for the active deployment.",
+            requiredEnvironment: ["NEXT_PUBLIC_COMMUNITY_FACTORY_CONTRACT_ID"],
+            runbookAnchor: "3-deploy-in-dependency-order",
+          }),
+        ],
+      },
+      false,
+    );
+
+    render(<MainnetReadinessPage />);
+
+    expect(await screen.findByText(/Unhealthy/)).toBeInTheDocument();
+    expect(screen.getByText("CommunityFactory contract")).toBeInTheDocument();
   });
 
   it("shows a retryable error state when the health endpoint cannot be reached", async () => {

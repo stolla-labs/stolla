@@ -1,76 +1,19 @@
 import { NextResponse } from "next/server";
+import { evaluateDeploymentHealth } from "@/lib/health";
 import { activeCapabilities } from "@/lib/stellar";
-import {
-  buildHealthGates,
-  listUnavailableCapabilities,
-  type HealthGate,
-  type NetworkCapabilityName,
-} from "@/lib/network";
 
 export const dynamic = "force-dynamic";
 
-type HealthResponse = {
-  status: "ok" | "degraded";
-  network: { selected: "testnet" | "mainnet"; passphraseConfigured: boolean };
-  rpc: { configured: boolean };
-  contracts: {
-    nftConfigured: boolean;
-    governorConfigured: boolean;
-    communityFactoryConfigured: boolean;
-    allConfigured: boolean;
-  };
-  capabilities: Record<NetworkCapabilityName, boolean>;
-  unavailableCapabilities: NetworkCapabilityName[];
-  /** Full readiness checklist (issue #408) — one row per capability, with the reason text for failures. */
-  gates: HealthGate[];
-};
-
-function buildResponse(): { response: HealthResponse; statusCode: number } {
-  const capabilities = activeCapabilities;
-  const nftConfigured = Boolean(capabilities.contracts.legacyNft);
-  const governorConfigured = Boolean(capabilities.contracts.legacyGovernor);
-  const legacyConfigured = capabilities.legacyContracts.available;
-  const factoryConfigured = capabilities.communityFactory.available;
-  const isReady = capabilities.rpc.available && factoryConfigured;
-  const unavailableCapabilities = listUnavailableCapabilities(capabilities);
-
-  return {
-    response: {
-      status: isReady ? "ok" : "degraded",
-      network: {
-        selected: capabilities.network.id,
-        passphraseConfigured: Boolean(capabilities.network.networkPassphrase),
-      },
-      rpc: { configured: capabilities.rpc.available },
-      contracts: {
-        nftConfigured,
-        governorConfigured,
-        communityFactoryConfigured: factoryConfigured,
-        allConfigured: legacyConfigured && factoryConfigured,
-      },
-      capabilities: {
-        rpc: capabilities.rpc.available,
-        explorer: capabilities.explorer.available,
-        communityFactory: factoryConfigured,
-        legacyContracts: legacyConfigured,
-        proposalDiscovery: capabilities.proposalDiscovery.available,
-        privilegedWrites: capabilities.privilegedWrites.available,
-      },
-      unavailableCapabilities,
-      gates: buildHealthGates(capabilities),
-    },
-    statusCode: isReady ? 200 : 503,
-  };
-}
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
+} as const;
 
 export async function GET() {
-  const { response, statusCode } = buildResponse();
+  const { response, statusCode } = await evaluateDeploymentHealth(activeCapabilities);
   return NextResponse.json(response, {
     status: statusCode,
-    headers: {
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
-      Pragma: "no-cache",
-      Expires: "0",
-    },
+    headers: NO_STORE_HEADERS,
   });
 }

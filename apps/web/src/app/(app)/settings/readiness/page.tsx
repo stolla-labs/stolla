@@ -10,7 +10,8 @@ import { MAINNET_RUNBOOK_PATH, type HealthGate } from "@/lib/network";
 const RUNBOOK_BASE_URL = `https://github.com/stolla-labs/stolla/blob/main/${MAINNET_RUNBOOK_PATH}`;
 
 interface HealthPayload {
-  status: "ok" | "degraded";
+  healthy?: boolean;
+  status: "ok" | "healthy" | "degraded" | "unhealthy";
   gates: HealthGate[];
 }
 
@@ -151,12 +152,19 @@ export default function MainnetReadinessPage() {
         <>
           <div
             className={`mt-6 rounded-lg border p-3 text-sm ${
-              state.payload.status === "ok"
+              state.payload.status === "healthy" || state.payload.status === "ok"
                 ? "border-emerald-800/70 bg-emerald-950/30 text-emerald-200"
-                : "border-amber-800/70 bg-amber-950/30 text-amber-200"
+                : state.payload.status === "unhealthy"
+                  ? "border-rose-800/70 bg-rose-950/30 text-rose-200"
+                  : "border-amber-800/70 bg-amber-950/30 text-amber-200"
             }`}
           >
-            Overall: {state.payload.status === "ok" ? "Ready" : "Degraded — one or more gates failing"}
+            Overall:{" "}
+            {state.payload.status === "healthy" || state.payload.status === "ok"
+              ? "Ready"
+              : state.payload.status === "unhealthy"
+                ? "Unhealthy — core readiness gates failing"
+                : "Degraded — one or more gates failing"}
           </div>
           <ul className="mt-4 space-y-3">
             {state.payload.gates.map((gate) => (
