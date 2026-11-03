@@ -96,11 +96,15 @@ discovery ledger from becoming an unrelated contract/RPC failure. Wallet
 comparison always uses `networkPassphrase`; a Testnet wallet therefore matches
 Testnet exactly while unknown or wrong passphrases remain blocked.
 
-`GET /api/health` publishes booleans and unavailable capability names without
-returning RPC URLs, contract IDs, or passphrases. Production health checks
-require an RPC and at least one deployable contract model (CommunityFactory or
-the legacy pair). Test fixtures call the same production matrix builder so E2E
-defaults cannot silently drift from runtime configuration.
+`GET /api/health` publishes separate configuration and read-probe status for
+RPC, `CommunityFactory`, registry listing (`list_communities`), and optional
+legacy contracts without exposing RPC URLs, query strings, credentials,
+contract IDs, passphrases, or full wallet addresses. A `healthy` response (and
+`scripts/check-production-health.mjs`) requires live RPC, `CommunityFactory`,
+and registry readability, while optional legacy contract issues report
+`degraded` rather than failing a factory-backed deployment. Test fixtures call
+the same production matrix builder so E2E defaults cannot silently drift from
+runtime configuration.
 
 ### Deploy Order
 
