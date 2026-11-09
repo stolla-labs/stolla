@@ -12,15 +12,21 @@ export type E2EProposal = {
   state?: number;
 };
 
+export type E2EWalletConfig = {
+  address: string;
+  networkPassphrase: string;
+  rejected?: boolean;
+  /** When false, WalletProvider starts disconnected until the user clicks Connect Wallet. */
+  autoConnect?: boolean;
+  /** Tracks explicit user disconnect in E2E sessions so polling does not re-connect. */
+  disconnected?: boolean;
+  /** Test-only signing material used by the real-transaction browser suite. */
+  secretKey?: string;
+  signedNetworkPassphrases?: string[];
+};
+
 export type StollaE2EBridge = {
-  wallet?: {
-    address: string;
-    networkPassphrase: string;
-    rejected?: boolean;
-    /** Test-only signing material used by the real-transaction browser suite. */
-    secretKey?: string;
-    signedNetworkPassphrases?: string[];
-  };
+  wallet?: E2EWalletConfig;
   communities?: CommunityRegistryPage["communities"];
   proposals?: Record<string, E2EProposal[]>;
   deployment?: CommunityDeploymentAdapter;
@@ -31,6 +37,40 @@ export type StollaE2EBridge = {
     invocations: unknown[];
   };
 };
+
+export type HeaderOverflowMetrics = {
+  viewportWidth: number;
+  clientWidth: number;
+  documentWidth: number;
+  bodyWidth: number;
+  headerRightEdge: number;
+};
+
+export function evaluateHeaderOverflowBounds(metrics: HeaderOverflowMetrics): {
+  withinViewport: boolean;
+  reasons: string[];
+} {
+  const reasons: string[] = [];
+  if (metrics.documentWidth > metrics.clientWidth) {
+    reasons.push(
+      `documentElement.scrollWidth (${metrics.documentWidth}) exceeds clientWidth (${metrics.clientWidth})`,
+    );
+  }
+  if (metrics.bodyWidth > metrics.clientWidth) {
+    reasons.push(
+      `body.scrollWidth (${metrics.bodyWidth}) exceeds clientWidth (${metrics.clientWidth})`,
+    );
+  }
+  if (metrics.headerRightEdge > metrics.viewportWidth + 1) {
+    reasons.push(
+      `header right edge (${metrics.headerRightEdge}) exceeds viewportWidth (${metrics.viewportWidth})`,
+    );
+  }
+  return {
+    withinViewport: reasons.length === 0,
+    reasons,
+  };
+}
 
 declare global {
   interface Window {
@@ -48,6 +88,31 @@ export function e2eMocksEnabled(): boolean {
 export function getE2EBridge(): StollaE2EBridge | null {
   if (typeof window === "undefined" || !e2eMocksEnabled()) return null;
   return window.__STOLLA_E2E__ ?? null;
+}
+
+export function shouldAutoConnectE2EWallet(
+  wallet: E2EWalletConfig | undefined | null,
+): boolean {
+  if (!wallet) return false;
+  if (wallet.disconnected) return false;
+  return wallet.autoConnect !== false;
+}
+
+export function connectE2EWallet(
+  wallet: E2EWalletConfig | undefined | null,
+): E2EWalletConfig | null {
+  if (!wallet) return null;
+  wallet.disconnected = false;
+  wallet.autoConnect = true;
+  return wallet;
+}
+
+export function disconnectE2EWallet(
+  wallet: E2EWalletConfig | undefined | null,
+): boolean {
+  if (!wallet) return false;
+  wallet.disconnected = true;
+  return true;
 }
 
 export function e2eListCommunities(

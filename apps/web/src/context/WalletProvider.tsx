@@ -14,7 +14,12 @@ import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
 import { Networks, KitEventType } from "@creit.tech/stellar-wallets-kit/types";
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
-import { getE2EBridge } from "@/lib/e2eMock";
+import {
+  connectE2EWallet,
+  disconnectE2EWallet,
+  getE2EBridge,
+  shouldAutoConnectE2EWallet,
+} from "@/lib/e2eMock";
 import { activeNetwork } from "@/lib/stellar";
 import { describeNetwork } from "@/lib/network";
 
@@ -138,16 +143,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     const mockedWallet = getE2EBridge()?.wallet;
     if (mockedWallet) {
       const initialize = window.setTimeout(() => {
+        if (!shouldAutoConnectE2EWallet(mockedWallet)) return;
         setAddress(mockedWallet.address);
         setWalletNetworkPassphrase(mockedWallet.networkPassphrase);
         setWalletNetwork(describeNetwork(mockedWallet.networkPassphrase).id);
       }, 0);
       const interval = window.setInterval(() => {
         const current = getE2EBridge()?.wallet;
-        if (!current) return;
-        setAddress(current.address);
-        setWalletNetworkPassphrase(current.networkPassphrase);
-        setWalletNetwork(describeNetwork(current.networkPassphrase).id);
+        if (!shouldAutoConnectE2EWallet(current)) return;
+        setAddress(current!.address);
+        setWalletNetworkPassphrase(current!.networkPassphrase);
+        setWalletNetwork(describeNetwork(current!.networkPassphrase).id);
       }, 100);
       return () => {
         window.clearTimeout(initialize);
@@ -197,8 +203,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setWalletNetworkPassphrase(selectedNetwork.networkPassphrase);
         return;
       }
-      const mockedWallet = getE2EBridge()?.wallet;
+      const mockedWallet = connectE2EWallet(getE2EBridge()?.wallet);
       if (mockedWallet) {
+        if (mockedWallet.rejected) {
+          throw new Error("User rejected the request.");
+        }
         setAddress(mockedWallet.address);
         setWalletNetworkPassphrase(mockedWallet.networkPassphrase);
         setWalletNetwork(describeNetwork(mockedWallet.networkPassphrase).id);
@@ -229,7 +238,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   const disconnect = useCallback(() => {
-    if (getE2EBridge()?.wallet) {
+    if (disconnectE2EWallet(getE2EBridge()?.wallet)) {
       setAddress(null);
       setWalletNetwork(null);
       setWalletNetworkPassphrase(null);
