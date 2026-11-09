@@ -206,6 +206,18 @@ environment files, dependencies, npm caches, and the root lockfile.
 4. **Proposer** creates a proposal (needs delegated NFT voting power)
 5. **Member** casts a vote on the proposal detail page
 
+### FAQ: Can a community owner revoke or burn a membership NFT?
+
+No. CommunityNft intentionally omits NonFungibleBurnable and does not expose
+an owner-initiated 
+evoke or urn entry point, and the web dashboard does
+not render a revoke button. Allowing a single CommunityOwner key to burn
+member tokens without holder authorization would allow unilateral voter
+censorship before proposal snapshots. If a member rotates wallets voluntarily,
+they can 	ransfer or delegate their token; if a member key is compromised,
+the community must reissue memberships on a new community deployment (see
+[ADR-001](docs/adr/001-nft-voting-model.md)).
+
 ## Project structure
 
 ```

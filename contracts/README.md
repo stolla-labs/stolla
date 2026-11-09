@@ -6,9 +6,23 @@ Soroban smart contracts for NFT-gated community governance.
 
 | Contract | Description |
 |----------|-------------|
-| `community-nft` | SEP-0050 NFT with `NonFungibleVotes` + per-token IPFS URI storage |
+| `community-nft` | SEP-0050 NFT with `NonFungibleVotes` + per-token IPFS URI storage (mint-only; no owner revoke/burn — see [ADR-001](../docs/adr/001-nft-voting-model.md)) |
 | `community-governor` | OpenZeppelin Governor wired to the NFT votes token |
 | `community-treasury` | Community asset custody; only the configured Timelock can spend, subject to per-asset caps |
+
+## Membership revocation and burn policy (`community-nft`)
+
+`CommunityNft` intentionally does **not** implement `NonFungibleBurnable` or
+expose an owner-only `revoke` function:
+
+- Minting (`mint(to, token_uri)`) is gated by `#[only_owner]`, but once minted,
+  token ownership and delegated voting units are controlled solely by the token
+  holder via SEP-0050 (`transfer`, `approve`) and OpenZeppelin `Votes`
+  (`delegate`).
+- Unilateral owner burn is excluded so a single `CommunityOwner` key cannot
+  censor voters immediately before a proposal snapshot ledger.
+- See [ADR-001](../docs/adr/001-nft-voting-model.md) for the documented
+  operational workarounds when a member wallet is rotated or compromised.
 
 ## Commands
 
