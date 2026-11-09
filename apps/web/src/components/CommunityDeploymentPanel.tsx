@@ -28,6 +28,7 @@ import type {
 import { getE2EBridge } from "@/lib/e2eMock";
 import { config } from "@/lib/stellar";
 import { buildStellarExplorerTxUrl } from "@/lib/stellarExplorer";
+import { lookupTransactionErrorCatalog } from "@/lib/transactionErrors";
 import type { TransactionLifecycleStage } from "@/lib/transactionLifecycle";
 
 type Props = {
@@ -81,7 +82,7 @@ function friendlyError(error: unknown): string {
   if (/insufficient|resource/i.test(message)) {
     return "Simulation found insufficient transaction resources. No wallet signature was requested.";
   }
-  return message || "Community deployment failed.";
+  return lookupTransactionErrorCatalog(error, "deploy").body;
 }
 
 export function CommunityDeploymentPanel({

@@ -118,6 +118,7 @@ export type TransactionLifecycleStatusProps = {
   /** Concise label for the operation, e.g. "Mint", "Delegate", "Vote". */
   operationLabel?: string;
   error?: string | null;
+  diagnostic?: string | null;
   metadata?: TransactionLifecycleMetadata;
   /** When false, idle still renders a compact ready state (default: hide idle). */
   showIdle?: boolean;
@@ -130,6 +131,7 @@ export function TransactionLifecycleStatus({
   stage: rawStage,
   operationLabel = "Transaction",
   error = null,
+  diagnostic = null,
   metadata,
   showIdle = false,
 }: TransactionLifecycleStatusProps) {
@@ -188,6 +190,16 @@ export function TransactionLifecycleStatus({
             <p className="mt-2 min-w-0 break-words text-sm text-rose-400 [overflow-wrap:anywhere]">
               {error}
             </p>
+          )}
+          {isFailure && diagnostic && (
+            <details className="mt-2 text-xs text-slate-400">
+              <summary className="cursor-pointer select-none font-medium text-slate-300">
+                Technical details
+              </summary>
+              <pre className="mt-1 overflow-x-auto rounded border border-slate-800 bg-[#0b0f19] p-2 font-mono text-[11px] text-slate-300 whitespace-pre-wrap">
+                {diagnostic}
+              </pre>
+            </details>
           )}
         </div>
       </div>

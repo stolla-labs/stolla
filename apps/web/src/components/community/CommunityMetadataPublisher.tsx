@@ -13,6 +13,7 @@ import {
 } from "@/lib/community/publishMetadata";
 import { formatBytes } from "@/lib/ipfs/limits";
 import { IpfsPinError, type IpfsPinClient } from "@/lib/ipfs/pin";
+import { lookupTransactionErrorCatalog } from "@/lib/transactionErrors";
 
 type Props = {
   draft: CommunityMetadataDraft;
@@ -48,8 +49,8 @@ function describePinError(error: unknown): { message: string; retryable: boolean
     }
     return { message: error.message, retryable: error.retryable };
   }
-  const message = error instanceof Error ? error.message : String(error);
-  return { message: message || "Pinning failed.", retryable: true };
+  const catalog = lookupTransactionErrorCatalog(error, "pin");
+  return { message: catalog.body, retryable: catalog.retryable };
 }
 
 /**

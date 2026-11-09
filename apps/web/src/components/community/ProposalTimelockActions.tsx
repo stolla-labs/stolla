@@ -1,3 +1,4 @@
+import { lookupTransactionErrorCatalog } from "@/lib/transactionErrors";
 "use client";
 
 import { useState } from "react";
@@ -78,11 +79,7 @@ export function ProposalTimelockActions({
       setError(null);
       setDraftAction(null);
     } catch (submitError: unknown) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "The timelock action could not be submitted.",
-      );
+      setError(lookupTransactionErrorCatalog(submitError, "timelock").body);
     } finally {
       setPending(false);
     }
