@@ -6,6 +6,7 @@ import type { GuardianAdapter } from "@/lib/community/guardian";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
+import { CommunityOnboardingChecklist } from "./CommunityOnboardingChecklist";
 import { GuardianControls } from "./GuardianControls";
 
 export type CommunityDetailViewProps = {
@@ -51,6 +52,8 @@ function CommunityDetailPanel({ community, guardianAdapter }: { community: Commu
       />
 
       <h1 className="mt-4 text-2xl font-bold text-slate-100">{displayName}</h1>
+
+      <CommunityOnboardingChecklist community={community} />
 
       {community.record.timelockContract && (
         <GuardianControls timelockId={community.record.timelockContract} adapter={guardianAdapter} />
