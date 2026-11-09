@@ -33,3 +33,39 @@ Contract tests advance both ledger sequence and timestamp, verify all critical
 state remains readable, and assert renewal at the one-day threshold. No
 proposal, vote receipt, NFT ownership, metadata, delegation, or voting-power
 record is intentionally temporary.
+
+## Automated instance TTL keeper (`scripts/extend-instance-ttl.mjs`)
+
+Operators can inspect TTL headroom and renew `CommunityFactory`, `Community NFT`,
+and `Community Governor` instance TTLs with [`scripts/extend-instance-ttl.mjs`](../scripts/extend-instance-ttl.mjs):
+
+```bash
+# List discovered contract IDs from apps/web/.env.local or environment
+node scripts/extend-instance-ttl.mjs --list
+
+# Check current ledger sequence and TTL headroom
+node scripts/extend-instance-ttl.mjs --check
+
+# Preview extend_instance_ttl invocations (default --dry-run never submits transactions)
+node scripts/extend-instance-ttl.mjs --extend --dry-run
+
+# Submit extend_instance_ttl transactions on testnet and log transaction hashes
+node scripts/extend-instance-ttl.mjs --extend --apply --identity keeper --network testnet
+```
+
+### Schedule, key handling, and alerting guidance
+
+- **Recommended schedule:** Run `--check` every 6 hours and `--extend --apply`
+  at least once every 24 hours (or whenever headroom enters `RENEW_NOW`, i.e.,
+  $\le 17,280$ ledgers remaining). Because the renewal window is 30 days
+  ($518,400$ ledgers), a daily job provides a 29-day buffer before expiration.
+- **Auth key handling:** `extend_instance_ttl` is permissionless on-chain.
+  Configure a dedicated low-balance fee-payer identity (`--identity keeper`) in
+  Stellar CLI rather than using the `FactoryOwner` or `CommunityOwner` admin
+  keys.
+- **Mainnet safety gate:** The script refuses `mainnet` / `public` networks
+  unless `--allow-mainnet` is passed explicitly.
+- **Failure alerts:** Non-zero exit codes and `[ttl-keeper] EXTEND_FAILED` or
+  `[ttl-keeper] RPC_ERROR` stderr lines should trigger operator alerts in cron
+  or CI runners. Successful renewals log
+  `[ttl-keeper] EXTENDED <label> (<contractId>) network=<net> txHash=<hash>`.
