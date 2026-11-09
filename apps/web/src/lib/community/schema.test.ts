@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_GOVERNANCE_DRAFT,
+  estimateLedgersDurationLabel,
   parseCommunityMetadata,
   validateAuthoringDraft,
   validateDeploymentPayload,
@@ -92,7 +93,6 @@ describe("community deployment payload (validateDeploymentPayload)", () => {
 });
 
 describe("community metadata schema", () => {
-
   it("parses version-1 metadata and rejects unknown or mismatched fields", () => {
     const metadata = {
       schemaVersion: 1,
@@ -132,23 +132,75 @@ describe("community metadata schema", () => {
     ).toBeNull();
   });
 
-  it("accepts explicit governance defaults and rejects numeric boundaries", () => {
+  it("accepts testnet defaults, zero voting delay, and documented upper schema bounds (#385)", () => {
+    expect(DEFAULT_GOVERNANCE_DRAFT).toEqual({
+      proposalThreshold: "1",
+      quorum: "1",
+      votingDelay: "1",
+      votingPeriod: "10000",
+    });
     expect(validateGovernanceDraft(DEFAULT_GOVERNANCE_DRAFT)).toEqual({});
+
+    // Zero voting delay and upper bounds per docs/community-metadata-governance-schema.md
+    expect(
+      validateGovernanceDraft({
+        proposalThreshold: "4294967295",
+        quorum: "4294967295",
+        votingDelay: "0",
+        votingPeriod: "1555200",
+      }),
+    ).toEqual({});
+
+    expect(
+      validateGovernanceDraft({
+        proposalThreshold: "10",
+        quorum: "2",
+        votingDelay: "120960",
+        votingPeriod: "1",
+      }),
+    ).toEqual({});
+  });
+
+  it("rejects out-of-bounds governance parameters against schema limits (#385)", () => {
     expect(
       validateGovernanceDraft({
         proposalThreshold: "0",
-        quorum: (BigInt(1) << BigInt(128)).toString(),
-        votingDelay: "4294967296",
-        votingPeriod: "-1",
+        quorum: "4294967296",
+        votingDelay: "120961",
+        votingPeriod: "0",
       }),
     ).toEqual({
       proposalThreshold:
-        "Enter a whole number from 1 through the maximum u128 value.",
-      quorum: "Enter a whole number from 1 through the maximum u128 value.",
+        "Enter a whole number from 1 through 4,294,967,295 NFT votes.",
+      quorum: "Enter a whole number from 1 through 4,294,967,295 NFT votes.",
       votingDelay:
-        "Enter a whole number from 1 through 4,294,967,295 ledgers.",
+        "Enter a whole number from 0 through 120,960 ledgers (up to 7 days).",
       votingPeriod:
-        "Enter a whole number from 2 through 4,294,967,295 ledgers.",
+        "Enter a whole number from 1 through 1,555,200 ledgers (up to 90 days).",
     });
+
+    expect(
+      validateGovernanceDraft({
+        proposalThreshold: "4294967296",
+        quorum: "0",
+        votingDelay: "-1",
+        votingPeriod: "1555201",
+      }),
+    ).toEqual({
+      proposalThreshold:
+        "Enter a whole number from 1 through 4,294,967,295 NFT votes.",
+      quorum: "Enter a whole number from 1 through 4,294,967,295 NFT votes.",
+      votingDelay:
+        "Enter a whole number from 0 through 120,960 ledgers (up to 7 days).",
+      votingPeriod:
+        "Enter a whole number from 1 through 1,555,200 ledgers (up to 90 days).",
+    });
+  });
+
+  it("formats plain-language ledger duration estimates", () => {
+    expect(estimateLedgersDurationLabel("0")).toBe("Immediate (0 ledgers)");
+    expect(estimateLedgersDurationLabel("1")).toBe("~5 seconds");
+    expect(estimateLedgersDurationLabel("10000")).toBe("~13.9 hours");
+    expect(estimateLedgersDurationLabel("120960")).toBe("~7 days");
   });
 });

@@ -34,9 +34,9 @@ const input = {
       "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
   },
   governance: {
-    proposalThreshold: "340282366920938463463374607431768211455",
-    quorum: "9007199254740993",
-    votingDelay: "12",
+    proposalThreshold: "4294967295",
+    quorum: "2500",
+    votingDelay: "0",
     votingPeriod: "17280",
   },
 };
@@ -59,16 +59,47 @@ describe("community deployment serialization", () => {
     });
     expect(scValToNative(invocation.args[0])).toBe(creator);
     expect(request.community_owner).toBe(creator);
-    expect(governance.proposal_threshold).toBe(
-      BigInt("340282366920938463463374607431768211455"),
-    );
-    expect(governance.quorum).toBe(BigInt("9007199254740993"));
-    expect(governance.voting_delay).toBe(12);
+    expect(governance.proposal_threshold).toBe(BigInt("4294967295"));
+    expect(governance.quorum).toBe(BigInt("2500"));
+    expect(governance.voting_delay).toBe(0);
+    expect(governance.voting_period).toBe(17280);
     expect(Array.from(metadata.metadata_hash as Uint8Array)).toEqual(
       Array.from(hash),
     );
     expect(metadata.collection_uri).toBe("ipfs://collection");
     expect(metadata.metadata_uri).toBe("ipfs://community");
+  });
+
+  it("rejects out-of-bounds governance parameters before simulation (#385)", async () => {
+    await expect(
+      serializeCommunityFactoryInvocation({
+        ...input,
+        governance: {
+          ...input.governance,
+          votingDelay: "120961",
+        },
+      }),
+    ).rejects.toThrow(/Governance parameters are out of schema bounds/);
+
+    await expect(
+      serializeCommunityFactoryInvocation({
+        ...input,
+        governance: {
+          ...input.governance,
+          votingPeriod: "0",
+        },
+      }),
+    ).rejects.toThrow(/Governance parameters are out of schema bounds/);
+
+    await expect(
+      serializeCommunityFactoryInvocation({
+        ...input,
+        governance: {
+          ...input.governance,
+          quorum: "4294967296",
+        },
+      }),
+    ).rejects.toThrow(/Governance parameters are out of schema bounds/);
   });
 
   it("uses the generated payload hash when no override is supplied", async () => {

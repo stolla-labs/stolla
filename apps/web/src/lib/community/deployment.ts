@@ -10,6 +10,7 @@ import { activeCapabilities, requireRpcConfig } from "@/lib/stellar";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
 import {
   validateDeploymentPayload,
+  validateGovernanceDraft,
   type CommunityDeploymentPayload,
   type CommunityMetadataDraft,
   type GovernanceDraft,
@@ -128,6 +129,11 @@ export async function serializeCommunityFactoryInvocation(
     activeCapabilities.network.networkPassphrase
   ) {
     throw new Error("The deployment network passphrase does not match the application network.");
+  }
+  const governanceErrors = validateGovernanceDraft(input.governance);
+  const firstGovernanceError = Object.values(governanceErrors)[0];
+  if (firstGovernanceError) {
+    throw new Error(`Governance parameters are out of schema bounds: ${firstGovernanceError}`);
   }
   const payloadErrors = validateDeploymentPayload(input.payload);
   const firstPayloadError = Object.values(payloadErrors)[0];

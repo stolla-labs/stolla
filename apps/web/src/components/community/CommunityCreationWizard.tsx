@@ -17,6 +17,7 @@ import { useWallet } from "@/context/WalletProvider";
 import {
   COMMUNITY_LIMITS,
   DEFAULT_GOVERNANCE_DRAFT,
+  estimateLedgersDurationLabel,
   type CommunityMetadataDraft,
   type CommunityMetadataDraftErrors,
   type GovernanceDraft,
@@ -82,6 +83,7 @@ export function CommunityCreationWizard() {
     useState<CommunityMetadataDraft>(EMPTY_METADATA_DRAFT);
   const [governance, setGovernance] = useState<GovernanceDraft>(
     DEFAULT_GOVERNANCE_DRAFT,
+  estimateLedgersDurationLabel,
   );
   const [errors, setErrors] = useState<CommunityMetadataDraftErrors>({});
   const [governanceErrors, setGovernanceErrors] =
@@ -527,13 +529,13 @@ export function CommunityCreationWizard() {
               <div>
                 <dt className="text-sm text-slate-500">Voting delay</dt>
                 <dd className="mt-1 text-slate-100">
-                  {governance.votingDelay} Stellar ledgers
+                  {governance.votingDelay} Stellar ledgers ({estimateLedgersDurationLabel(governance.votingDelay)})
                 </dd>
               </div>
               <div>
                 <dt className="text-sm text-slate-500">Voting period</dt>
                 <dd className="mt-1 text-slate-100">
-                  {governance.votingPeriod} Stellar ledgers
+                  {governance.votingPeriod} Stellar ledgers ({estimateLedgersDurationLabel(governance.votingPeriod)})
                 </dd>
               </div>
             </dl>
@@ -632,25 +634,25 @@ export function CommunityCreationWizard() {
                   field: "proposalThreshold",
                   label: "Proposal threshold",
                   unit: "NFT votes",
-                  help: "Minimum delegated voting power required to create a proposal.",
+                  help: "Minimum delegated voting power required to create a proposal (schema bounds: 1–4,294,967,295 NFT votes).",
                 },
                 {
                   field: "quorum",
                   label: "Quorum",
                   unit: "NFT votes",
-                  help: "For and abstain votes required for a proposal to meet quorum.",
+                  help: "For and abstain votes required for a proposal to meet quorum (schema bounds: 1–4,294,967,295 NFT votes).",
                 },
                 {
                   field: "votingDelay",
                   label: "Voting delay",
                   unit: "Stellar ledgers",
-                  help: "Ledgers between proposal creation and the voting snapshot.",
+                  help: "Ledgers between proposal creation and the voting snapshot (0–120,960 ledgers, up to ~7 days; 0 starts immediately).",
                 },
                 {
                   field: "votingPeriod",
                   label: "Voting period",
                   unit: "Stellar ledgers",
-                  help: "Ledgers voting remains open; this must exceed the voting delay.",
+                  help: "Ledgers voting remains open (1–1,555,200 ledgers, up to ~90 days at ~5s per ledger).",
                 },
               ] as const
             ).map(({ field, label, unit, help }) => (

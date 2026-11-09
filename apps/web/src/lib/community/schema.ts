@@ -13,16 +13,24 @@ export const COMMUNITY_LIMITS = {
   externalLinks: 10,
 } as const;
 
+/**
+ * Governance parameter bounds per `docs/community-metadata-governance-schema.md`
+ * and `contracts/contracts/community-factory/src/lib.rs` (#385):
+ * - voting_delay: 0..=120,960 ledgers (up to ~7 days; 0 allows immediate voting)
+ * - voting_period: 1..=1,555,200 ledgers (up to ~90 days)
+ * - proposal_threshold: 1..=4,294,967,295 NFT votes
+ * - quorum: 1..=4,294,967,295 NFT votes
+ */
 export const GOVERNANCE_LIMITS = {
-  votingDelay: { min: 1, max: 4_294_967_295 },
-  votingPeriod: { min: 2, max: 4_294_967_295 },
+  votingDelay: { min: 0, max: 120_960 },
+  votingPeriod: { min: 1, max: 1_555_200 },
   proposalThreshold: {
     min: BigInt(1),
-    max: (BigInt(1) << BigInt(128)) - BigInt(1),
+    max: BigInt(4_294_967_295),
   },
   quorum: {
     min: BigInt(1),
-    max: (BigInt(1) << BigInt(128)) - BigInt(1),
+    max: BigInt(4_294_967_295),
   },
 } as const;
 
@@ -43,6 +51,29 @@ export const DEFAULT_GOVERNANCE_DRAFT: GovernanceDraft = {
   votingDelay: "1",
   votingPeriod: "10000",
 };
+
+/**
+ * Returns a plain-language wall-clock duration estimate at ~5 seconds per Stellar ledger.
+ */
+export function estimateLedgersDurationLabel(ledgersValue: string): string {
+  const parsed = parseUnsignedInteger(ledgersValue);
+  if (parsed === null) return "";
+  const ledgers = Number(parsed);
+  if (!Number.isSafeInteger(ledgers) || ledgers < 0) return "";
+  if (ledgers === 0) return "Immediate (0 ledgers)";
+  const seconds = ledgers * 5;
+  if (seconds < 60) return `~${seconds} seconds`;
+  if (seconds < 3600) {
+    const minutes = Math.round((seconds / 60) * 10) / 10;
+    return `~${minutes} minute${minutes === 1 ? "" : "s"}`;
+  }
+  if (seconds < 86400) {
+    const hours = Math.round((seconds / 3600) * 10) / 10;
+    return `~${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+  const days = Math.round((seconds / 86400) * 10) / 10;
+  return `~${days} day${days === 1 ? "" : "s"}`;
+}
 
 /**
  * Authoring draft: what the creator types in the wizard. It deliberately has
@@ -240,7 +271,7 @@ export function validateGovernanceDraft(
     proposalThreshold > GOVERNANCE_LIMITS.proposalThreshold.max
   ) {
     errors.proposalThreshold =
-      "Enter a whole number from 1 through the maximum u128 value.";
+      "Enter a whole number from 1 through 4,294,967,295 NFT votes.";
   }
   if (
     quorum === null ||
@@ -248,24 +279,23 @@ export function validateGovernanceDraft(
     quorum > GOVERNANCE_LIMITS.quorum.max
   ) {
     errors.quorum =
-      "Enter a whole number from 1 through the maximum u128 value.";
+      "Enter a whole number from 1 through 4,294,967,295 NFT votes.";
   }
   if (
     votingDelay === null ||
     votingDelay < BigInt(GOVERNANCE_LIMITS.votingDelay.min) ||
     votingDelay > BigInt(GOVERNANCE_LIMITS.votingDelay.max)
   ) {
-    errors.votingDelay = "Enter a whole number from 1 through 4,294,967,295 ledgers.";
+    errors.votingDelay =
+      "Enter a whole number from 0 through 120,960 ledgers (up to 7 days).";
   }
   if (
     votingPeriod === null ||
     votingPeriod < BigInt(GOVERNANCE_LIMITS.votingPeriod.min) ||
     votingPeriod > BigInt(GOVERNANCE_LIMITS.votingPeriod.max)
   ) {
-    errors.votingPeriod = "Enter a whole number from 2 through 4,294,967,295 ledgers.";
-  } else if (votingDelay !== null && votingPeriod <= votingDelay) {
     errors.votingPeriod =
-      "Voting period must be greater than the voting delay.";
+      "Enter a whole number from 1 through 1,555,200 ledgers (up to 90 days).";
   }
 
   return errors;

@@ -20,8 +20,9 @@ import {
   type CommunityDeploymentSimulation,
   type DeploymentTransactionStatus,
 } from "@/lib/community/deployment";
-import type {
-  CommunityDeploymentPayload,
+import {
+  validateGovernanceDraft,
+  type CommunityDeploymentPayload,
   CommunityMetadataDraft,
   GovernanceDraft,
 } from "@/lib/community/schema";
@@ -330,6 +331,13 @@ export function CommunityDeploymentPanel({
       authorization !== "ready" ||
       transactionHash
     ) {
+      return;
+    }
+    const govErrors = validateGovernanceDraft(governance);
+    const firstGovError = Object.values(govErrors)[0];
+    if (firstGovError) {
+      setStage("failure");
+      setMessage(firstGovError);
       return;
     }
     const generation = ++simulationGeneration.current;
