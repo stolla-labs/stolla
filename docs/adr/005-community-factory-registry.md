@@ -182,6 +182,42 @@ a new factory and an explicit migration registry rather than rewriting IDs.
 - Add deterministic-address, duplicate-ID, authorization, pagination-limit,
   atomic rollback, and TTL-boundary tests.
 - Define governance parameter bounds and metadata size limits.
-- Add factory deployment and code-hash rotation tooling.
+- Add factory deployment and code-hash rotation tooling (implemented in [scripts/rotate-factory-wasm-hashes.mjs](../../scripts/rotate-factory-wasm-hashes.mjs)).
+
+## Operator WASM Hash Rotation Runbook (scripts/rotate-factory-wasm-hashes.mjs)
+
+Operators rotate the approved CommunityNFT and CommunityGovernor template
+WASM hashes on an existing CommunityFactory without redeploying the factory:
+
+1. **Prechecks & hash computation:** Build release WASMs (
+pm run build:contracts)
+   and run a dry-run preview. The script computes SHA-256 digests directly from
+   the WASM files (or validates explicit --nft-wasm-hash / --governor-wasm-hash
+   64-character hex arguments) and rejects zero hashes:
+   `ash
+   node scripts/rotate-factory-wasm-hashes.mjs \
+     --factory-id <FACTORY_CONTRACT_ID> \
+     --nft-wasm contracts/target/wasm32v1-none/release/community_nft.wasm \
+     --governor-wasm contracts/target/wasm32v1-none/release/community_governor.wasm \
+     --dry-run
+   `
+2. **Authorization & apply:** In --apply mode, the script resolves the caller's
+   public key (stellar keys public-key <identity>) and queries the on-chain
+   owner of CommunityFactory. If the caller does not match FactoryOwner,
+   execution aborts before uploading or invoking set_code_hashes:
+   `ash
+   node scripts/rotate-factory-wasm-hashes.mjs \
+     --factory-id <FACTORY_CONTRACT_ID> \
+     --nft-wasm contracts/target/wasm32v1-none/release/community_nft.wasm \
+     --governor-wasm contracts/target/wasm32v1-none/release/community_governor.wasm \
+     --identity deployer \
+     --apply
+   `
+3. **Rollback:** set_code_hashes emits FactoryCodeHashesChanged containing
+   old_nft_wasm_hash and old_governor_wasm_hash. Because previously uploaded
+   WASM blobs remain on-chain (or can be re-uploaded), operators can roll back
+   template hashes immediately by re-running 
+otate-factory-wasm-hashes.mjs
+   with --nft-wasm-hash <old_nft_hash> --governor-wasm-hash <old_gov_hash> --apply.
 - Update the web app to discover communities and regenerate bindings.
 - Document production multisig, keeper, upgrade, and migration runbooks.
