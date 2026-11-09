@@ -20,6 +20,8 @@ import {
 } from "@/lib/timelock/client";
 import type { TimelockActionName } from "@/lib/timelock/proposalExecution";
 import { useTimelockWindow } from "@/lib/timelock/useTimelockWindow";
+import type { ProposalActionBatchInput } from "@/lib/timelock/actionDecoder";
+import { ProposalActionPolicyPanel } from "./ProposalActionPolicyPanel";
 import { ProposalTimelockActions } from "./ProposalTimelockActions";
 import { QuorumProgress } from "@/components/QuorumProgress";
 import { fmt } from "@/lib/voteDisplay";
@@ -48,6 +50,7 @@ export type CommunityProposalDetailViewProps = {
   signTransaction?: SignTransaction;
   correctNetwork?: boolean;
   onTimelockAction?: (action: TimelockActionName) => Promise<TimelockCallResult>;
+  actionBatch?: ProposalActionBatchInput | null;
 };
 
 export function CommunityProposalDetailView({
@@ -62,6 +65,7 @@ export function CommunityProposalDetailView({
   signTransaction,
   correctNetwork,
   onTimelockAction,
+  actionBatch,
 }: CommunityProposalDetailViewProps) {
   const resolution = useRegistryCommunity(communityId, registry);
 
@@ -95,6 +99,7 @@ export function CommunityProposalDetailView({
       signTransaction={signTransaction}
       correctNetwork={correctNetwork}
       onTimelockAction={onTimelockAction}
+      actionBatch={actionBatch}
     />
   );
 }
@@ -110,6 +115,7 @@ function CommunityProposalDetailPanel({
   signTransaction,
   correctNetwork,
   onTimelockAction,
+  actionBatch,
 }: {
   community: Community;
   proposalId: string;
@@ -121,6 +127,7 @@ function CommunityProposalDetailPanel({
   signTransaction?: SignTransaction;
   correctNetwork?: boolean;
   onTimelockAction?: (action: TimelockActionName) => Promise<TimelockCallResult>;
+  actionBatch?: ProposalActionBatchInput | null;
 }) {
   const resolution = useCommunityProposal(
     community.record.governorContract,
@@ -204,6 +211,14 @@ function CommunityProposalDetailPanel({
               </dd>
             </div>
           </dl>
+          <ProposalActionPolicyPanel
+            batch={{
+              ...actionBatch,
+              etaLedger: actionBatch?.etaLedger ?? timelockWindow.etaLedger,
+              expiresAtLedger:
+                actionBatch?.expiresAtLedger ?? timelockWindow.expiresAtLedger,
+            }}
+          />
           <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
             <h2 className="font-semibold text-slate-100">Votes</h2>
             {resolution.votes && !resolution.votes.error ? (
