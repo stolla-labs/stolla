@@ -44,6 +44,7 @@ import { BatchMintPanel } from "@/components/community/BatchMintPanel";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
+import { ThirdPartyDelegationPanel } from "@/components/community/ThirdPartyDelegationPanel";
 import {
   loadCommunityData,
   runCommunityRefresh,
@@ -372,6 +373,36 @@ export default function CommunityPage() {
     await client.mint({ to, token_uri: published.tokenUri });
   }
 
+  async function handleDelegateToTarget(targetDelegatee: string): Promise<boolean> {
+    if (!address) {
+      setStatus({ message: "Connect your wallet first.", tone: "error" });
+      return false;
+    }
+    if (delegationLifecycle.isInFlight) return false;
+    setStatus(null);
+    delegationLifecycle.reset();
+    const result = await delegationLifecycle.execute(async () => {
+      const client = createNftClient({
+        publicKey: address,
+        signTransaction,
+        contractId: activeNftContract,
+      });
+      return client.delegate({
+        account: address,
+        delegatee: targetDelegatee,
+      });
+    });
+    if (result.ok) {
+      setStatus({
+        message: targetDelegatee === address ? "Delegated voting power to yourself." : "Delegated voting power to " + targetDelegatee + ".",
+        tone: "routine",
+      });
+      await refresh();
+      return true;
+    }
+    return false;
+  }
+
   async function handleDelegate() {
     if (!address) {
       setStatus({ message: "Connect your wallet first.", tone: "error" });
@@ -544,6 +575,12 @@ export default function CommunityPage() {
                   ? "Delegation in progress…"
                   : "Delegate to self"}
               </AppButton>
+              <ThirdPartyDelegationPanel
+                connectedAccount={address}
+                currentDelegatee={delegate}
+                disabled={!address || mintLifecycle.isInFlight || delegationLifecycle.isInFlight}
+                onDelegateToAddress={handleDelegateToTarget}
+              />
               <TransactionLifecycleStatus
                 stage={delegationLifecycle.stage}
                 operationLabel="Delegate"
