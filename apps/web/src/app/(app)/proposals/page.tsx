@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Buffer } from "buffer";
 import Link from "next/link";
 import { useWallet } from "@/context/WalletProvider";
@@ -41,6 +41,12 @@ import {
   readProposalDraft,
   writeProposalDraft,
 } from "@/lib/proposal-draft";
+import {
+  createProposeAttemptLock,
+  formatProposeCooldownAnnouncement,
+  getProposeCooldownRemainingSeconds,
+  mapProposeRejectionGuidance,
+} from "@/lib/proposals/propose-cooldown";
 
 type ActionStatus = {
   message: string;
@@ -77,6 +83,19 @@ export default function ProposalsPage() {
   const [savedDraft, setSavedDraft] = useState<ProposalMetadataDraft | null>(
     null,
   );
+  const proposeLockRef = useRef(createProposeAttemptLock());
+  const [cooldownUntilMs, setCooldownUntilMs] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const cooldownRemainingSeconds = getProposeCooldownRemainingSeconds(
+    cooldownUntilMs,
+    nowMs,
+  );
+
+  useEffect(() => {
+    if (cooldownRemainingSeconds <= 0) return;
+    const interval = window.setInterval(() => setNowMs(Date.now()), 500);
+    return () => window.clearInterval(interval);
+  }, [cooldownRemainingSeconds]);
 
   useEffect(() => {
     if (!contractIds.governor) return;
@@ -288,26 +307,38 @@ export default function ProposalsPage() {
       setStatus(null);
       return;
     }
-    if (proposeLifecycle.isInFlight) return;
+    if (
+      proposeLifecycle.isInFlight ||
+      !proposeLockRef.current.tryAcquire(Date.now())
+    ) {
+      return;
+    }
 
     const descriptionSnapshot = serializeProposalMetadata(draftSnapshot);
     setMetadataErrors({});
     setStatus(null);
     proposeLifecycle.reset();
 
-    const result = await proposeLifecycle.execute(async () => {
-      const client = createGovernorClient({
-        publicKey: address,
-        signTransaction,
+    let result: Awaited<ReturnType<typeof proposeLifecycle.execute>>;
+    try {
+      result = await proposeLifecycle.execute(async () => {
+        const client = createGovernorClient({
+          publicKey: address,
+          signTransaction,
+        });
+        return client.propose({
+          targets: [address],
+          functions: ["noop"],
+          args: [[]],
+          description: descriptionSnapshot,
+          proposer: address,
+        });
       });
-      return client.propose({
-        targets: [address],
-        functions: ["noop"],
-        args: [[]],
-        description: descriptionSnapshot,
-        proposer: address,
-      });
-    });
+    } finally {
+      const currentNow = Date.now();
+      setNowMs(currentNow);
+      setCooldownUntilMs(proposeLockRef.current.release(currentNow));
+    }
 
     if (!result.ok) {
       // Preserve entered metadata on rejection / RPC failure.
@@ -437,16 +468,36 @@ export default function ProposalsPage() {
           <AppButton
             tone="primary"
             onClick={() => void handleCreateProposal()}
-            disabled={mainnetWritesBlocked() || !address || proposeLifecycle.isInFlight}
+            disabled={
+              mainnetWritesBlocked() ||
+              !address ||
+              proposeLifecycle.isInFlight ||
+              cooldownRemainingSeconds > 0
+            }
             aria-describedby={
-              !address ? "create-proposal-disabled-reason" : undefined
+              !address
+                ? "create-proposal-disabled-reason"
+                : cooldownRemainingSeconds > 0
+                  ? "create-proposal-cooldown-reason"
+                  : undefined
             }
             className="mt-3 w-full sm:w-auto"
           >
             {proposeLifecycle.isInFlight
               ? "Creating proposal…"
-              : "Create proposal"}
+              : cooldownRemainingSeconds > 0
+                ? `Wait ${cooldownRemainingSeconds}s…`
+                : "Create proposal"}
           </AppButton>
+          {cooldownRemainingSeconds > 0 && (
+            <LiveStatus
+              id="create-proposal-cooldown-reason"
+              tone="routine"
+              className="mt-2 text-xs text-slate-300"
+            >
+              {formatProposeCooldownAnnouncement(cooldownRemainingSeconds)}
+            </LiveStatus>
+          )}
           <MainnetWriteGate />
           {!address && (
             <p
@@ -459,7 +510,11 @@ export default function ProposalsPage() {
           <TransactionLifecycleStatus
             stage={proposeLifecycle.stage}
             operationLabel="Propose"
-            error={proposeLifecycle.error}
+            error={
+              proposeLifecycle.error
+                ? mapProposeRejectionGuidance(proposeLifecycle.error).message
+                : null
+            }
             metadata={{
               transactionHash: proposeLifecycle.transactionHash,
               details: proposeLifecycle.outcomeKind
