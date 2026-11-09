@@ -198,6 +198,48 @@ manifest/cache errors, then restart the development server. The command only
 removes `apps/web/.next` and `apps/web/.turbo`; it preserves source and
 environment files, dependencies, npm caches, and the root lockfile.
 
+## Continuous Integration (CI)
+
+GitHub Actions (.github/workflows/ci.yml) runs automatically on push and
+pull_request to main (as well as manual workflow_dispatch runs):
+
+- **contracts (required gate):** Installs the official Linux x86_64
+  stellar-cli release binary (with libdbus-1-dev / pkg-config / libssl-dev
+  installed as a source-build fallback so CI never fails on missing dbus-1),
+  runs cargo test, and builds all Soroban contracts via
+  CARGO_TARGET_DIR=target stellar contract build.
+- **rontend (required gate):** Rejects nested lockfiles, runs 
+pm ci,
+  
+pm run check:workspace, 
+pm run lint,
+  
+pm run typecheck --workspace=web, 
+pm run test --workspace=web, script
+  verification tests (
+ode --test), and a production Next.js build.
+- **e2e (advisory):** Runs the Playwright Chromium multi-community smoke
+  suite (
+pm run test:e2e --workspace=web) and uploads the Playwright report
+  artifact. Marked continue-on-error: true while browser-level E2E hardening
+  is tracked in #265 and #395.
+
+To run the exact CI checks locally before opening a pull request:
+
+`ash
+# 1. Contracts job
+npm run test:contracts
+npm run build:contracts
+
+# 2. Frontend + script gates
+npm ci
+npm run check:workspace
+npm run lint
+npm run typecheck
+npm test
+NEXT_PUBLIC_STELLAR_NETWORK=testnet NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org npm run build
+`
+
 ## End-to-end flow
 
 1. Connect Freighter on testnet

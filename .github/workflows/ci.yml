@@ -1,19 +1,36 @@
-# Passive: not run on push/PR. Re-enable triggers when CI is green again.
-# Manual run: Actions → CI → Run workflow
 name: CI
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   contracts:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Install Stellar CLI
-        run: cargo install --locked stellar-cli
+        with:
+          target: wasm32v1-none,wasm32-unknown-unknown
+      - name: Install Stellar CLI (dbus-free binary with apt fallback)
+        env:
+          STELLAR_CLI_VERSION: "22.6.0"
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pkg-config libdbus-1-dev libssl-dev ca-certificates curl tar
+          ARCHIVE="stellar-cli-${STELLAR_CLI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          URL="https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/${ARCHIVE}"
+          if curl -fsSL "$URL" -o "/tmp/${ARCHIVE}"; then
+            sudo tar -xzf "/tmp/${ARCHIVE}" -C /usr/local/bin stellar
+            rm -f "/tmp/${ARCHIVE}"
+          else
+            cargo install --locked stellar-cli
+          fi
+          stellar --version
       - name: Test contracts
         run: cd contracts && cargo test
       - name: Build contracts
@@ -21,7 +38,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,8 +62,8 @@ jobs:
         run: npm run typecheck --workspace=web
       - name: Test frontend
         run: npm run test --workspace=web
-      - name: Test production health checker
-        run: node --test scripts/check-production-health.test.mjs
+      - name: Test scripts
+        run: node --test scripts/check-production-health.test.mjs scripts/deploy-testnet.test.mjs scripts/ci-workflow.test.mjs
       - name: Build frontend
         run: npm run build --workspace=web
         env:
@@ -56,6 +72,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # Advisory while browser-level E2E flake hardening is tracked in #265 and #395.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
