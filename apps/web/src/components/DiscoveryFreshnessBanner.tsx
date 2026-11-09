@@ -8,15 +8,15 @@ const STATE_STYLES: Record<
 > = {
   current: {} as unknown as { className: string; icon: string },
   delayed: {
-    className: "border-amber-800/60 bg-amber-950/40 text-amber-200",
+    className: "border-amber-600/80 bg-amber-950/50 text-amber-100",
     icon: "\u25BA",
   },
   stale: {
-    className: "border-amber-800/70 bg-amber-950/50 text-amber-200",
+    className: "border-amber-600/90 bg-amber-950/60 text-amber-100",
     icon: "\u25BA",
   },
   unavailable: {
-    className: "border-rose-800/70 bg-rose-950/40 text-rose-200",
+    className: "border-rose-600/80 bg-rose-950/50 text-rose-100",
     icon: "\u2717",
   },
 };
@@ -70,7 +70,7 @@ export function DiscoveryFreshnessBanner({
             type="button"
             onClick={onRetry}
             disabled={isRetrying}
-            className="min-h-9 rounded-lg border border-current px-3 py-1.5 text-xs font-medium transition hover:bg-white/10 disabled:opacity-50"
+            className="min-h-9 rounded-lg border border-current px-3 py-1.5 text-xs font-medium transition hover:bg-white/10 disabled:border-dashed disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isRetrying ? "Retrying\u2026" : "Retry discovery"}
           </button>

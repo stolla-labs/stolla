@@ -58,17 +58,22 @@
   --skeleton-fill: #334155;
 
   /*
-   * Form-control contrast tokens (WCAG AA targets)
+   * Form-control & interactive app-shell contrast tokens (WCAG AA targets, #321 & #391)
    * --input-border   : border-slate-600 (#475569) — visible against #0b0f19 (bg)
-   *                    and #151b2b (surface). Contrast ratio ≈ 3.5:1 on bg.
+   *                    and #151b2b (surface).
+   * --interactive-border: slate-500 (#64748b) — >= 3.05:1 against #151b2b surface
+   *                    and >= 3.75:1 against #0b0f19 background for WCAG 1.4.11.
+   * --interactive-muted-text: slate-400 (#94a3b8) — 5.88:1 on #151b2b surface and
+   *                    7.23:1 on #0b0f19 background (exceeds 4.5:1 WCAG AA).
    * --input-placeholder: slate-400 (#94a3b8) — contrast ratio ≈ 4.8:1 on input bg.
-   * --input-help     : slate-400 (#94a3b8) — same token; meets WCAG AA (4.5:1) for
-   *                    non-decorative text against #0b0f19.
+   * --input-help     : slate-400 (#94a3b8) — meets WCAG AA (4.5:1) for text.
    * --input-focus-border: indigo-400 (#818cf8) — high-visibility accent on focus.
-   * --disabled-opacity: 0.45 + grayscale filter distinguishes disabled from enabled
-   *                    primary buttons without relying on opacity alone.
+   * --disabled-opacity: 0.45 + grayscale + dashed border distinguishes disabled CTAs
+   *                    from enabled buttons without relying on color alone.
    */
   --input-border: #475569;
+  --interactive-border: #64748b;
+  --interactive-muted-text: #94a3b8;
   --input-placeholder: #94a3b8;
   --input-help: #94a3b8;
   --input-focus-border: #818cf8;
@@ -143,12 +148,13 @@ h3 {
 }
 
 /*
- * Clearly disabled primary button: reduced opacity + grayscale so the
- * brand-purple cannot be mistaken for an active clickable target.
+ * Clearly disabled primary button: reduced opacity + grayscale + dashed border
+ * so disabled CTAs are distinguishable without relying on color alone (#391).
  */
 .btn-disabled-primary {
   opacity: var(--disabled-opacity);
   filter: grayscale(0.6);
+  border-style: dashed;
   pointer-events: none;
   cursor: not-allowed;
 }

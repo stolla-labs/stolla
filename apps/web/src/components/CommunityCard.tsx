@@ -15,9 +15,9 @@ const MEMBERSHIP_STYLES: Record<
   "member" | "non_member" | "unknown",
   string
 > = {
-  member: "border-emerald-800/80 bg-emerald-950/50 text-emerald-200",
-  non_member: "border-slate-700 bg-slate-900/60 text-slate-400",
-  unknown: "border-amber-800/70 bg-amber-950/40 text-amber-200",
+  member: "border-emerald-700 bg-emerald-950/60 text-emerald-200",
+  non_member: "border-slate-600 bg-slate-900/80 text-slate-300",
+  unknown: "border-amber-700 bg-amber-950/50 text-amber-200",
 };
 
 export function CommunityCard({ community }: { community: CommunityView }) {
@@ -29,7 +29,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
   const watched = watchlist.isWatched(record.id);
 
   return (
-    <article className="flex h-full min-w-0 flex-col rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5">
+    <article className="flex h-full min-w-0 flex-col rounded-xl border border-slate-800 bg-[#151b2b] p-4 transition-colors hover:border-slate-600 sm:p-5">
       <div className="flex min-w-0 items-start gap-3">
         <CommunityAvatar
           communityId={record.id}
@@ -55,7 +55,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
             ) : null}
           </div>
           <p
-            className="mt-0.5 break-all font-mono text-xs text-slate-500"
+            className="mt-0.5 break-all font-mono text-xs text-slate-400"
             title={record.id}
           >
             {truncateMiddle(record.id, 10, 8)}
@@ -65,13 +65,13 @@ export function CommunityCard({ community }: { community: CommunityView }) {
 
       {metadata ? (
         <p
-          className="mt-4 line-clamp-3 break-words text-sm leading-6 text-slate-400 [overflow-wrap:anywhere]"
+          className="mt-4 line-clamp-3 break-words text-sm leading-6 text-slate-300 [overflow-wrap:anywhere]"
           title={metadata.description}
         >
           {metadata.description}
         </p>
       ) : (
-        <p className="mt-4 text-sm text-amber-300" role="status">
+        <p className="mt-4 text-sm text-amber-200" role="status">
           Metadata unavailable. The verified registry record is still shown.
           {metadataError ? (
             <span className="sr-only"> {metadataError}</span>
@@ -81,29 +81,29 @@ export function CommunityCard({ community }: { community: CommunityView }) {
 
       <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-800 pt-4 text-sm">
         <div className="min-w-0">
-          <dt className="text-xs text-slate-500">Proposal threshold</dt>
-          <dd className="mt-1 break-words text-slate-200">
+          <dt className="text-xs text-slate-400">Proposal threshold</dt>
+          <dd className="mt-1 break-words text-slate-100">
             {governance.proposalThreshold ?? "Unavailable"}{" "}
             {governance.proposalThreshold ? "NFT votes" : ""}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-slate-500">Quorum</dt>
-          <dd className="mt-1 break-words text-slate-200">
+          <dt className="text-xs text-slate-400">Quorum</dt>
+          <dd className="mt-1 break-words text-slate-100">
             {governance.quorum ?? "Unavailable"}{" "}
             {governance.quorum ? "NFT votes" : ""}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-slate-500">Voting delay</dt>
-          <dd className="mt-1 break-words text-slate-200">
+          <dt className="text-xs text-slate-400">Voting delay</dt>
+          <dd className="mt-1 break-words text-slate-100">
             {governance.votingDelay ?? "Unavailable"}{" "}
             {governance.votingDelay !== null ? "ledgers" : ""}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-slate-500">Voting period</dt>
-          <dd className="mt-1 break-words text-slate-200">
+          <dt className="text-xs text-slate-400">Voting period</dt>
+          <dd className="mt-1 break-words text-slate-100">
             {governance.votingPeriod ?? "Unavailable"}{" "}
             {governance.votingPeriod !== null ? "ledgers" : ""}
           </dd>

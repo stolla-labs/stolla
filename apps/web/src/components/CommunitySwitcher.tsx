@@ -105,7 +105,7 @@ export function CommunitySwitcher({
       <div className="relative shrink-0">
         <Link
           href="/communities"
-          className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-amber-800/70 bg-amber-950/40 px-3 py-2 text-left text-sm text-amber-100 hover:bg-amber-950/60"
+          className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-amber-700 bg-amber-950/50 px-3 py-2 text-left text-sm text-amber-100 hover:bg-amber-950/70"
           aria-label="Community registry unavailable. Open communities for configuration details."
         >
           Registry unavailable
@@ -129,7 +129,7 @@ export function CommunitySwitcher({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={accessibleName}
-        className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+        className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-left text-sm text-slate-100 transition hover:border-slate-400 hover:bg-slate-800"
       >
         <span
           className={
@@ -140,7 +140,7 @@ export function CommunitySwitcher({
         >
           {selectedLabel}
         </span>
-        <span aria-hidden="true" className="text-xs text-slate-500">
+        <span aria-hidden="true" className="text-xs text-slate-400">
           ▾
         </span>
       </button>
@@ -148,7 +148,7 @@ export function CommunitySwitcher({
         <div
           role="dialog"
           aria-label="Choose a community"
-          className="absolute left-0 top-full z-[70] mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-700 bg-slate-900 p-3 shadow-2xl"
+          className="absolute left-0 top-full z-[70] mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-600 bg-slate-900 p-3 shadow-2xl"
         >
           <label htmlFor="community-switcher-search" className="sr-only">
             Search communities
@@ -160,21 +160,21 @@ export function CommunitySwitcher({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search communities"
-            className="min-h-11 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100"
+            className="input-field min-h-11 w-full rounded-lg border border-slate-600 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100"
           />
           <div className="mt-2 max-h-72 overflow-y-auto">
             {loading && (
-              <p role="status" className="p-3 text-sm text-slate-400">
+              <p role="status" className="p-3 text-sm text-slate-300">
                 Loading communities…
               </p>
             )}
             {error && (
-              <p role="alert" className="p-3 text-sm text-rose-300">
+              <p role="alert" className="p-3 text-sm text-rose-200">
                 {error}
               </p>
             )}
             {!loading && !error && loaded && matches.length === 0 && (
-              <p className="p-3 text-sm text-slate-400">
+              <p className="p-3 text-sm text-slate-300">
                 {communities.length === 0
                   ? "No communities are registered."
                   : "No communities match this search."}
@@ -195,10 +195,10 @@ export function CommunitySwitcher({
                   aria-current={
                     community.record.id === selectedId ? "page" : undefined
                   }
-                  className="block min-h-11 rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 aria-[current=page]:bg-indigo-950 aria-[current=page]:text-indigo-200"
+                  className="block min-h-11 rounded-lg px-3 py-2 text-sm text-slate-100 hover:bg-slate-800 aria-[current=page]:bg-indigo-950 aria-[current=page]:text-indigo-200"
                 >
                   <span className="block truncate">{name}</span>
-                  <span className="block truncate font-mono text-xs text-slate-500">
+                  <span className="block truncate font-mono text-xs text-slate-400">
                     {truncateMiddle(community.record.id)}
                   </span>
                 </Link>

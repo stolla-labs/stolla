@@ -79,8 +79,8 @@ export function Header() {
                   href={item.href}
                   className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors sm:px-3 ${
                     isActive
-                      ? "bg-indigo-950 font-medium text-indigo-300"
-                      : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                      ? "bg-indigo-950 font-medium text-indigo-200"
+                      : "text-slate-300 hover:bg-slate-800/80 hover:text-slate-100"
                   }`}
                 >
                   {item.label}
@@ -98,7 +98,7 @@ export function Header() {
                 <>
                   <div className="hidden items-center gap-2 sm:flex">
                     <span
-                      className="truncate text-xs text-slate-500 sm:max-w-[120px] md:max-w-[180px]"
+                      className="truncate text-xs text-slate-400 sm:max-w-[120px] md:max-w-[180px]"
                       title={address}
                     >
                       {truncateMiddle(address)}
@@ -106,7 +106,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={disconnect}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800"
+                      className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
                     >
                       Disconnect
                     </button>
@@ -120,12 +120,12 @@ export function Header() {
                       aria-haspopup="menu"
                       aria-expanded={isMenuOpen}
                       aria-label={`Account ${truncateMiddle(address)}`}
-                      className="flex max-w-[11rem] items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/80 px-2.5 py-1.5 text-left text-sm text-slate-100 shadow-sm"
+                      className="flex max-w-[11rem] items-center gap-1.5 rounded-lg border border-slate-600 bg-slate-900/80 px-2.5 py-1.5 text-left text-sm text-slate-100 shadow-sm hover:border-slate-400"
                     >
-                      <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
+                      <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-200">
                         Account
                       </span>
-                      <span className="truncate font-mono text-xs text-slate-300">
+                      <span className="truncate font-mono text-xs text-slate-200">
                         {truncateMiddle(address)}
                       </span>
                     </button>
@@ -134,14 +134,14 @@ export function Header() {
                       <div
                         role="menu"
                         aria-label="Account menu"
-                        className="absolute right-0 top-full z-[60] mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-2xl"
+                        className="absolute right-0 top-full z-[60] mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-600 bg-slate-900/95 p-3 shadow-2xl"
                       >
                         <div className="mb-3 flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
                               Connected account
                             </p>
-                            <p className="mt-1 break-all font-mono text-sm text-slate-200">
+                            <p className="mt-1 break-all font-mono text-sm text-slate-100">
                               {address}
                             </p>
                           </div>
@@ -159,7 +159,7 @@ export function Header() {
                               handleDisconnect();
                             }
                           }}
-                          className="w-full rounded-lg border border-slate-700 px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-slate-800"
+                          className="w-full rounded-lg border border-slate-600 px-3 py-2 text-left text-sm text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
                         >
                           Disconnect
                         </button>
@@ -180,8 +180,8 @@ export function Header() {
                   }
                   className={
                     demoteWalletCta
-                      ? "rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800 disabled:opacity-50 sm:px-4"
-                      : "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50 sm:px-4"
+                      ? "rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-100 transition hover:border-slate-400 hover:bg-slate-800 disabled:border-dashed disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
+                      : "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:btn-disabled-primary sm:px-4"
                   }
                 >
                   {isConnecting ? "Connecting..." : "Connect Wallet"}
@@ -191,7 +191,7 @@ export function Header() {
             {isConnecting ? (
               <LiveStatus
                 id="wallet-connection-status"
-                className="max-w-64 text-right text-xs text-slate-400"
+                className="max-w-64 text-right text-xs text-slate-300"
               >
                 Connecting to wallet…
               </LiveStatus>
@@ -199,7 +199,7 @@ export function Header() {
               <LiveStatus
                 id="wallet-connection-status"
                 tone="error"
-                className="max-w-64 text-right text-xs text-rose-300"
+                className="max-w-64 text-right text-xs text-rose-200"
               >
                 {connectionError.message}
               </LiveStatus>
