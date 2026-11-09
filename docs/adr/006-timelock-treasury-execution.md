@@ -547,7 +547,48 @@ communities, and RPC event decoding.
 5. Add upgrade entry points and bootstrap-role revocation proofs to every
    governed contract.
 6. Implement Guardian multisignature and bounded pause behavior.
-7. Add persistent event indexing and alerting for privileged actions.
+7. Add persistent event indexing and alerting for privileged actions (implemented in [scripts/timelock-treasury-alerts.mjs](../../scripts/timelock-treasury-alerts.mjs)).
+
+## Privileged Action Event Schemas & Alert Worker (scripts/timelock-treasury-alerts.mjs)
+
+### Event Field Schemas
+
+| Contract | Event (#[contractevent]) | Topics | Data Fields | Alert Type & Severity |
+| --- | --- | --- | --- | --- |
+| CommunityTimelock | ActionQueued (ction_queued) | ction_id: BytesN<32>, proposal_id: BytesN<32> | governor: Address, queued_ledger: u32, earliest_ledger: u32, expiry_ledger: u32, atch_hash: BytesN<32> | TIMELOCK_QUEUED (warning) |
+| CommunityTimelock | ActionExecuted (ction_executed) | ction_id: BytesN<32>, proposal_id: BytesN<32> | executor: Address, execution_ledger: u32, atch_hash: BytesN<32> | TIMELOCK_EXECUTED (high) |
+| CommunityTimelock | ActionCancelled (ction_cancelled) | ction_id: BytesN<32>, proposal_id: BytesN<32> | guardian: Address, cancellation_ledger: u32, 
+eason_hash: BytesN<32> | TIMELOCK_CANCELLED (critical) |
+| CommunityTimelock | ActionExpired (ction_expired) | ction_id: BytesN<32>, proposal_id: BytesN<32> | earliest_ledger: u32, expiry_ledger: u32, marking_ledger: u32 | TIMELOCK_EXPIRED (info) |
+| CommunityTreasury | TreasuryPayment (	reasury_payment) | sset: Address, 
+ecipient: Address | mount: i128, 
+eference: Bytes | TREASURY_SPEND (high) |
+| CommunityTreasury | PolicyChanged (policy_changed) | sset: Address | max_per_call: i128, max_per_period: i128, period_ledgers: u32, 
+ecipients_restricted: bool, 
+emoved: bool | TREASURY_POLICY_CHANGED (critical) |
+| CommunityTreasury | RecipientChanged (
+ecipient_changed) | sset: Address, 
+ecipient: Address | llowed: bool | TREASURY_RECIPIENT_CHANGED (warning) |
+
+### Running the Alert Consumer
+
+scripts/timelock-treasury-alerts.mjs consumes either an indexed JSON event store
+(--events-file) or polls Soroban RPC getEvents (--rpc-url, --contracts,
+--start-ledger). When ALERT_WEBHOOK_URL (--webhook-url) is omitted, the
+worker fails soft into LOG_ONLY mode and writes structured JSON alerts to
+stdout (and optionally --out-file):
+
+`ash
+# Log-only mode from an indexed event store or fixture file
+node scripts/timelock-treasury-alerts.mjs --events-file events.json --out-file alerts.jsonl
+
+# Live RPC polling with webhook delivery
+ALERT_WEBHOOK_URL=https://alerts.example.org/stolla \
+  node scripts/timelock-treasury-alerts.mjs \
+  --rpc-url https://soroban-testnet.stellar.org \
+  --contracts <TIMELOCK_ID>,<TREASURY_ID> \
+  --start-ledger 1500000
+`
 8. Complete the test matrix, issue #89 TTL coverage, adversarial integration
    tests, and an independent audit.
 9. Build proposal-policy decoding in the frontend so users can review assets,
