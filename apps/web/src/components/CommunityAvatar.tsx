@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { resolveCommunityResourceUrl } from "@/lib/community/schema";
+import {
+  resolveCommunityResourceCandidates,
+  selectActiveGatewayCandidate,
+} from "@/lib/ipfs/gateways";
 
 const FALLBACK_STYLES = [
   "border-indigo-700 bg-indigo-950 text-indigo-300",
@@ -30,16 +33,18 @@ export function CommunityAvatar({
   logo?: string;
   size?: "card" | "detail";
 }) {
-  const source = useMemo(() => {
-    if (!logo) return null;
-    try {
-      return resolveCommunityResourceUrl(logo);
-    } catch {
-      return null;
-    }
-  }, [logo]);
-  const [failedSource, setFailedSource] = useState<string | null>(null);
-  const failed = source !== null && failedSource === source;
+  const candidates = useMemo(
+    () => resolveCommunityResourceCandidates(logo),
+    [logo],
+  );
+  const [failureState, setFailureState] = useState<{
+    logo: string | undefined;
+    failedCount: number;
+  }>({ logo, failedCount: 0 });
+
+  const failedCount =
+    failureState.logo === logo ? failureState.failedCount : 0;
+  const source = selectActiveGatewayCandidate(candidates, failedCount);
 
   const sizeClass =
     size === "detail"
@@ -47,7 +52,7 @@ export function CommunityAvatar({
       : "h-12 w-12 text-lg";
   const sharedClass = `${sizeClass} shrink-0 rounded-xl border`;
 
-  if (source && !failed) {
+  if (source) {
     return (
       // The adjacent heading already provides the community name.
       // eslint-disable-next-line @next/next/no-img-element
@@ -56,7 +61,13 @@ export function CommunityAvatar({
         alt=""
         width={size === "detail" ? 80 : 48}
         height={size === "detail" ? 80 : 48}
-        onError={() => setFailedSource(source)}
+        onError={() =>
+          setFailureState((current) => ({
+            logo,
+            failedCount:
+              (current.logo === logo ? current.failedCount : 0) + 1,
+          }))
+        }
         className={`${sharedClass} bg-slate-900 object-cover`}
       />
     );
