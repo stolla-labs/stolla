@@ -328,8 +328,7 @@ Remaining gaps:
   dashboard.
 - Spend-counter TTL uses the same 30-day extension as the other contracts.
   Archival restoration is not implemented.
-- `CommunityGovernor` still uses immediate execution. Its queueing default was
-  not changed.
+- `CommunityGovernor` now enables queueing (`proposals_need_queuing() == true`) whenever a `Timelock` address is configured via `set_timelock`, while preserving signaling-only immediate mode when `Timelock` is unset (`None`). It also stores and exposes the exact approved action payload via `get_proposal_action` and `verify_proposal_action`.
 
 ### Other target calls
 
@@ -540,8 +539,7 @@ communities, and RPC event decoding.
    the allow/deny tests are in place. Still open: Timelock-verified action
    ids, batch sums, SAC code checks, direct-transfer deposits, upgrade and
    bootstrap revocation, and `storage_health`.
-3. Update `CommunityGovernor` to require queueing and expose exact approved
-   action data for Timelock verification.
+3. **Completed (#379):** Updated `CommunityGovernor` so `proposals_need_queuing()` returns `true` for executable communities configured with a `Timelock` address (while remaining `false` in signaling-only mode when `Timelock` is unset), enforced `queue` and ETA before `execute`, and exposed exact approved action data (`targets`, `functions`, `args`, `description_hash`) via `get_proposal_action` and `verify_proposal_action` for Timelock verification.
 4. Add per-community deployment/registry integration after the
    CommunityFactory decision in issue #91.
 5. Add upgrade entry points and bootstrap-role revocation proofs to every

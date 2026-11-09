@@ -1511,3 +1511,244 @@ fn governor_storage_survives_advancement_and_instance_ttl_renews_at_boundary() {
         assert_eq!(e.storage().instance().get_ttl(), STORAGE_EXTEND_AMOUNT);
     });
 }
+
+
+#[test]
+fn executable_community_requires_queue_before_execute_and_exposes_action_data() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    let governor_admin = CommunityGovernorClient::new(&e, &fixture.governor_id);
+    let timelock = Address::generate(&e);
+    let proposer = fixture.primary_voter().clone();
+    let operator = Address::generate(&e);
+    let executor = Address::generate(&e);
+    let proposal = executable_proposal(&e, 77);
+    let target = GovernorExecutionTargetClient::new(&e, &proposal.target_id);
+
+    e.mock_all_auths();
+    governor_admin.set_timelock(&Some(timelock.clone()));
+    assert_eq!(governor_admin.timelock(), Some(timelock));
+    assert!(fixture.governor.proposals_need_queuing());
+
+    advance_ledger(&e, 1);
+    let proposal_id = pass_executable_proposal(&fixture, &proposal, &proposer);
+
+    let recorded = governor_admin
+        .get_proposal_action(&proposal_id)
+        .expect("approved action record must exist");
+    assert_eq!(
+        recorded,
+        crate::ApprovedAction {
+            proposal_id: proposal_id.clone(),
+            targets: proposal.targets.clone(),
+            functions: proposal.functions.clone(),
+            args: proposal.args.clone(),
+            description_hash: proposal.description_hash.clone(),
+        }
+    );
+    assert!(governor_admin.verify_proposal_action(
+        &proposal_id,
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+    ));
+
+    // Cannot execute before queue when Timelock queueing is enabled.
+    mock_execute_auth(&e, &fixture.governor_id, &proposal, &executor);
+    let before_queue = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        );
+    }));
+    assert!(before_queue.is_err());
+    assert_eq!(target.calls(), 0);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Succeeded
+    );
+
+    let current_ledger = e.ledger().sequence();
+    let eta = current_ledger + 50;
+    e.mock_all_auths();
+    let queued_id = fixture.governor.queue(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+        &eta,
+        &operator,
+    );
+    assert_eq!(queued_id, proposal_id);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Queued
+    );
+    assert_eq!(governor_admin.proposal_eta(&proposal_id), Some(eta));
+
+    // Cannot execute before ETA is reached.
+    set_ledger_sequence(&e, eta - 1);
+    mock_execute_auth(&e, &fixture.governor_id, &proposal, &executor);
+    let before_eta = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        );
+    }));
+    assert!(before_eta.is_err());
+    assert_eq!(target.calls(), 0);
+
+    // Executes cleanly once queued and ETA is reached.
+    set_ledger_sequence(&e, eta);
+    mock_execute_auth(&e, &fixture.governor_id, &proposal, &executor);
+    assert_eq!(
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        ),
+        proposal_id
+    );
+    assert_eq!(target.value(), 77);
+    assert_eq!(target.calls(), 1);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Executed
+    );
+}
+
+#[test]
+fn executable_community_rejects_mismatched_action_data_on_queue_and_execute() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    let governor_admin = CommunityGovernorClient::new(&e, &fixture.governor_id);
+    let timelock = Address::generate(&e);
+    let proposer = fixture.primary_voter().clone();
+    let operator = Address::generate(&e);
+    let executor = Address::generate(&e);
+    let proposal = executable_proposal(&e, 42);
+    let target = GovernorExecutionTargetClient::new(&e, &proposal.target_id);
+
+    e.mock_all_auths();
+    governor_admin.set_timelock(&Some(timelock));
+
+    advance_ledger(&e, 1);
+    let proposal_id = pass_executable_proposal(&fixture, &proposal, &proposer);
+    let mismatched_args = vec![&e, vec![&e, 999u32.into_val(&e)]];
+    assert!(!governor_admin.verify_proposal_action(
+        &proposal_id,
+        &proposal.targets,
+        &proposal.functions,
+        &mismatched_args,
+        &proposal.description_hash,
+    ));
+
+    let eta = e.ledger().sequence() + 25;
+    e.mock_all_auths();
+    let mismatched_queue = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.queue(
+            &proposal.targets,
+            &proposal.functions,
+            &mismatched_args,
+            &proposal.description_hash,
+            &eta,
+            &operator,
+        );
+    }));
+    assert!(mismatched_queue.is_err());
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Succeeded
+    );
+
+    e.mock_all_auths();
+    fixture.governor.queue(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+        &eta,
+        &operator,
+    );
+    set_ledger_sequence(&e, eta);
+
+    e.mock_all_auths();
+    let mismatched_execute = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &mismatched_args,
+            &proposal.description_hash,
+            &executor,
+        );
+    }));
+    assert!(mismatched_execute.is_err());
+    assert_eq!(target.calls(), 0);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Queued
+    );
+}
+
+#[test]
+fn signaling_only_mode_remains_available_when_timelock_unset() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    let governor_admin = CommunityGovernorClient::new(&e, &fixture.governor_id);
+    let timelock = Address::generate(&e);
+    let proposer = fixture.primary_voter().clone();
+    let operator = Address::generate(&e);
+    let executor = Address::generate(&e);
+    let proposal = executable_proposal(&e, 19);
+    let target = GovernorExecutionTargetClient::new(&e, &proposal.target_id);
+
+    e.mock_all_auths();
+    governor_admin.set_timelock(&Some(timelock));
+    assert!(fixture.governor.proposals_need_queuing());
+    governor_admin.set_timelock(&None);
+    assert_eq!(governor_admin.timelock(), None);
+    assert!(!fixture.governor.proposals_need_queuing());
+
+    advance_ledger(&e, 1);
+    let proposal_id = pass_executable_proposal(&fixture, &proposal, &proposer);
+
+    let eta = e.ledger().sequence() + 10;
+    e.mock_all_auths();
+    let queue_when_disabled = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.queue(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &eta,
+            &operator,
+        );
+    }));
+    assert!(queue_when_disabled.is_err());
+
+    mock_execute_auth(&e, &fixture.governor_id, &proposal, &executor);
+    assert_eq!(
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        ),
+        proposal_id
+    );
+    assert_eq!(target.value(), 19);
+    assert_eq!(target.calls(), 1);
+}
