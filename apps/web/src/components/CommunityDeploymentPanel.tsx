@@ -26,6 +26,7 @@ import type {
   GovernanceDraft,
 } from "@/lib/community/schema";
 import { getE2EBridge } from "@/lib/e2eMock";
+import { permissionlessCreateEnabled, resolveFactoryCreatorAuthorized } from "@/lib/network";
 import { config } from "@/lib/stellar";
 import { buildStellarExplorerTxUrl } from "@/lib/stellarExplorer";
 import type { TransactionLifecycleStage } from "@/lib/transactionLifecycle";
@@ -195,14 +196,23 @@ export function CommunityDeploymentPanel({
     return null;
   }, [address, factoryId, networkMismatch, transactionHash, walletNetworkUnknown]);
 
+  const permissionlessCreate = permissionlessCreateEnabled();
+
   const authorization: FactoryAuthorizationStatus = useMemo(() => {
     if (staticAuthorization !== null) return staticAuthorization;
+    if (permissionlessCreate) return "ready";
     if (ownerRead === null) return "checking";
     if (ownerRead.status === "ok") {
-      return ownerRead.owner === address ? "ready" : "unauthorized";
+      return resolveFactoryCreatorAuthorized({
+        address,
+        factoryOwner: ownerRead.owner,
+        permissionlessCreate,
+      })
+        ? "ready"
+        : "unauthorized";
     }
     return "read-failed";
-  }, [address, ownerRead, staticAuthorization]);
+  }, [address, ownerRead, permissionlessCreate, staticAuthorization]);
 
   useEffect(() => {
     if (transactionHash || staticAuthorization !== null) return;

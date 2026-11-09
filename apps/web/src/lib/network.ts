@@ -152,6 +152,7 @@ export type NetworkCapabilities = {
   legacyContracts: CapabilityAvailability & { nftContractId: string; governorContractId: string };
   proposalDiscovery: CapabilityAvailability & { governorContractId: string; startLedger: number | null };
   privilegedWrites: CapabilityAvailability;
+  permissionlessCreate: CapabilityAvailability;
 };
 
 type CapabilityEnvironment = Record<string, string | undefined>;
@@ -176,6 +177,33 @@ export function mainnetWritesAllowed(
   const flag =
     environment.NEXT_PUBLIC_ALLOW_MAINNET_WRITES ?? environment.ALLOW_MAINNET_WRITES;
   return flag?.trim().toLowerCase() === "true";
+}
+
+/**
+ * Community creation remains restricted to the CommunityFactory owner by
+ * default. Set NEXT_PUBLIC_PERMISSIONLESS_CREATE=true only when targeting a
+ * factory deployment that has enabled the reviewed creator-policy upgrade
+ * described in ADR-005.
+ */
+export function permissionlessCreateEnabled(
+  environment: CapabilityEnvironment = process.env,
+): boolean {
+  const flag =
+    environment.NEXT_PUBLIC_PERMISSIONLESS_CREATE ??
+    environment.PERMISSIONLESS_CREATE;
+  return flag?.trim().toLowerCase() === "true";
+}
+
+export function resolveFactoryCreatorAuthorized(options: {
+  address: string | null | undefined;
+  factoryOwner: string | null | undefined;
+  permissionlessCreate?: boolean;
+}): boolean {
+  const caller = options.address?.trim() ?? "";
+  if (!caller) return false;
+  if (options.permissionlessCreate === true) return true;
+  const owner = options.factoryOwner?.trim() ?? "";
+  return Boolean(owner) && caller === owner;
 }
 
 export function resolveActiveNetworkId(value?: string): ActiveNetworkId {
@@ -236,6 +264,12 @@ export function buildNetworkCapabilities(
       : unavailable(
           "Mainnet writes are off. You can still browse the registry and proposals. See docs/testnet-to-mainnet-runbook.md.",
           "NEXT_PUBLIC_ALLOW_MAINNET_WRITES",
+        ),
+    permissionlessCreate: permissionlessCreateEnabled(environment)
+      ? { available: true as const }
+      : unavailable(
+          "Only the CommunityFactory owner can create communities during this pilot. See docs/adr/005-community-factory-registry.md.",
+          "NEXT_PUBLIC_PERMISSIONLESS_CREATE",
         ),
   };
 }

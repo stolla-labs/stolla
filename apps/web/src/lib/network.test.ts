@@ -11,7 +11,9 @@ import {
   describeNetwork,
   findNetworkByPassphrase,
   listUnavailableCapabilities,
+  permissionlessCreateEnabled,
   requireNetworkCapability,
+  resolveFactoryCreatorAuthorized,
   transactionUrl,
 } from "./network";
 import { createNetworkCapabilitiesFixture } from "@/test-support/stellar/capabilities";
@@ -211,5 +213,66 @@ describe("buildHealthGates", () => {
     expect(factoryGate?.available).toBe(false);
     expect(factoryGate?.reason).toMatch(/CommunityFactory/);
     expect(gates.find((gate) => gate.name === "privilegedWrites")?.available).toBe(true);
+  });
+});
+
+describe("permissionlessCreate capability and creator policy gate", () => {
+  it("defaults to restricted owner-only creation when NEXT_PUBLIC_PERMISSIONLESS_CREATE is unset or false", () => {
+    expect(permissionlessCreateEnabled({})).toBe(false);
+    expect(
+      permissionlessCreateEnabled({ NEXT_PUBLIC_PERMISSIONLESS_CREATE: "false" }),
+    ).toBe(false);
+
+    const capabilities = buildNetworkCapabilities("testnet", {});
+    expect(capabilities.permissionlessCreate.available).toBe(false);
+    if (!capabilities.permissionlessCreate.available) {
+      expect(capabilities.permissionlessCreate.reason).toContain(
+        "Only the CommunityFactory owner can create communities",
+      );
+      expect(capabilities.permissionlessCreate.requiredEnvironment).toContain(
+        "NEXT_PUBLIC_PERMISSIONLESS_CREATE",
+      );
+    }
+
+    expect(
+      resolveFactoryCreatorAuthorized({
+        address: "GMEMBER",
+        factoryOwner: "GOWNER",
+        permissionlessCreate: false,
+      }),
+    ).toBe(false);
+    expect(
+      resolveFactoryCreatorAuthorized({
+        address: "GOWNER",
+        factoryOwner: "GOWNER",
+        permissionlessCreate: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("enables permissionless creation only when NEXT_PUBLIC_PERMISSIONLESS_CREATE=true", () => {
+    expect(
+      permissionlessCreateEnabled({ NEXT_PUBLIC_PERMISSIONLESS_CREATE: "true" }),
+    ).toBe(true);
+
+    const capabilities = buildNetworkCapabilities("testnet", {
+      NEXT_PUBLIC_PERMISSIONLESS_CREATE: "true",
+    });
+    expect(capabilities.permissionlessCreate.available).toBe(true);
+
+    expect(
+      resolveFactoryCreatorAuthorized({
+        address: "GMEMBER",
+        factoryOwner: "GOWNER",
+        permissionlessCreate: true,
+      }),
+    ).toBe(true);
+    expect(
+      resolveFactoryCreatorAuthorized({
+        address: "",
+        factoryOwner: "GOWNER",
+        permissionlessCreate: true,
+      }),
+    ).toBe(false);
   });
 });

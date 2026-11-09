@@ -185,3 +185,29 @@ a new factory and an explicit migration registry rather than rewriting IDs.
 - Add factory deployment and code-hash rotation tooling.
 - Update the web app to discover communities and regenerate bindings.
 - Document production multisig, keeper, upgrade, and migration runbooks.
+
+
+## Addendum: Reviewed Path Toward Permissionless Community Creation
+
+### Risks of unrestricted creation
+
+Opening `CommunityFactory::create_community` to arbitrary callers without guardrails introduces four operational risks:
+
+1. **On-chain registry and persistent storage spam:** Each creation allocates persistent `Community(id)` and `CommunityAt(index)` records plus two deployed contract instances (`CommunityNft` and `CommunityGovernor`), increasing pagination scan cost for all indexers and clients.
+2. **IPFS pinning abuse:** The `/api/ipfs/pin` endpoint uses the server-side `PINATA_JWT` quota; unrestricted wizard submissions can exhaust storage and bandwidth budgets.
+3. **Namespace spoofing and lookalikes:** Unverified creators can register misleading names/symbols to impersonate established Stellar ecosystems.
+4. **RPC event discovery load:** Unbounded community creation increases event volume for indexers polling factory and governor topics.
+
+### Staged creator-policy model
+
+| Stage | On-chain enforcement | Web capability (`NEXT_PUBLIC_PERMISSIONLESS_CREATE`) | Spam & safety controls |
+| --- | --- | --- | --- |
+| **Stage 1: Owner-gated pilot (Current default)** | `creator == FactoryOwner` required in `CommunityFactory::create_community` | `false` (default when unset) | Only `FactoryOwner` can pass preflight in `CommunityDeploymentPanel`; non-owners see pilot restriction copy |
+| **Stage 2: Allowlist / curator policy contract** | `FactoryOwner` delegates creator check to an allowlist or bond policy contract | `false` (unless testing open pilot) | Curated partner addresses or refundable XLM creation deposit |
+| **Stage 3: Reviewed permissionless pilot** | Factory upgraded to accept any authenticated `creator` (`creator.require_auth()`) with per-caller rate limit or creation fee | `true` | Per-IP/wallet `/api/ipfs/pin` rate limits, creation bond/fee, and registry verification badges |
+
+### Enabling permissionless creation for a pilot
+
+1. Upgrade or deploy a `CommunityFactory` instance whose creator policy permits non-owner `creator` accounts.
+2. Set `NEXT_PUBLIC_PERMISSIONLESS_CREATE=true` in `apps/web/.env.local` (or deployment environment variables).
+3. When `NEXT_PUBLIC_PERMISSIONLESS_CREATE` is unset or `false`, the web app never advertises open creation and keeps the `FactoryOwner` authorization preflight active.
