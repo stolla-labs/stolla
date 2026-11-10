@@ -18,6 +18,7 @@ import { contractIds } from "@/lib/stellar";
 import { SkeletonProposalRow } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
 import { ProposalMetadataFields } from "@/components/proposal/ProposalMetadataFields";
+import { ProposeCooldownGuidance } from "@/components/proposal/ProposeCooldownGuidance";
 import { PreSubmitSummary } from "@/components/PreSubmitSummary";
 import { AppButton } from "@/components/ui/AppButton";
 import { MainnetWriteGate, mainnetWritesBlocked } from "@/components/MainnetWriteGate";
@@ -431,6 +432,7 @@ export default function ProposalsPage() {
                 errors={metadataErrors}
                 onChange={updateMetadataField}
               />
+              <ProposeCooldownGuidance error={proposeLifecycle.error} />
             </div>
           )}
           <PreSubmitSummary simulation={null} onConfirm={() => void handleCreateProposal()} />
