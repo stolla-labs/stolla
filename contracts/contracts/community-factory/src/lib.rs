@@ -87,6 +87,7 @@ enum DataKey {
     CommunityCount,
     Community(BytesN<32>),
     CommunityAt(u32),
+    CommunityPaused(BytesN<32>),
 }
 
 #[contracterror]
@@ -111,6 +112,7 @@ pub enum FactoryError {
     PendingOwnerExpired = 16,
     CommunityNotFound = 17,
     CommunityOwnerNotSet = 18,
+    UnauthorizedCommunityAdmin = 19,
 }
 
 #[contractclient(name = "NftOwnershipClient")]
@@ -172,6 +174,15 @@ pub struct CommunityOwnerSynced {
     pub community_id: BytesN<32>,
     pub old_owner: Address,
     pub new_owner: Address,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CommunityPausedChanged {
+    #[topic]
+    pub community_id: BytesN<32>,
+    pub caller: Address,
+    pub paused: bool,
 }
 
 #[contract]
@@ -379,6 +390,69 @@ impl CommunityFactory {
             .extend_ttl(&key, FACTORY_TTL_THRESHOLD, FACTORY_TTL_EXTEND);
         extend_instance_ttl(e);
         Ok(record)
+    }
+
+    /// Read whether a registered community is currently paused/archived in the
+    /// factory registry. Communities remain in `get_community`/`list_communities`
+    /// so historical governance and membership records stay readable.
+    pub fn is_community_paused(e: &Env, community_id: BytesN<32>) -> Result<bool, FactoryError> {
+        extend_instance_ttl(e);
+        let community_key = DataKey::Community(community_id.clone());
+        if !e.storage().persistent().has(&community_key) {
+            return Err(FactoryError::CommunityNotFound);
+        }
+        e.storage().persistent().extend_ttl(
+            &community_key,
+            FACTORY_TTL_THRESHOLD,
+            FACTORY_TTL_EXTEND,
+        );
+        let status_key = DataKey::CommunityPaused(community_id);
+        let paused = e
+            .storage()
+            .persistent()
+            .get(&status_key)
+            .unwrap_or(false);
+        if e.storage().persistent().has(&status_key) {
+            e.storage().persistent().extend_ttl(
+                &status_key,
+                FACTORY_TTL_THRESHOLD,
+                FACTORY_TTL_EXTEND,
+            );
+        }
+        Ok(paused)
+    }
+
+    /// Pause or unpause a registered community. Authorized for either the
+    /// community's registered `community_owner` or the factory `owner`.
+    pub fn set_community_paused(
+        e: &Env,
+        caller: Address,
+        community_id: BytesN<32>,
+        paused: bool,
+    ) -> Result<bool, FactoryError> {
+        caller.require_auth();
+        let community_key = DataKey::Community(community_id.clone());
+        let record: CommunityRecord = e
+            .storage()
+            .persistent()
+            .get(&community_key)
+            .ok_or(FactoryError::CommunityNotFound)?;
+        if caller != record.community_owner && caller != owner(e) {
+            return Err(FactoryError::UnauthorizedCommunityAdmin);
+        }
+        let status_key = DataKey::CommunityPaused(community_id.clone());
+        let persistent = e.storage().persistent();
+        persistent.set(&status_key, &paused);
+        persistent.extend_ttl(&community_key, FACTORY_TTL_THRESHOLD, FACTORY_TTL_EXTEND);
+        persistent.extend_ttl(&status_key, FACTORY_TTL_THRESHOLD, FACTORY_TTL_EXTEND);
+        extend_instance_ttl(e);
+        CommunityPausedChanged {
+            community_id,
+            caller,
+            paused,
+        }
+        .publish(e);
+        Ok(paused)
     }
 
     pub fn list_communities(

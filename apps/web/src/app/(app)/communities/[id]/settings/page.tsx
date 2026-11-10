@@ -11,8 +11,11 @@ import { previewCommunityMetadata, publishCommunityMetadata } from "@/lib/commun
 import type { CommunityMetadataDraft } from "@/lib/community/schema";
 import {
   canEditCommunitySettings,
+  COMMUNITY_PAUSED_REASON,
+  isCommunityPaused,
   retainSettingsDraft,
   writeMetadataOverlay,
+  writePauseOverlay,
 } from "@/lib/community/settings";
 import type { Community } from "@/lib/community/types";
 import { createIpfsPinClient } from "@/lib/ipfs/pin";
@@ -38,6 +41,8 @@ export default function CommunitySettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [pinning, setPinning] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [pauseNotice, setPauseNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const result = await registry.get(params.id);
@@ -45,6 +50,7 @@ export default function CommunitySettingsPage() {
     setCommunity(result.community);
     setName(result.community.metadata?.name ?? "");
     setDescription(result.community.metadata?.description ?? "");
+    setPaused(isCommunityPaused(result.community.record));
   }, [params.id, registry]);
 
   useEffect(() => {
@@ -54,6 +60,18 @@ export default function CommunitySettingsPage() {
 
   const owner = community?.record.communityOwner ?? null;
   const allowed = canEditCommunitySettings(address, owner);
+
+  function togglePauseState() {
+    if (!community || !allowed) return;
+    const nextPaused = !paused;
+    writePauseOverlay(community.record.id, nextPaused);
+    setPaused(nextPaused);
+    setPauseNotice(
+      nextPaused
+        ? COMMUNITY_PAUSED_REASON
+        : "Community unpaused. Minting and proposal creation are restored for authorized roles.",
+    );
+  }
 
   async function refreshPreview(nextName: string, nextDescription: string) {
     const preview = await previewCommunityMetadata(
@@ -159,6 +177,44 @@ export default function CommunitySettingsPage() {
       <AppButton type="button" className="mt-4" disabled={pinning} onClick={() => void save()}>
         {pinning ? "Pinning…" : "Update metadata"}
       </AppButton>
+
+      <section
+        aria-labelledby="community-pause-settings-title"
+        className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="community-pause-settings-title" className="font-semibold text-slate-100">
+            Registry lifecycle status
+          </h2>
+          <span
+            data-testid="community-status-badge"
+            className={`inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium ${
+              paused
+                ? "border-amber-700/80 bg-amber-950/60 text-amber-200"
+                : "border-emerald-800/80 bg-emerald-950/50 text-emerald-200"
+            }`}
+          >
+            {paused ? "Paused" : "Active"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-slate-400">
+          Pausing marks this community as non-active in the registry and disables mint and proposal creation CTAs while keeping historical governance and membership records readable.
+        </p>
+        {pauseNotice && (
+          <p role="status" className="mt-3 text-sm text-amber-200">
+            {pauseNotice}
+          </p>
+        )}
+        <AppButton
+          type="button"
+          tone={paused ? "primary" : "secondary"}
+          className="mt-4"
+          onClick={togglePauseState}
+        >
+          {paused ? "Unpause community" : "Pause community"}
+        </AppButton>
+      </section>
+
       <div className="mt-6">
         <CommunityInviteLinkBuilder communityId={community.record.id} />
       </div>

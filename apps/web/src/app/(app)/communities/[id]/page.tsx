@@ -23,7 +23,11 @@ import {
 import { truncateMiddle } from "@/lib/truncate";
 import { CommunityMemberRoster } from "@/components/community/CommunityMemberRoster";
 import { GuardianControls } from "@/components/community/GuardianControls";
-import { readMetadataOverlay } from "@/lib/community/settings";
+import {
+  COMMUNITY_PAUSED_REASON,
+  isCommunityPaused,
+  readMetadataOverlay,
+} from "@/lib/community/settings";
 import { useCommunityWatchlist } from "@/hooks/useCommunityWatchlist";
 import { hasInviteIntent } from "@/lib/community/invite";
 
@@ -252,6 +256,7 @@ export default function CommunityDetailPage() {
   const overlay = readMetadataOverlay(record.id);
   const name = overlay?.name ?? metadata?.name ?? `Community ${truncateMiddle(record.id, 8, 6)}`;
   const metadataUri = overlay?.metadataUri ?? record.metadataUri;
+  const paused = isCommunityPaused(record);
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-10">
@@ -276,9 +281,19 @@ export default function CommunityDetailPage() {
           size="detail"
         />
         <div className="min-w-0">
-          <h1 className="break-words text-2xl font-bold text-slate-100 [overflow-wrap:anywhere] sm:text-3xl">
-            {name}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="break-words text-2xl font-bold text-slate-100 [overflow-wrap:anywhere] sm:text-3xl">
+              {name}
+            </h1>
+            {paused && (
+              <span
+                data-testid="community-status-badge"
+                className="inline-flex items-center rounded-md border border-amber-700/80 bg-amber-950/60 px-2.5 py-0.5 text-xs font-medium text-amber-200"
+              >
+                Paused
+              </span>
+            )}
+          </div>
           <p className="mt-2 break-all font-mono text-xs text-slate-500">
             {record.id}
           </p>
@@ -361,6 +376,16 @@ export default function CommunityDetailPage() {
         </nav>
       )}
 
+      {paused && (
+        <section
+          role="status"
+          data-testid="community-paused-banner"
+          className="mt-6 rounded-lg border border-amber-800/70 bg-amber-950/40 p-4 text-sm text-amber-200"
+        >
+          {COMMUNITY_PAUSED_REASON}
+        </section>
+      )}
+
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <AppLinkButton
           href={`/communities/${record.id}/proposals`}
@@ -371,6 +396,8 @@ export default function CommunityDetailPage() {
         <AppLinkButton
           href={`/community?community=${record.id}`}
           tone="secondary"
+          aria-disabled={paused}
+          title={paused ? COMMUNITY_PAUSED_REASON : undefined}
         >
           Membership actions
         </AppLinkButton>

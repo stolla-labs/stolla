@@ -120,6 +120,8 @@ export function parseRegistryRecord(
       : null;
   const metadataUri =
     typeof record.metadata_uri === "string" ? record.metadata_uri : null;
+  const paused =
+    typeof record.paused === "boolean" ? record.paused : undefined;
 
   if (
     !id ||
@@ -141,6 +143,7 @@ export function parseRegistryRecord(
     nftContract,
     governorContract,
     ...(timelockContract ? { timelockContract } : {}),
+    ...(paused !== undefined ? { paused } : {}),
     creator,
     communityOwner,
     createdAtLedger,

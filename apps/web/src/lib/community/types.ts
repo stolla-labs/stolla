@@ -17,6 +17,8 @@ export type CommunityRegistryRecord = {
   governorContract: string;
   /** Present only for communities deployed with emergency Timelock support. */
   timelockContract?: string;
+  /** Optional registry-level pause/archive flag. */
+  paused?: boolean;
   creator: string;
   communityOwner: string;
   createdAtLedger: number;

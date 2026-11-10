@@ -42,6 +42,7 @@ import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleSta
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import { BatchMintPanel } from "@/components/community/BatchMintPanel";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
+import { COMMUNITY_PAUSED_REASON, isCommunityPaused } from "@/lib/community/settings";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
 import {
@@ -123,6 +124,7 @@ export default function CommunityPage() {
     activeCommunity?.record.nftContract ??
     (!selectedCommunityId ? contractIds.nft : "");
   const contractsConfigured = routeResolved && Boolean(activeNftContract);
+  const communityPaused = isCommunityPaused(activeCommunity?.record);
 
   useEffect(() => {
     let active = true;
@@ -575,6 +577,15 @@ export default function CommunityPage() {
 
           {address && mintOwner === address ? <section className="min-w-0 rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5">
             <h2 className="font-semibold text-slate-100">Mint NFT (owner only)</h2>
+            {communityPaused && (
+              <p
+                role="status"
+                data-testid="community-paused-banner"
+                className="mt-3 rounded-lg border border-amber-800/70 bg-amber-950/40 p-3 text-sm text-amber-200"
+              >
+                {COMMUNITY_PAUSED_REASON}
+              </p>
+            )}
             <PreSubmitSummary simulation={null} onConfirm={() => void handleMint()} />
             <div className="mt-4 min-w-0 space-y-4">
               <div>
@@ -765,6 +776,7 @@ export default function CommunityPage() {
                 tone="primary"
                 onClick={() => void handleMint()}
                 disabled={
+                  communityPaused ||
                   mainnetWritesBlocked() ||
                   !address ||
                   !tokenDraftValid ||
@@ -773,6 +785,7 @@ export default function CommunityPage() {
                   mintLifecycle.isInFlight ||
                   delegationLifecycle.isInFlight
                 }
+                title={communityPaused ? COMMUNITY_PAUSED_REASON : undefined}
                 className="w-full sm:w-auto"
               >
                 {pinState.kind === "pinning"
@@ -808,6 +821,7 @@ export default function CommunityPage() {
               />
               <BatchMintPanel
                 disabled={
+                  communityPaused ||
                   !address ||
                   !tokenDraftValid ||
                   pinState.kind === "pinning" ||

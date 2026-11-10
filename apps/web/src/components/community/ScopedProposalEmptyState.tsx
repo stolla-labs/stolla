@@ -12,6 +12,7 @@ import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleSta
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { COMMUNITY_PAUSED_REASON, isCommunityPaused } from "@/lib/community/settings";
 
 const emptyDraft: ProposalMetadataDraft = {
   title: "",
@@ -57,13 +58,15 @@ export function ScopedProposalEmptyState({
 
   const threshold = community.governance.proposalThreshold;
   const walletReadiness = readiness?.address === address ? readiness : null;
+  const paused = isCommunityPaused(community.record);
   const canPropose = Boolean(
+    !paused &&
     address && walletReadiness?.status === "ready" && threshold !== null &&
     walletReadiness.votes !== undefined && walletReadiness.votes >= BigInt(threshold),
   );
 
   async function delegate() {
-    if (!address || delegation.isInFlight) return;
+    if (paused || !address || delegation.isInFlight) return;
     delegation.reset();
     const result = await delegation.execute(() => createNftClient({
       publicKey: address,
@@ -116,7 +119,11 @@ export function ScopedProposalEmptyState({
       className="mt-3"
       title="No proposals yet"
       action={
-        !address ? (
+        paused ? (
+          <AppButton tone="primary" disabled title={COMMUNITY_PAUSED_REASON}>
+            Create first proposal
+          </AppButton>
+        ) : !address ? (
           <AppButton tone="primary" onClick={() => void connect()} disabled={isConnecting}>
             {isConnecting ? "Connecting…" : "Connect wallet to propose"}
           </AppButton>
@@ -136,6 +143,11 @@ export function ScopedProposalEmptyState({
       }
     >
       <p>This community has no public proposals yet. Members with enough delegated voting power can create the first one.</p>
+      {paused && (
+        <p role="status" data-testid="community-paused-reason" className="mt-2 text-amber-200">
+          {COMMUNITY_PAUSED_REASON}
+        </p>
+      )}
       {address && walletReadiness?.status === "loading" && <p>Checking voting power…</p>}
       {address && walletReadiness?.status === "ready" && !canPropose && threshold !== null && (
         <p>Delegate this community&apos;s membership NFT voting power to meet the proposal threshold.</p>

@@ -8,6 +8,9 @@ export type CommunityMetadataOverlay = CommunitySettingsDraft & {
   metadataHash: string;
 };
 
+export const COMMUNITY_PAUSED_REASON =
+  "This community is paused in the registry. History remains readable, but minting and new proposals are disabled.";
+
 export function canEditCommunitySettings(
   viewer: string | null | undefined,
   owner: string | null | undefined,
@@ -25,6 +28,10 @@ export function retainSettingsDraft<T>(draft: T): T {
 
 export function settingsStorageKey(communityId: string): string {
   return `stolla.community-metadata.${communityId}`;
+}
+
+export function pauseStorageKey(communityId: string): string {
+  return `stolla.community-paused.${communityId}`;
 }
 
 export function readMetadataOverlay(communityId: string): CommunityMetadataOverlay | null {
@@ -45,4 +52,27 @@ export function writeMetadataOverlay(
   overlay: CommunityMetadataOverlay,
 ): void {
   window.sessionStorage.setItem(settingsStorageKey(communityId), JSON.stringify(overlay));
+}
+
+export function readPauseOverlay(communityId: string): boolean | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.sessionStorage.getItem(pauseStorageKey(communityId));
+  if (raw === null) return null;
+  if (raw === "true") return true;
+  if (raw === "false") return false;
+  return null;
+}
+
+export function writePauseOverlay(communityId: string, paused: boolean): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(pauseStorageKey(communityId), paused ? "true" : "false");
+}
+
+export function isCommunityPaused(
+  record: { id: string; paused?: boolean } | null | undefined,
+): boolean {
+  if (!record) return false;
+  const overlay = readPauseOverlay(record.id);
+  if (overlay !== null) return overlay;
+  return Boolean(record.paused);
 }

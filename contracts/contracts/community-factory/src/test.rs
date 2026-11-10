@@ -11,7 +11,8 @@ use stellar_governance::governor::GovernorClient;
 
 use crate::{
     derive_salt, CommunityCreated, CommunityFactory, CommunityFactoryClient, CommunityMetadata,
-    CreateCommunityRequest, FactoryError, GovernanceParams, METADATA_SCHEMA_VERSION,
+    CommunityPausedChanged, CreateCommunityRequest, FactoryError, GovernanceParams,
+    METADATA_SCHEMA_VERSION,
 };
 
 const NFT_WASM: &[u8] = include_bytes!("../test_wasm/community_nft.wasm");
@@ -401,4 +402,62 @@ fn community_owner_sync_follows_accepted_nft_owner() {
         client.try_sync_community_owner(&BytesN::from_array(&fixture.e, &[0; 32])),
         Err(Ok(FactoryError::CommunityNotFound))
     );
+}
+
+#[test]
+fn community_pause_state_authorizes_community_or_factory_owner_and_preserves_reads() {
+    let fixture = Fixture::new();
+    fixture.e.mock_all_auths();
+    let client = fixture.client();
+    let request = fixture.request(b"pausable-community");
+    let record = client.create_community(&fixture.owner, &request);
+    let stranger = Address::generate(&fixture.e);
+    let unknown_id = BytesN::from_array(&fixture.e, &[5; 32]);
+
+    assert!(!client.is_community_paused(&record.community_id));
+    assert_eq!(
+        client.try_is_community_paused(&unknown_id),
+        Err(Ok(FactoryError::CommunityNotFound))
+    );
+    assert_eq!(
+        client.try_set_community_paused(&fixture.owner, &unknown_id, &true),
+        Err(Ok(FactoryError::CommunityNotFound))
+    );
+    assert_eq!(
+        client.try_set_community_paused(&stranger, &record.community_id, &true),
+        Err(Ok(FactoryError::UnauthorizedCommunityAdmin))
+    );
+    assert!(!client.is_community_paused(&record.community_id));
+
+    // Community owner can pause the community
+    assert!(client.set_community_paused(
+        &request.community_owner,
+        &record.community_id,
+        &true
+    ));
+    let expected_event = CommunityPausedChanged {
+        community_id: record.community_id.clone(),
+        caller: request.community_owner.clone(),
+        paused: true,
+    }
+    .to_xdr(&fixture.e, &fixture.factory_id);
+    assert_eq!(
+        fixture.e.events().all().events().last(),
+        Some(&expected_event)
+    );
+    assert!(client.is_community_paused(&record.community_id));
+
+    // Read paths remain available while paused
+    assert_eq!(
+        client.get_community(&record.community_id),
+        Some(record.clone())
+    );
+    assert_eq!(
+        client.list_communities(&None, &10).records.get(0),
+        Some(record.clone())
+    );
+
+    // Factory owner can also unpause (or pause) as emergency policy fallback
+    assert!(!client.set_community_paused(&fixture.owner, &record.community_id, &false));
+    assert!(!client.is_community_paused(&record.community_id));
 }

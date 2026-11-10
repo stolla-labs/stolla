@@ -8,6 +8,7 @@ import { useCommunityWatchlist } from "@/hooks/useCommunityWatchlist";
 import {
   membershipLabel,
 } from "@/lib/community/membership";
+import { isCommunityPaused } from "@/lib/community/settings";
 import type { CommunityView } from "@/lib/community/types";
 import { truncateMiddle } from "@/lib/truncate";
 
@@ -27,6 +28,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
   const membershipText = membershipLabel(membership);
   const watchlist = useCommunityWatchlist();
   const watched = watchlist.isWatched(record.id);
+  const paused = isCommunityPaused(record);
 
   return (
     <article className="flex h-full min-w-0 flex-col rounded-xl border border-slate-800 bg-[#151b2b] p-4 sm:p-5">
@@ -41,6 +43,14 @@ export function CommunityCard({ community }: { community: CommunityView }) {
             <h2 className="break-words text-lg font-semibold text-slate-100 [overflow-wrap:anywhere]">
               {name}
             </h2>
+            {paused && (
+              <span
+                data-testid="community-status-badge"
+                className="inline-flex shrink-0 items-center rounded-md border border-amber-700/80 bg-amber-950/60 px-2 py-0.5 text-[11px] font-medium leading-4 text-amber-200"
+              >
+                Paused
+              </span>
+            )}
             {membershipText &&
             (membership === "member" ||
               membership === "non_member" ||

@@ -20,6 +20,8 @@ inputs follow the
 | `owner()`, `code_hashes()`, `is_paused()` | none | Reads factory configuration |
 | `set_code_hashes(nft, governor)` | owner | Changes templates for future communities |
 | `set_paused(paused)` | owner | Pauses or resumes creation |
+| `is_community_paused(id)` | none | Reads per-community pause/archive status while keeping history readable |
+| `set_community_paused(caller, id, paused)` | registered `community_owner` or factory `owner` | Pauses or unpauses a community in the registry and emits `community_paused_changed` |
 | `transfer_ownership(new, deadline)`, `accept_ownership()` | current/new owner | Performs two-step ownership transfer |
 | `extend_instance_ttl()` | none | Renews bounded instance state for keepers |
 
