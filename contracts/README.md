@@ -31,3 +31,8 @@ CARGO_TARGET_DIR=target stellar contract build
 ## Deploy
 
 See [`../scripts/deploy-testnet.sh`](../scripts/deploy-testnet.sh).
+
+## FAQ: Membership Revocation & Burn (`community-nft`)
+
+- **Can a community owner revoke or burn a member's NFT?**
+  No. `community-nft` implements `NonFungibleToken` (`NonFungibleVotes`), `Votes`, and `Ownable`, and intentionally omits `NonFungibleBurnable` and owner-forced revocation to prevent unilateral mid-governance disenfranchisement. See [ADR-001](../docs/adr/001-nft-voting-model.md#membership-token-revocation-and-burn-policy-402) for the full audit decision and key-rotation workarounds.
