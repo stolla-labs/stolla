@@ -7,6 +7,7 @@ import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
 import { GuardianControls } from "./GuardianControls";
+import { OwnerOnboardingChecklist } from "./OwnerOnboardingChecklist";
 
 export type CommunityDetailViewProps = {
   communityId: string;
@@ -92,6 +93,8 @@ function CommunityDetailPanel({ community, guardianAdapter }: { community: Commu
       >
         View proposals
       </AppLinkButton>
+
+      <OwnerOnboardingChecklist community={community} />
     </div>
   );
 }
