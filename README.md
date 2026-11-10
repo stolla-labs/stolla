@@ -198,6 +198,21 @@ manifest/cache errors, then restart the development server. The command only
 removes `apps/web/.next` and `apps/web/.turbo`; it preserves source and
 environment files, dependencies, npm caches, and the root lockfile.
 
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs automatically on `push` and
+`pull_request` to `main` (and supports manual `workflow_dispatch`):
+
+- **`contracts` job** — Installs a prebuilt `stellar-cli` release binary (avoiding
+  source compilation of `dbus-sys` / `libdbus-1-dev`), then runs `cargo test` and
+  `CARGO_TARGET_DIR=target stellar contract build`.
+- **`frontend` job** — Enforces the single root `package-lock.json`, runs
+  `npm ci`, `npm run check:workspace`, `npm run lint`,
+  `npm run typecheck --workspace=web`, `npm run test --workspace=web`,
+  `node --test scripts/check-production-health.test.mjs`, and
+  `npm run build --workspace=web`.
+- **`e2e` job** — Runs the Playwright multi-community browsing smoke suite.
+
 ## End-to-end flow
 
 1. Connect Freighter on testnet

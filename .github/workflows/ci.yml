@@ -1,19 +1,29 @@
-# Passive: not run on push/PR. Re-enable triggers when CI is green again.
-# Manual run: Actions → CI → Run workflow
 name: CI
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   contracts:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Install Stellar CLI
-        run: cargo install --locked stellar-cli
+        with:
+          targets: wasm32-unknown-unknown, wasm32v1-none
+      - name: Install Stellar CLI (prebuilt dbus-free binary)
+        env:
+          STELLAR_CLI_VERSION: "22.6.0"
+        run: |
+          set -euo pipefail
+          ARCHIVE="stellar-cli-${STELLAR_CLI_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          curl -fsSL "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/${ARCHIVE}" -o "/tmp/${ARCHIVE}"
+          tar -xzf "/tmp/${ARCHIVE}" -C "${HOME}/.cargo/bin"
+          stellar --version
       - name: Test contracts
         run: cd contracts && cargo test
       - name: Build contracts
@@ -21,7 +31,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
