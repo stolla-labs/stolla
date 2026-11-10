@@ -13,6 +13,7 @@ import {
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
 import { Networks, KitEventType } from "@creit.tech/stellar-wallets-kit/types";
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
+import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
 import type { SignTransaction } from "@stellar/stellar-sdk/contract";
 import { getE2EBridge } from "@/lib/e2eMock";
 import { activeNetwork } from "@/lib/stellar";
@@ -112,10 +113,22 @@ export function toWalletConnectionError(
   };
 }
 
+export const SUPPORTED_WALLET_MODULE_IDS = ["freighter", "xbull"] as const;
+export type SupportedWalletModuleId =
+  (typeof SUPPORTED_WALLET_MODULE_IDS)[number];
+
+export function buildWalletKitModules() {
+  return [new FreighterModule(), new xBullModule()];
+}
+
+export function resetWalletKitForTesting() {
+  kitInitialized = false;
+}
+
 function ensureKit() {
   if (!kitInitialized && typeof window !== "undefined") {
     StellarWalletsKit.init({
-      modules: [new FreighterModule()],
+      modules: buildWalletKitModules(),
       network:
         activeNetwork.id === "mainnet" ? Networks.PUBLIC : Networks.TESTNET,
     });

@@ -1,3 +1,4 @@
+import { useContext } from "react";
 import {
   cleanup,
   fireEvent,
@@ -7,13 +8,20 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/Header";
-import { WalletProvider } from "./WalletProvider";
+import {
+  SUPPORTED_WALLET_MODULE_IDS,
+  WalletContext,
+  WalletProvider,
+  buildWalletKitModules,
+  resetWalletKitForTesting,
+} from "./WalletProvider";
 
 const walletKit = vi.hoisted(() => ({
   authModal: vi.fn(),
   disconnect: vi.fn(),
   getNetwork: vi.fn(),
   init: vi.fn(),
+  signTransaction: vi.fn(),
   on: vi.fn((type?: unknown, handler?: unknown) => {
     void type;
     void handler;
@@ -31,7 +39,17 @@ vi.mock("@creit.tech/stellar-wallets-kit/types", () => ({
 }));
 
 vi.mock("@creit.tech/stellar-wallets-kit/modules/freighter", () => ({
-  FreighterModule: class FreighterModule {},
+  FreighterModule: class FreighterModule {
+    productId = "freighter";
+    productName = "Freighter";
+  },
+}));
+
+vi.mock("@creit.tech/stellar-wallets-kit/modules/xbull", () => ({
+  xBullModule: class xBullModule {
+    productId = "xbull";
+    productName = "xBull";
+  },
 }));
 
 vi.mock("next/navigation", () => ({
@@ -48,6 +66,7 @@ function renderWalletHeader() {
 
 describe("wallet connection feedback", () => {
   beforeEach(() => {
+    resetWalletKitForTesting();
     walletKit.authModal.mockReset();
     walletKit.disconnect.mockReset();
     walletKit.getNetwork.mockReset();
@@ -56,6 +75,7 @@ describe("wallet connection feedback", () => {
       networkPassphrase: "Test SDF Network ; September 2015",
     });
     walletKit.init.mockReset();
+    walletKit.signTransaction.mockReset();
     walletKit.on.mockClear();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
@@ -251,5 +271,72 @@ describe("wallet connection feedback", () => {
     expect(
       await screen.findByRole("button", { name: "Disconnect" }),
     ).toBeInTheDocument();
+  });
+
+  it("initializes StellarWalletsKit with Freighter and xBull modules and supports module switching + signTransaction XDR round-trip", async () => {
+    expect(SUPPORTED_WALLET_MODULE_IDS).toEqual(["freighter", "xbull"]);
+    const modules = buildWalletKitModules() as Array<{ productId?: string }>;
+    expect(modules.map((m) => m.productId)).toEqual(["freighter", "xbull"]);
+
+    let emitState:
+      | ((event: {
+          payload: { address?: string | null; networkPassphrase?: string };
+        }) => void)
+      | undefined;
+    walletKit.on.mockImplementation((_type, handler) => {
+      emitState = handler as typeof emitState;
+      return vi.fn();
+    });
+    walletKit.authModal.mockResolvedValueOnce({ address: "GFREIGHTER111" });
+    walletKit.signTransaction.mockImplementation(async (xdr: string) => ({
+      signedTxXdr: `signed:${xdr}`,
+      signerAddress: "GXBULL222",
+    }));
+
+    let capturedContext: React.ContextType<typeof WalletContext> = null;
+    function Probe() {
+      capturedContext = useContext(WalletContext);
+      return <Header />;
+    }
+
+    render(
+      <WalletProvider>
+        <Probe />
+      </WalletProvider>,
+    );
+
+    expect(walletKit.init).toHaveBeenCalledOnce();
+    const initArgs = walletKit.init.mock.calls[0]?.[0] as {
+      modules: Array<{ productId?: string }>;
+    };
+    expect(initArgs.modules.map((m) => m.productId)).toEqual([
+      "freighter",
+      "xbull",
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
+    await screen.findByRole("button", { name: "Disconnect" });
+    expect(capturedContext?.address).toBe("GFREIGHTER111");
+
+    // Simulate switching to xBull module via kit state update
+    emitState?.({
+      payload: {
+        address: "GXBULL222",
+        networkPassphrase: "Test SDF Network ; September 2015",
+      },
+    });
+    await waitFor(() => expect(capturedContext?.address).toBe("GXBULL222"));
+
+    const roundTrip = await capturedContext!.signTransaction("AAAA_UNSIGNED_XDR");
+    expect(roundTrip).toEqual({
+      signedTxXdr: "signed:AAAA_UNSIGNED_XDR",
+      signerAddress: "GXBULL222",
+    });
+    expect(walletKit.signTransaction).toHaveBeenCalledWith(
+      "AAAA_UNSIGNED_XDR",
+      expect.objectContaining({
+        networkPassphrase: "Test SDF Network ; September 2015",
+      }),
+    );
   });
 });
