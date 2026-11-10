@@ -541,7 +541,10 @@ communities, and RPC event decoding.
    ids, batch sums, SAC code checks, direct-transfer deposits, upgrade and
    bootstrap revocation, and `storage_health`.
 3. Update `CommunityGovernor` to require queueing and expose exact approved
-   action data for Timelock verification.
+   action data for Timelock verification (`configure_timelock`, `set_timelock`,
+   `set_privileged_target`, `get_queued_action`, `verify_approved_action`, and
+   `proposals_need_queuing()` returning `true` once Timelock mode is enabled,
+   while blocking privileged targets in signaling-only mode).
 4. Add per-community deployment/registry integration after the
    CommunityFactory decision in issue #91.
 5. Add upgrade entry points and bootstrap-role revocation proofs to every

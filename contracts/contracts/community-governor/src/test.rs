@@ -20,7 +20,8 @@ use stellar_governance::{
 use community_nft::{CommunityNft, CommunityNftClient};
 
 use crate::{
-    CommunityGovernor, CommunityGovernorClient, STORAGE_EXTEND_AMOUNT, STORAGE_TTL_THRESHOLD,
+    CommunityGovernor, CommunityGovernorClient, DEFAULT_TIMELOCK_DELAY_LEDGERS,
+    STORAGE_EXTEND_AMOUNT, STORAGE_TTL_THRESHOLD,
 };
 
 const GOVERNOR_WASM: &[u8] =
@@ -1510,4 +1511,167 @@ fn governor_storage_survives_advancement_and_instance_ttl_renews_at_boundary() {
     e.as_contract(&fixture.governor_id, || {
         assert_eq!(e.storage().instance().get_ttl(), STORAGE_EXTEND_AMOUNT);
     });
+}
+
+#[test]
+fn timelock_mode_requires_queueing_and_enforces_delay_before_execution() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    let governor_admin = CommunityGovernorClient::new(&e, &fixture.governor_id);
+    let timelock = Address::generate(&e);
+    let proposer = fixture.primary_voter().clone();
+    let operator = Address::generate(&e);
+    let executor = Address::generate(&e);
+    let proposal = executable_proposal(&e, 77);
+    let target = GovernorExecutionTargetClient::new(&e, &proposal.target_id);
+
+    assert!(governor_admin.is_signaling_only());
+    assert!(!fixture.governor.proposals_need_queuing());
+
+    e.mock_all_auths();
+    governor_admin.set_timelock(&timelock);
+    assert!(!governor_admin.is_signaling_only());
+    assert!(fixture.governor.proposals_need_queuing());
+    assert_eq!(governor_admin.timelock(), Some(timelock));
+    assert_eq!(
+        governor_admin.timelock_min_delay(),
+        DEFAULT_TIMELOCK_DELAY_LEDGERS
+    );
+
+    advance_ledger(&e, 1);
+    let proposal_id = pass_executable_proposal(&fixture, &proposal, &proposer);
+    assert!(governor_admin.verify_approved_action(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+    ));
+
+    // Unqueued execution must fail even though the proposal is Succeeded.
+    let unqueued = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        );
+    }));
+    assert!(unqueued.is_err());
+    assert_eq!(target.calls(), 0);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Succeeded
+    );
+
+    // Queueing with an ETA earlier than the minimum timelock delay is rejected.
+    let queued_at = e.ledger().sequence();
+    let eta = queued_at + DEFAULT_TIMELOCK_DELAY_LEDGERS;
+    let early_queue = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.queue(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &(eta - 1),
+            &operator,
+        );
+    }));
+    assert!(early_queue.is_err());
+
+    let queued_id = fixture.governor.queue(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+        &eta,
+        &operator,
+    );
+    assert_eq!(queued_id, proposal_id);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Queued
+    );
+
+    let record = governor_admin
+        .get_queued_action(&proposal_id)
+        .expect("queued action record stored");
+    assert_eq!(record.proposal_id, proposal_id);
+    assert_eq!(record.queued_at, queued_at);
+    assert_eq!(record.eta, eta);
+    assert_eq!(
+        record.batch_hash,
+        governor_admin.batch_hash(&proposal.targets, &proposal.functions, &proposal.args)
+    );
+    assert!(governor_admin.verify_approved_action(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+    ));
+
+    // Execution at eta - 1 must fail.
+    set_ledger_sequence(&e, eta - 1);
+    let early_exec = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        );
+    }));
+    assert!(early_exec.is_err());
+    assert_eq!(target.calls(), 0);
+
+    // Execution at eta succeeds once.
+    set_ledger_sequence(&e, eta);
+    let executed_id = fixture.governor.execute(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+        &executor,
+    );
+    assert_eq!(executed_id, proposal_id);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Executed
+    );
+    assert_eq!(target.value(), 77);
+    assert_eq!(target.calls(), 1);
+}
+
+#[test]
+fn signaling_only_governor_rejects_privileged_targets_until_timelock_enabled() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    let governor_admin = CommunityGovernorClient::new(&e, &fixture.governor_id);
+    let proposer = fixture.primary_voter().clone();
+    let executor = Address::generate(&e);
+    let proposal = executable_proposal(&e, 91);
+    let target = GovernorExecutionTargetClient::new(&e, &proposal.target_id);
+
+    e.mock_all_auths();
+    governor_admin.set_privileged_target(&proposal.target_id, &true);
+
+    advance_ledger(&e, 1);
+    let proposal_id = pass_executable_proposal(&fixture, &proposal, &proposer);
+    let blocked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &executor,
+        );
+    }));
+    assert!(blocked.is_err());
+    assert_eq!(target.calls(), 0);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Succeeded
+    );
 }
