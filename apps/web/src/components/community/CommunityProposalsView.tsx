@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Community, CommunityRegistry } from "@/lib/community/types";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
@@ -10,6 +11,7 @@ import {
 } from "@/lib/communities/proposals";
 import { describeProposalDiscoveryError } from "@/lib/communities/proposalDiscoveryErrors";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
+import { matchesProposalSearch } from "@/lib/proposals/search-filter";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
 import { ProposalExportControls } from "./ProposalExportControls";
@@ -33,6 +35,7 @@ export type CommunityProposalsViewProps = {
   communityId: string;
   registry?: CommunityRegistry;
   proposalIds?: string[];
+  proposalDescriptions?: Record<string, string | null>;
   getReader?: ProposalReaderFactory;
 };
 
@@ -40,6 +43,7 @@ export function CommunityProposalsView({
   communityId,
   registry,
   proposalIds,
+  proposalDescriptions,
   getReader,
 }: CommunityProposalsViewProps) {
   const resolution = useRegistryCommunity(communityId, registry);
@@ -67,6 +71,7 @@ export function CommunityProposalsView({
         proposalIds ??
         getStoredProposalIdsFor(community.record.governorContract)
       }
+      proposalDescriptions={proposalDescriptions}
       getReader={getReader}
     />
   );
@@ -75,17 +80,50 @@ export function CommunityProposalsView({
 function CommunityProposalsPanel({
   community,
   proposalIds,
+  proposalDescriptions,
   getReader,
 }: {
   community: Community;
   proposalIds: string[];
+  proposalDescriptions?: Record<string, string | null>;
   getReader?: ProposalReaderFactory;
 }) {
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("q") ?? "";
+  });
+
+  function updateSearchQuery(next: string) {
+    setSearchQuery(next);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (next.trim()) {
+        url.searchParams.set("q", next);
+      } else {
+        url.searchParams.delete("q");
+      }
+      window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+    }
+  }
+
   const resolution = useCommunityProposals(
     community.record.governorContract,
     proposalIds,
     getReader,
   );
+
+  const filteredEntries = useMemo(() => {
+    if (resolution.status !== "ready") return [];
+    return resolution.entries.filter((entry) =>
+      matchesProposalSearch(
+        {
+          id: entry.id,
+          description: proposalDescriptions?.[entry.id] ?? null,
+        },
+        searchQuery,
+      ),
+    );
+  }, [proposalDescriptions, resolution, searchQuery]);
 
   const discoveryError =
     resolution.status === "ready" && resolution.error
@@ -165,25 +203,52 @@ function CommunityProposalsPanel({
               </span>
             </FreshnessNotice>
           )}
-          <ul className="mt-6 space-y-2">
-            {resolution.entries.map((entry) => (
-              <li key={entry.id}>
-                <Link
-                  href={`/community/${community.record.id}/proposals/${entry.id}`}
-                  className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80"
-                >
-                  <span className="truncate font-mono">#{entry.id}</span>
-                  <span
-                    className={`ml-3 ${entry.status === "error" ? "text-rose-400" : "text-slate-500"}`}
+          <div className="mt-6">
+            <label htmlFor="community-proposal-search" className="sr-only">
+              Search proposals by title, summary, or ID
+            </label>
+            <input
+              id="community-proposal-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => updateSearchQuery(e.target.value)}
+              placeholder="Search proposals by title, summary, or #ID…"
+              aria-label="Search proposals by title, summary, or ID"
+              className="w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+            />
+          </div>
+          {filteredEntries.length === 0 ? (
+            <div className="mt-6 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-4 text-sm text-slate-400">
+              <p>No proposals match your search.</p>
+              <button
+                type="button"
+                onClick={() => updateSearchQuery("")}
+                className="mt-2 cursor-pointer text-indigo-300 underline hover:text-indigo-200"
+              >
+                Clear search
+              </button>
+            </div>
+          ) : (
+            <ul className="mt-6 space-y-2">
+              {filteredEntries.map((entry) => (
+                <li key={entry.id}>
+                  <Link
+                    href={`/community/${community.record.id}/proposals/${entry.id}`}
+                    className="flex items-center justify-between rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80"
                   >
-                    {entry.status === "ready"
-                      ? stateLabels[entry.state]
-                      : "Unavailable"}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                    <span className="truncate font-mono">#{entry.id}</span>
+                    <span
+                      className={`ml-3 ${entry.status === "error" ? "text-rose-400" : "text-slate-500"}`}
+                    >
+                      {entry.status === "ready"
+                        ? stateLabels[entry.state]
+                        : "Unavailable"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )}
     </div>

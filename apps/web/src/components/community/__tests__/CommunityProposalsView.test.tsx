@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ProposalState } from "@/lib/bindings/community-governor/src";
 import { CommunityProposalsView } from "@/components/community/CommunityProposalsView";
 import {
@@ -182,5 +182,45 @@ describe("CommunityProposalsView", () => {
     await screen.findByRole("link", { name: /#01/ });
     expect(screen.getByRole("button", { name: /Export proposals as CSV/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Export proposals as JSON/i })).toBeInTheDocument();
+  });
+
+  it("filters proposals by ID or metadata description and clears search (#390)", async () => {
+    const getReader = createGovernorReaderFactory([
+      {
+        contractId: atlasCommunity.record.governorContract,
+        proposals: { "01": ProposalState.Active, "02": ProposalState.Succeeded },
+      },
+    ]);
+
+    render(
+      <CommunityProposalsView
+        communityId={atlasCommunity.record.id}
+        registry={multiCommunityRegistry}
+        proposalIds={["01", "02"]}
+        proposalDescriptions={{
+          "01": "Treasury Quorum Upgrade",
+          "02": "Community Marketing Grant",
+        }}
+        getReader={getReader}
+      />,
+    );
+
+    await screen.findByRole("link", { name: /#01/ });
+    expect(screen.getByRole("link", { name: /#02/ })).toBeInTheDocument();
+
+    const searchInput = screen.getByRole("searchbox", {
+      name: /Search proposals by title, summary, or ID/i,
+    });
+
+    fireEvent.change(searchInput, { target: { value: "marketing" } });
+    expect(screen.queryByRole("link", { name: /#01/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /#02/ })).toBeInTheDocument();
+
+    fireEvent.change(searchInput, { target: { value: "no-match-xyz" } });
+    expect(screen.getByText("No proposals match your search.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Clear search/i }));
+    expect(screen.getByRole("link", { name: /#01/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /#02/ })).toBeInTheDocument();
   });
 });
