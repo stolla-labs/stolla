@@ -50,6 +50,37 @@ separate reviewed upgrade.
   authority; production deployment must assign that authority to the
   community owner or its Governor, never silently to the factory operator.
 
+### Reviewed path toward permissionless community creation
+
+During the initial pilot, `CommunityFactory::create_community` enforces
+`creator == FactoryOwner` on-chain, and the web application enforces an
+owner-preflight check in `CommunityDeploymentPanel` (`permissionlessCreate`
+capability default `false`).
+
+Transitioning to permissionless or policy-delegated community creation requires
+two coordinated steps:
+
+1. **On-chain policy & anti-spam upgrade:**
+   - Replace the strict `creator == FactoryOwner` assertion in
+     `CommunityFactory` with a configurable `CreatorPolicy` (`OwnerOnly`,
+     `Allowlist(Address)`, or `PermissionlessWithFee { token, min_fee,
+     treasury }`).
+   - Require the caller (`creator`) to fund initial persistent storage rent/TTL
+     for `Community(community_id)` and `CommunityAt(index)` (or pay a refundable
+     anti-spam deposit) so unrestricted deployment cannot exhaust factory rent
+     or pollute pagination.
+   - Emit `creator_policy_changed(old_policy, new_policy)` when `FactoryOwner`
+     updates the policy.
+2. **Web capability gate (`NEXT_PUBLIC_PERMISSIONLESS_CREATE`):**
+   - `buildNetworkCapabilities` exposes `permissionlessCreate` (default
+     `available: false` unless `NEXT_PUBLIC_PERMISSIONLESS_CREATE=true`).
+   - While `NEXT_PUBLIC_PERMISSIONLESS_CREATE` is unset or `false`,
+     `CommunityDeploymentPanel` reads `FactoryOwner` and locks simulation for
+     non-owner wallets with an explicit pilot notice.
+   - Once the on-chain policy upgrade is deployed and verified, setting
+     `NEXT_PUBLIC_PERMISSIONLESS_CREATE=true` unlocks simulation and deployment
+     for any connected wallet on the expected network.
+
 ### Identifier and deployment sequence
 
 `community_id` is `sha256(network_id || factory_address ||

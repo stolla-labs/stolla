@@ -133,7 +133,8 @@ export type NetworkCapabilityName =
   | "communityFactory"
   | "legacyContracts"
   | "proposalDiscovery"
-  | "privilegedWrites";
+  | "privilegedWrites"
+  | "permissionlessCreate";
 
 export type CapabilityAvailability =
   | { available: true }
@@ -152,6 +153,7 @@ export type NetworkCapabilities = {
   legacyContracts: CapabilityAvailability & { nftContractId: string; governorContractId: string };
   proposalDiscovery: CapabilityAvailability & { governorContractId: string; startLedger: number | null };
   privilegedWrites: CapabilityAvailability;
+  permissionlessCreate: CapabilityAvailability;
 };
 
 type CapabilityEnvironment = Record<string, string | undefined>;
@@ -175,6 +177,19 @@ export function mainnetWritesAllowed(
   if (id !== "mainnet") return true;
   const flag =
     environment.NEXT_PUBLIC_ALLOW_MAINNET_WRITES ?? environment.ALLOW_MAINNET_WRITES;
+  return flag?.trim().toLowerCase() === "true";
+}
+
+/**
+ * Community creation is owner-gated (`creator == FactoryOwner`) by default
+ * (ADR-005). Only enable `NEXT_PUBLIC_PERMISSIONLESS_CREATE=true` after the
+ * on-chain `CommunityFactory` policy upgrade has been deployed and reviewed.
+ */
+export function permissionlessCreateAllowed(
+  environment: CapabilityEnvironment = process.env,
+): boolean {
+  const flag =
+    environment.NEXT_PUBLIC_PERMISSIONLESS_CREATE ?? environment.PERMISSIONLESS_CREATE;
   return flag?.trim().toLowerCase() === "true";
 }
 
@@ -236,6 +251,12 @@ export function buildNetworkCapabilities(
       : unavailable(
           "Mainnet writes are off. You can still browse the registry and proposals. See docs/testnet-to-mainnet-runbook.md.",
           "NEXT_PUBLIC_ALLOW_MAINNET_WRITES",
+        ),
+    permissionlessCreate: permissionlessCreateAllowed(environment)
+      ? { available: true as const }
+      : unavailable(
+          "Community creation is owner-gated during the pilot. Enable NEXT_PUBLIC_PERMISSIONLESS_CREATE only after an on-chain CommunityFactory policy upgrade (see docs/adr/005-community-factory-registry.md).",
+          "NEXT_PUBLIC_PERMISSIONLESS_CREATE",
         ),
   };
 }

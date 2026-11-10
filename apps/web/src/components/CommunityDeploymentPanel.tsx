@@ -26,6 +26,7 @@ import type {
   GovernanceDraft,
 } from "@/lib/community/schema";
 import { getE2EBridge } from "@/lib/e2eMock";
+import { permissionlessCreateAllowed } from "@/lib/network";
 import { config } from "@/lib/stellar";
 import { buildStellarExplorerTxUrl } from "@/lib/stellarExplorer";
 import type { TransactionLifecycleStage } from "@/lib/transactionLifecycle";
@@ -192,6 +193,7 @@ export function CommunityDeploymentPanel({
     if (walletNetworkUnknown) return "network-unknown";
     if (networkMismatch) return "wrong-network";
     if (!factoryId) return "read-failed";
+    if (permissionlessCreateAllowed()) return "ready";
     return null;
   }, [address, factoryId, networkMismatch, transactionHash, walletNetworkUnknown]);
 

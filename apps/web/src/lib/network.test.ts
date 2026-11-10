@@ -11,6 +11,7 @@ import {
   describeNetwork,
   findNetworkByPassphrase,
   listUnavailableCapabilities,
+  permissionlessCreateAllowed,
   requireNetworkCapability,
   transactionUrl,
 } from "./network";
@@ -162,6 +163,30 @@ describe("network capability matrix", () => {
         NEXT_PUBLIC_ALLOW_MAINNET_WRITES: "true",
       }).privilegedWrites.available,
     ).toBe(true);
+  });
+
+  it("defaults permissionlessCreate to unavailable and unlocks when NEXT_PUBLIC_PERMISSIONLESS_CREATE is true", () => {
+    expect(permissionlessCreateAllowed({})).toBe(false);
+    const defaultCaps = buildNetworkCapabilities("testnet", {});
+    expect(defaultCaps.permissionlessCreate.available).toBe(false);
+    if (!defaultCaps.permissionlessCreate.available) {
+      expect(defaultCaps.permissionlessCreate.reason).toContain(
+        "docs/adr/005-community-factory-registry.md",
+      );
+      expect(defaultCaps.permissionlessCreate.requiredEnvironment).toEqual([
+        "NEXT_PUBLIC_PERMISSIONLESS_CREATE",
+      ]);
+    }
+
+    expect(
+      permissionlessCreateAllowed({
+        NEXT_PUBLIC_PERMISSIONLESS_CREATE: "true",
+      }),
+    ).toBe(true);
+    const enabledCaps = buildNetworkCapabilities("testnet", {
+      NEXT_PUBLIC_PERMISSIONLESS_CREATE: "true",
+    });
+    expect(enabledCaps.permissionlessCreate.available).toBe(true);
   });
 });
 
