@@ -26,16 +26,16 @@ export const appButtonBaseClass =
 export const appButtonToneClass: Record<AppButtonTone, string> = {
   primary:
     "bg-indigo-500 text-white hover:bg-indigo-400 focus-visible:outline-indigo-400 " +
-    "disabled:btn-disabled-primary",
+    "disabled:cursor-not-allowed disabled:btn-disabled-primary",
   secondary:
-    "border border-slate-600 text-slate-200 hover:bg-slate-800 focus-visible:outline-slate-400 " +
-    "disabled:pointer-events-none disabled:opacity-50",
+    "border border-slate-600 text-slate-100 hover:border-slate-500 hover:bg-slate-800 hover:text-white focus-visible:outline-indigo-400 " +
+    "disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-dashed disabled:opacity-50",
   danger:
     "border border-rose-700 text-rose-100 hover:bg-rose-900/60 focus-visible:outline-rose-300 " +
-    "disabled:pointer-events-none disabled:opacity-50",
+    "disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-dashed disabled:opacity-50",
   success:
     "bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:outline-emerald-400 " +
-    "disabled:pointer-events-none disabled:opacity-50",
+    "disabled:pointer-events-none disabled:cursor-not-allowed disabled:border-dashed disabled:opacity-50",
 };
 
 export const appButtonSizeClass: Record<AppButtonSize, string> = {

@@ -77,10 +77,10 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors sm:px-3 ${
+                  className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-indigo-400 sm:px-3 ${
                     isActive
-                      ? "bg-indigo-950 font-medium text-indigo-300"
-                      : "text-slate-400 hover:bg-slate-800/80 hover:text-slate-100"
+                      ? "bg-indigo-950 font-medium text-indigo-200 ring-1 ring-indigo-500/40"
+                      : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
                   }`}
                 >
                   {item.label}
@@ -98,7 +98,7 @@ export function Header() {
                 <>
                   <div className="hidden items-center gap-2 sm:flex">
                     <span
-                      className="truncate text-xs text-slate-500 sm:max-w-[120px] md:max-w-[180px]"
+                      className="truncate text-xs text-slate-300 sm:max-w-[120px] md:max-w-[180px]"
                       title={address}
                     >
                       {truncateMiddle(address)}
@@ -106,7 +106,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={disconnect}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800"
+                      className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-800 hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                     >
                       Disconnect
                     </button>
@@ -180,8 +180,8 @@ export function Header() {
                   }
                   className={
                     demoteWalletCta
-                      ? "rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800 disabled:opacity-50 sm:px-4"
-                      : "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50 sm:px-4"
+                      ? "rounded-lg border border-slate-600 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-800 hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:cursor-not-allowed disabled:border-dashed disabled:opacity-50 sm:px-4"
+                      : "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
                   }
                 >
                   {isConnecting ? "Connecting..." : "Connect Wallet"}
