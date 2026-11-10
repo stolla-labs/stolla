@@ -20,6 +20,7 @@ import {
 } from "@/lib/timelock/client";
 import type { TimelockActionName } from "@/lib/timelock/proposalExecution";
 import { useTimelockWindow } from "@/lib/timelock/useTimelockWindow";
+import { ProposalActionPolicySummary } from "./ProposalActionPolicySummary";
 import { ProposalTimelockActions } from "./ProposalTimelockActions";
 import { QuorumProgress } from "@/components/QuorumProgress";
 import { fmt } from "@/lib/voteDisplay";
@@ -48,6 +49,7 @@ export type CommunityProposalDetailViewProps = {
   signTransaction?: SignTransaction;
   correctNetwork?: boolean;
   onTimelockAction?: (action: TimelockActionName) => Promise<TimelockCallResult>;
+  actionPayload?: unknown;
 };
 
 export function CommunityProposalDetailView({
@@ -62,6 +64,7 @@ export function CommunityProposalDetailView({
   signTransaction,
   correctNetwork,
   onTimelockAction,
+  actionPayload,
 }: CommunityProposalDetailViewProps) {
   const resolution = useRegistryCommunity(communityId, registry);
 
@@ -95,6 +98,7 @@ export function CommunityProposalDetailView({
       signTransaction={signTransaction}
       correctNetwork={correctNetwork}
       onTimelockAction={onTimelockAction}
+      actionPayload={actionPayload}
     />
   );
 }
@@ -110,6 +114,7 @@ function CommunityProposalDetailPanel({
   signTransaction,
   correctNetwork,
   onTimelockAction,
+  actionPayload,
 }: {
   community: Community;
   proposalId: string;
@@ -121,6 +126,7 @@ function CommunityProposalDetailPanel({
   signTransaction?: SignTransaction;
   correctNetwork?: boolean;
   onTimelockAction?: (action: TimelockActionName) => Promise<TimelockCallResult>;
+  actionPayload?: unknown;
 }) {
   const resolution = useCommunityProposal(
     community.record.governorContract,
@@ -204,6 +210,12 @@ function CommunityProposalDetailPanel({
               </dd>
             </div>
           </dl>
+          <ProposalActionPolicySummary
+            actionPayload={actionPayload}
+            timelockConfigured={Boolean(timelockContractId)}
+            etaLedger={timelockWindow.etaLedger}
+            expiresAtLedger={timelockWindow.expiresAtLedger}
+          />
           <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
             <h2 className="font-semibold text-slate-100">Votes</h2>
             {resolution.votes && !resolution.votes.error ? (
