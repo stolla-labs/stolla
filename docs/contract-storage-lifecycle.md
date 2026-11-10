@@ -33,3 +33,27 @@ Contract tests advance both ledger sequence and timestamp, verify all critical
 state remains readable, and assert renewal at the one-day threshold. No
 proposal, vote receipt, NFT ownership, metadata, delegation, or voting-power
 record is intentionally temporary.
+
+## Automated TTL Keeper Script (#393)
+
+Operators can inspect TTL headroom and renew contract instances (`CommunityFactory`, `CommunityNft`, `CommunityGovernor`, `CommunityTimelock`) using [`../scripts/extend-contract-ttl.mjs`](../scripts/extend-contract-ttl.mjs).
+
+### Commands
+
+```bash
+# List configured contract IDs and TTL parameters
+node scripts/extend-contract-ttl.mjs --list
+
+# Check TTL headroom (dry-run is the default and never submits transactions)
+node scripts/extend-contract-ttl.mjs --check
+
+# Extend instance TTLs when headroom is at or below the 29-day threshold (501,120 ledgers)
+node scripts/extend-contract-ttl.mjs --extend
+```
+
+### Operational Guidance
+
+- **Recommended schedule:** Run `--extend` every 12–24 hours (`0 */12 * * *`) so instances are renewed well before entering the final 24-hour (`17,280`-ledger) window.
+- **Auth & key handling:** `extend_instance_ttl` is permissionless on Stolla contracts, so the fee-paying keeper account (`KEEPER_SECRET_KEY`) requires only XLM for transaction fees and holds no administrative or governance privileges.
+- **Mainnet safety gate:** The keeper defaults to `testnet` and refuses to run when `STELLAR_NETWORK=mainnet` unless `--allow-mainnet` is explicitly passed.
+- **Failure alerts:** Any non-zero exit code (`CONFIGURATION`, `GUARD`, or `ERROR`) writes a structured `[ttl-keeper]` line to `stderr` suitable for cron/CI alert routing.
