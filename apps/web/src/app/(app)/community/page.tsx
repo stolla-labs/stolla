@@ -43,6 +43,7 @@ import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import { BatchMintPanel } from "@/components/community/BatchMintPanel";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
+import { ThirdPartyDelegationPanel } from "@/components/community/ThirdPartyDelegationPanel";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
 import {
   loadCommunityData,
@@ -403,6 +404,39 @@ export default function CommunityPage() {
     }
   }
 
+  async function handleDelegateToAddress(delegatee: string): Promise<boolean> {
+    if (!address) {
+      setStatus({ message: "Connect your wallet first.", tone: "error" });
+      return false;
+    }
+    if (delegationLifecycle.isInFlight) return false;
+
+    setStatus(null);
+    delegationLifecycle.reset();
+
+    const result = await delegationLifecycle.execute(async () => {
+      const client = createNftClient({
+        publicKey: address,
+        signTransaction,
+        contractId: activeNftContract,
+      });
+      return client.delegate({
+        account: address,
+        delegatee,
+      });
+    });
+
+    if (result.ok) {
+      setStatus({
+        message: `Delegated voting power to ${delegatee}.`,
+        tone: "routine",
+      });
+      await refresh();
+      return true;
+    }
+    return false;
+  }
+
   return (
     <div className="mx-auto w-full min-w-0 max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-bold text-slate-100">Community NFT</h1>
@@ -544,6 +578,14 @@ export default function CommunityPage() {
                   ? "Delegation in progress…"
                   : "Delegate to self"}
               </AppButton>
+              <ThirdPartyDelegationPanel
+                account={address}
+                currentDelegate={delegate}
+                nftContractId={activeNftContract}
+                disabled={mintLifecycle.isInFlight}
+                isDelegating={delegationLifecycle.isInFlight}
+                onDelegateToAddress={handleDelegateToAddress}
+              />
               <TransactionLifecycleStatus
                 stage={delegationLifecycle.stage}
                 operationLabel="Delegate"
