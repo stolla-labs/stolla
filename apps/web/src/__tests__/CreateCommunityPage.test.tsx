@@ -236,7 +236,7 @@ describe("CreateCommunityPage", () => {
       target: { value: "0" },
     });
     fireEvent.change(screen.getByLabelText(/Quorum/), {
-      target: { value: "-1" },
+      target: { value: "4294967296" },
     });
     fireEvent.change(screen.getByLabelText(/Voting delay/), {
       target: { value: "20" },
@@ -246,11 +246,44 @@ describe("CreateCommunityPage", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Review community" }));
 
-    expect(screen.getAllByText(/maximum u128 value/)).toHaveLength(2);
+    expect(
+      screen.getAllByText(
+        "Enter a whole number from 1 through 4,294,967,295 NFT votes.",
+      ),
+    ).toHaveLength(2);
     expect(
       screen.getByText("Voting period must be greater than the voting delay."),
     ).toBeInTheDocument();
     expect(screen.queryByText("Deployment target")).not.toBeInTheDocument();
+  });
+
+  it("lets creators choose a governance preset or custom parameters within schema bounds and passes them to create_community", async () => {
+    wallet.useWallet.mockReturnValue(connectedWallet());
+    render(<CreateCommunityPage />);
+    enterValidMetadata();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Continue to governance" }),
+    );
+
+    expect(
+      screen.getByText(/1 Stellar ledger closes in ~5 seconds/),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Standard community/i }),
+    );
+    expect(screen.getByLabelText(/Voting delay/)).toHaveValue("17280");
+    expect(screen.getByLabelText(/Voting period/)).toHaveValue("51840");
+    expect(screen.getByLabelText(/Quorum/)).toHaveValue("3");
+
+    fireEvent.change(screen.getByLabelText(/Voting delay/), {
+      target: { value: "0" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Review community" }));
+
+    expect(screen.getByText(/^0 Stellar ledgers/)).toBeInTheDocument();
+    expect(screen.getByText(/^51840 Stellar ledgers/)).toBeInTheDocument();
+    expect(screen.getByText("3 NFT votes")).toBeInTheDocument();
   });
 
   it("keeps simulation locked until the documents are pinned, then passes the generated payload", async () => {

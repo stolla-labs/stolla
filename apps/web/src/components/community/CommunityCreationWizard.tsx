@@ -17,6 +17,8 @@ import { useWallet } from "@/context/WalletProvider";
 import {
   COMMUNITY_LIMITS,
   DEFAULT_GOVERNANCE_DRAFT,
+  GOVERNANCE_LIMITS,
+  GOVERNANCE_PRESETS,
   type CommunityMetadataDraft,
   type CommunityMetadataDraftErrors,
   type GovernanceDraft,
@@ -24,6 +26,10 @@ import {
   validateAuthoringDraft,
   validateGovernanceDraft,
 } from "@/lib/community/schema";
+import {
+  formatLedgerDuration,
+  LEDGER_TIME_ASSUMPTION_NOTE,
+} from "@/lib/community/governanceDisplay";
 import {
   COMMUNITY_WIZARD_DRAFT_VERSION,
   communityWizardStorageKey,
@@ -300,6 +306,20 @@ export function CommunityCreationWizard() {
     });
   }
 
+  function applyGovernancePreset(values: GovernanceDraft) {
+    setGovernance({ ...values });
+    setGovernanceErrors({});
+  }
+
+  const votingDelayLedgers = /^\d+$/.test(governance.votingDelay.trim())
+    ? Number(governance.votingDelay.trim())
+    : null;
+  const votingPeriodLedgers = /^\d+$/.test(governance.votingPeriod.trim())
+    ? Number(governance.votingPeriod.trim())
+    : null;
+  const votingDelayDuration = formatLedgerDuration(votingDelayLedgers);
+  const votingPeriodDuration = formatLedgerDuration(votingPeriodLedgers);
+
   function handleGovernanceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors = validateGovernanceDraft(governance);
@@ -528,12 +548,22 @@ export function CommunityCreationWizard() {
                 <dt className="text-sm text-slate-500">Voting delay</dt>
                 <dd className="mt-1 text-slate-100">
                   {governance.votingDelay} Stellar ledgers
+                  {votingDelayDuration && (
+                    <span className="ml-1.5 text-xs text-slate-400">
+                      ({votingDelayDuration})
+                    </span>
+                  )}
                 </dd>
               </div>
               <div>
                 <dt className="text-sm text-slate-500">Voting period</dt>
                 <dd className="mt-1 text-slate-100">
                   {governance.votingPeriod} Stellar ledgers
+                  {votingPeriodDuration && (
+                    <span className="ml-1.5 text-xs text-slate-400">
+                      ({votingPeriodDuration})
+                    </span>
+                  )}
                 </dd>
               </div>
             </dl>
@@ -625,6 +655,49 @@ export function CommunityCreationWizard() {
           <LiveStatus className="rounded-lg border border-emerald-800/70 bg-emerald-950/30 p-4 text-sm text-emerald-200">
             Metadata validated and saved for this wizard session.
           </LiveStatus>
+          <section aria-labelledby="governance-presets-title">
+            <h2
+              id="governance-presets-title"
+              className="text-sm font-semibold text-slate-200"
+            >
+              Governance presets
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-slate-400">
+              Choose a starting preset or customize individual parameters below.
+              1 Stellar ledger closes in ~5 seconds (~17,280 ledgers ≈ 1 day;{" "}
+              {LEDGER_TIME_ASSUMPTION_NOTE}).
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {GOVERNANCE_PRESETS.map((preset) => {
+                const isSelected =
+                  governance.proposalThreshold ===
+                    preset.values.proposalThreshold &&
+                  governance.quorum === preset.values.quorum &&
+                  governance.votingDelay === preset.values.votingDelay &&
+                  governance.votingPeriod === preset.values.votingPeriod;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => applyGovernancePreset(preset.values)}
+                    className={`rounded-lg border p-3 text-left transition ${
+                      isSelected
+                        ? "border-indigo-500 bg-indigo-950/40 text-slate-100"
+                        : "border-slate-700 bg-[#0b0f19] text-slate-300 hover:border-slate-600"
+                    }`}
+                  >
+                    <span className="block text-sm font-medium text-slate-100">
+                      {preset.label}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-400">
+                      {preset.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
           <div className="grid gap-5 sm:grid-cols-2">
             {(
               [
@@ -632,25 +705,25 @@ export function CommunityCreationWizard() {
                   field: "proposalThreshold",
                   label: "Proposal threshold",
                   unit: "NFT votes",
-                  help: "Minimum delegated voting power required to create a proposal.",
+                  help: `Minimum delegated voting power required to create a proposal (1–${GOVERNANCE_LIMITS.proposalThreshold.max.toLocaleString()} NFT votes).`,
                 },
                 {
                   field: "quorum",
                   label: "Quorum",
                   unit: "NFT votes",
-                  help: "For and abstain votes required for a proposal to meet quorum.",
+                  help: `For and abstain votes required for a proposal to meet quorum (1–${GOVERNANCE_LIMITS.quorum.max.toLocaleString()} NFT votes).`,
                 },
                 {
                   field: "votingDelay",
                   label: "Voting delay",
                   unit: "Stellar ledgers",
-                  help: "Ledgers between proposal creation and the voting snapshot.",
+                  help: `Ledgers between proposal creation and the voting snapshot (0–${GOVERNANCE_LIMITS.votingDelay.max.toLocaleString()} ledgers, up to ~7 days${votingDelayDuration ? `; currently ${votingDelayDuration}` : ""}).`,
                 },
                 {
                   field: "votingPeriod",
                   label: "Voting period",
                   unit: "Stellar ledgers",
-                  help: "Ledgers voting remains open; this must exceed the voting delay.",
+                  help: `Ledgers voting remains open; must exceed the voting delay (1–${GOVERNANCE_LIMITS.votingPeriod.max.toLocaleString()} ledgers, up to ~90 days${votingPeriodDuration ? `; currently ${votingPeriodDuration}` : ""}).`,
                 },
               ] as const
             ).map(({ field, label, unit, help }) => (

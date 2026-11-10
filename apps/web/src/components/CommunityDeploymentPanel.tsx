@@ -20,10 +20,11 @@ import {
   type CommunityDeploymentSimulation,
   type DeploymentTransactionStatus,
 } from "@/lib/community/deployment";
-import type {
-  CommunityDeploymentPayload,
-  CommunityMetadataDraft,
-  GovernanceDraft,
+import {
+  validateGovernanceDraft,
+  type CommunityDeploymentPayload,
+  type CommunityMetadataDraft,
+  type GovernanceDraft,
 } from "@/lib/community/schema";
 import { getE2EBridge } from "@/lib/e2eMock";
 import { config } from "@/lib/stellar";
@@ -330,6 +331,15 @@ export function CommunityDeploymentPanel({
       authorization !== "ready" ||
       transactionHash
     ) {
+      return;
+    }
+    const governanceErrors = validateGovernanceDraft(governance);
+    const firstGovernanceError = Object.values(governanceErrors)[0];
+    if (firstGovernanceError) {
+      setStage("failure");
+      setMessage(
+        `Governance parameters are out of schema bounds: ${firstGovernanceError}`,
+      );
       return;
     }
     const generation = ++simulationGeneration.current;

@@ -14,15 +14,15 @@ export const COMMUNITY_LIMITS = {
 } as const;
 
 export const GOVERNANCE_LIMITS = {
-  votingDelay: { min: 1, max: 4_294_967_295 },
-  votingPeriod: { min: 2, max: 4_294_967_295 },
+  votingDelay: { min: 0, max: 120_960 },
+  votingPeriod: { min: 1, max: 1_555_200 },
   proposalThreshold: {
     min: BigInt(1),
-    max: (BigInt(1) << BigInt(128)) - BigInt(1),
+    max: BigInt(4_294_967_295),
   },
   quorum: {
     min: BigInt(1),
-    max: (BigInt(1) << BigInt(128)) - BigInt(1),
+    max: BigInt(4_294_967_295),
   },
 } as const;
 
@@ -43,6 +43,49 @@ export const DEFAULT_GOVERNANCE_DRAFT: GovernanceDraft = {
   votingDelay: "1",
   votingPeriod: "10000",
 };
+
+export type GovernancePresetId = "default" | "standard" | "deliberative";
+
+export type GovernancePreset = {
+  id: GovernancePresetId;
+  label: string;
+  description: string;
+  values: GovernanceDraft;
+};
+
+export const GOVERNANCE_PRESETS: readonly GovernancePreset[] = [
+  {
+    id: "default",
+    label: "Fast pilot (default)",
+    description:
+      "1 ledger (~5s) review delay and 10,000 ledgers (~13h 53m) voting window.",
+    values: DEFAULT_GOVERNANCE_DRAFT,
+  },
+  {
+    id: "standard",
+    label: "Standard community",
+    description:
+      "17,280 ledgers (~1d) review delay, 51,840 ledgers (~3d) voting window, and 3-vote quorum.",
+    values: {
+      proposalThreshold: "1",
+      quorum: "3",
+      votingDelay: "17280",
+      votingPeriod: "51840",
+    },
+  },
+  {
+    id: "deliberative",
+    label: "Deliberative",
+    description:
+      "34,560 ledgers (~2d) review delay, 120,960 ledgers (~7d) voting window, and 5-vote quorum.",
+    values: {
+      proposalThreshold: "2",
+      quorum: "5",
+      votingDelay: "34560",
+      votingPeriod: "120960",
+    },
+  },
+] as const;
 
 /**
  * Authoring draft: what the creator types in the wizard. It deliberately has
@@ -240,7 +283,7 @@ export function validateGovernanceDraft(
     proposalThreshold > GOVERNANCE_LIMITS.proposalThreshold.max
   ) {
     errors.proposalThreshold =
-      "Enter a whole number from 1 through the maximum u128 value.";
+      "Enter a whole number from 1 through 4,294,967,295 NFT votes.";
   }
   if (
     quorum === null ||
@@ -248,21 +291,23 @@ export function validateGovernanceDraft(
     quorum > GOVERNANCE_LIMITS.quorum.max
   ) {
     errors.quorum =
-      "Enter a whole number from 1 through the maximum u128 value.";
+      "Enter a whole number from 1 through 4,294,967,295 NFT votes.";
   }
   if (
     votingDelay === null ||
     votingDelay < BigInt(GOVERNANCE_LIMITS.votingDelay.min) ||
     votingDelay > BigInt(GOVERNANCE_LIMITS.votingDelay.max)
   ) {
-    errors.votingDelay = "Enter a whole number from 1 through 4,294,967,295 ledgers.";
+    errors.votingDelay =
+      "Enter a whole number from 0 through 120,960 ledgers (~7 days).";
   }
   if (
     votingPeriod === null ||
     votingPeriod < BigInt(GOVERNANCE_LIMITS.votingPeriod.min) ||
     votingPeriod > BigInt(GOVERNANCE_LIMITS.votingPeriod.max)
   ) {
-    errors.votingPeriod = "Enter a whole number from 2 through 4,294,967,295 ledgers.";
+    errors.votingPeriod =
+      "Enter a whole number from 1 through 1,555,200 ledgers (~90 days).";
   } else if (votingDelay !== null && votingPeriod <= votingDelay) {
     errors.votingPeriod =
       "Voting period must be greater than the voting delay.";
