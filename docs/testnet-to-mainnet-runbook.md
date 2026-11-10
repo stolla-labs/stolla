@@ -360,6 +360,28 @@ Record the uploaded WASM hash and transaction/ledger from RPC or explorer.
 Uploading code does not authorize it and is safe to do before deploying IDs,
 but all fees and hashes still require review.
 
+#### Rotating CommunityFactory approved WASM hashes (`set_code_hashes`)
+
+When rotating the template WASM hashes stored in an existing `CommunityFactory`
+(affecting future `create_community` deployments while leaving existing
+community contracts untouched), always preview the exact invocation first in
+`--dry-run` mode using `scripts/rotate-factory-wasm-hashes.mjs`:
+
+```bash
+node scripts/rotate-factory-wasm-hashes.mjs \
+  --factory-id "$COMMUNITY_FACTORY_ID" \
+  --nft-wasm-hash "$NEW_NFT_WASM_HASH" \
+  --governor-wasm-hash "$NEW_GOVERNOR_WASM_HASH" \
+  --identity "$DEPLOYER_IDENTITY" \
+  --network "$NETWORK" \
+  --dry-run
+```
+
+After the Contract verifier confirms both 64-character hex hashes against
+`release-artifacts/SHA256SUMS`, execute with `--apply` (requiring
+`CONFIRM_MAINNET=I_ACKNOWLEDGE_STOLLA_MAINNET` on mainnet) and verify the
+emitted `factory_code_hashes_changed` event on-chain.
+
 ### 3. Deploy in dependency order
 
 The exact deployment script must be checked in, reviewed, parameterized, and
