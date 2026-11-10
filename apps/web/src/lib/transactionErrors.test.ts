@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  lookupTransactionErrorCatalog,
   mapTransactionError,
+  TRANSACTION_ERROR_CATALOG,
+  TRANSACTION_ERROR_CATALOG_CODES,
   TRANSACTION_ERROR_CATEGORIES,
 } from "@/lib/transactionErrors";
 
@@ -100,9 +103,65 @@ describe("mapTransactionError", () => {
   it("uses a safe fallback for non-error values", () => {
     const mapped = mapTransactionError({ secret: "do-not-leak", xdr: "AAAA" });
     expect(mapped.category).toBe("unknown");
+    expect(mapped.code).toBe("unknown");
     expect(mapped.message).toMatch(/try again/i);
     expect(mapped.diagnostic).toBeNull();
     expect(JSON.stringify(mapped)).not.toContain("do-not-leak");
     expect(JSON.stringify(mapped)).not.toContain("AAAA");
+  });
+
+  it("maps specific Soroban simulation and contract codes to plain-language catalog entries (#401)", () => {
+    expect(TRANSACTION_ERROR_CATALOG_CODES.length).toBeGreaterThanOrEqual(16);
+    for (const code of TRANSACTION_ERROR_CATALOG_CODES) {
+      const entry = TRANSACTION_ERROR_CATALOG[code];
+      expect(entry.code).toBe(code);
+      expect(entry.title.length).toBeGreaterThan(0);
+      expect(entry.body.length).toBeGreaterThan(0);
+      expect(entry.cta.length).toBeGreaterThan(0);
+    }
+
+    const votingPower = mapTransactionError(
+      new Error("HostError: Error(Contract, #5012) InsufficientVotingPower"),
+    );
+    expect(votingPower.code).toBe("insufficient_voting_power");
+    expect(votingPower.category).toBe("contract_error");
+    expect(votingPower.title).toBe("Insufficient voting power");
+    expect(votingPower.cta).toMatch(/delegate/i);
+
+    const alreadyVoted = lookupTransactionErrorCatalog(
+      new Error("HostError: Error(Contract, #5016) AlreadyVoted"),
+    );
+    expect(alreadyVoted.code).toBe("already_voted");
+    expect(alreadyVoted.title).toBe("Vote already recorded");
+
+    const inactive = mapTransactionError(
+      new Error("HostError: Error(Contract, #5014) ProposalNotActive"),
+    );
+    expect(inactive.code).toBe("proposal_not_active");
+    expect(inactive.category).toBe("contract_error");
+
+    const cooldown = mapTransactionError(
+      new Error("HostError: Error(Contract, #5018) ProposeCooldown"),
+    );
+    expect(cooldown.code).toBe("propose_cooldown");
+    expect(cooldown.category).toBe("contract_error");
+
+    const unauthorized = mapTransactionError(
+      new Error("HostError: Error(Contract, #2000) OwnableUnauthorizedAccount"),
+    );
+    expect(unauthorized.code).toBe("unauthorized_owner");
+    expect(unauthorized.category).toBe("contract_error");
+
+    const restore = mapTransactionError(
+      new Error("Restore preamble required for archived footprint entry"),
+    );
+    expect(restore.code).toBe("storage_footprint_restore");
+    expect(restore.category).toBe("simulation_failed");
+
+    const resourceLimit = mapTransactionError(
+      new Error("Host budget exceeded: resource limit CPU instructions"),
+    );
+    expect(resourceLimit.code).toBe("resource_limit_exceeded");
+    expect(resourceLimit.category).toBe("simulation_failed");
   });
 });
