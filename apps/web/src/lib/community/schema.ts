@@ -111,14 +111,58 @@ export function isHttpsUrl(value: string): boolean {
   }
 }
 
-export function resolveCommunityResourceUrl(uri: string): string {
-  if (uri.startsWith("https://")) return uri;
+export const DEFAULT_IPFS_FALLBACK_GATEWAYS = [
+  "https://ipfs.io/ipfs/",
+  "https://dweb.link/ipfs/",
+  "https://w3s.link/ipfs/",
+] as const;
+
+export function getConfiguredIpfsGateways(): string[] {
+  const primary =
+    process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL?.trim() ||
+    "https://ipfs.io/ipfs/";
+  const rawFallbacks =
+    process.env.NEXT_PUBLIC_IPFS_FALLBACK_GATEWAY_URLS ?? "";
+  const parsedFallbacks = rawFallbacks
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.startsWith("https://"));
+
+  const combined = [
+    primary,
+    ...(parsedFallbacks.length > 0
+      ? parsedFallbacks
+      : DEFAULT_IPFS_FALLBACK_GATEWAYS),
+  ];
+
+  const normalized: string[] = [];
+  for (const gateway of combined) {
+    const withTrailingSlash = gateway.replace(/\/?$/, "/");
+    if (!normalized.includes(withTrailingSlash)) {
+      normalized.push(withTrailingSlash);
+    }
+  }
+  return normalized;
+}
+
+export function resolveCommunityResourceUrls(
+  uri: string,
+  gateways: readonly string[] = getConfiguredIpfsGateways(),
+): string[] {
+  if (uri.startsWith("https://")) return [uri];
   if (uri.startsWith("ipfs://") && uri.length > "ipfs://".length) {
-    const gateway =
-      process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL ?? "https://ipfs.io/ipfs/";
-    return `${gateway.replace(/\/?$/, "/")}${uri.slice("ipfs://".length)}`;
+    const cidPath = uri.slice("ipfs://".length);
+    const effectiveGateways =
+      gateways.length > 0 ? gateways : DEFAULT_IPFS_FALLBACK_GATEWAYS;
+    return effectiveGateways.map(
+      (gateway) => `${gateway.replace(/\/?$/, "/")}${cidPath}`,
+    );
   }
   throw new Error("The resource URI is not a supported public URI.");
+}
+
+export function resolveCommunityResourceUrl(uri: string): string {
+  return resolveCommunityResourceUrls(uri)[0];
 }
 
 export function validateAuthoringDraft(

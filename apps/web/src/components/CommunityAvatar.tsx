@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { resolveCommunityResourceUrl } from "@/lib/community/schema";
+import { resolveCommunityResourceUrls } from "@/lib/community/schema";
 
 const FALLBACK_STYLES = [
   "border-indigo-700 bg-indigo-950 text-indigo-300",
@@ -30,16 +30,22 @@ export function CommunityAvatar({
   logo?: string;
   size?: "card" | "detail";
 }) {
-  const source = useMemo(() => {
-    if (!logo) return null;
+  const sources = useMemo(() => {
+    if (!logo) return [];
     try {
-      return resolveCommunityResourceUrl(logo);
+      return resolveCommunityResourceUrls(logo);
     } catch {
-      return null;
+      return [];
     }
   }, [logo]);
-  const [failedSource, setFailedSource] = useState<string | null>(null);
-  const failed = source !== null && failedSource === source;
+  const [failureState, setFailureState] = useState<{
+    logoKey: string | undefined;
+    failedIndex: number;
+  }>({ logoKey: logo, failedIndex: -1 });
+
+  const activeIndex =
+    failureState.logoKey === logo ? failureState.failedIndex + 1 : 0;
+  const activeSource = sources[activeIndex] ?? null;
 
   const sizeClass =
     size === "detail"
@@ -47,16 +53,21 @@ export function CommunityAvatar({
       : "h-12 w-12 text-lg";
   const sharedClass = `${sizeClass} shrink-0 rounded-xl border`;
 
-  if (source && !failed) {
+  if (activeSource) {
     return (
       // The adjacent heading already provides the community name.
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={source}
+        src={activeSource}
         alt=""
         width={size === "detail" ? 80 : 48}
         height={size === "detail" ? 80 : 48}
-        onError={() => setFailedSource(source)}
+        onError={() =>
+          setFailureState({
+            logoKey: logo,
+            failedIndex: activeIndex,
+          })
+        }
         className={`${sharedClass} bg-slate-900 object-cover`}
       />
     );

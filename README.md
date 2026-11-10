@@ -48,6 +48,8 @@ NEXT_PUBLIC_NFT_CONTRACT_ID=<community-nft-contract-id>
 NEXT_PUBLIC_GOVERNOR_CONTRACT_ID=<governor-contract-id>
 # Optional gateway used to resolve ipfs:// community metadata and logos.
 NEXT_PUBLIC_IPFS_GATEWAY_URL=https://ipfs.io/ipfs/
+# Optional comma-separated fallback HTTPS IPFS gateways tried when a logo fails to load.
+NEXT_PUBLIC_IPFS_FALLBACK_GATEWAY_URLS=https://dweb.link/ipfs/,https://w3s.link/ipfs/
 # Server-only Pinata JWT. The app pins community, collection, and token
 # metadata through /api/ipfs/pin so creators never paste URIs. Never expose
 # it with a NEXT_PUBLIC_ prefix.
