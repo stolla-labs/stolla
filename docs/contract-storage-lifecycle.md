@@ -10,6 +10,8 @@ operator, keeper, or user can renew configuration before the final day of the
 window. Constructors and Stolla-owned entry points also renew the instance.
 Expired instance and persistent entries are restorable Soroban state, but
 renewal avoids an availability interruption and restoration transaction.
+The [contract instance TTL keeper](./contract-ttl-keeper.md) reports headroom
+and can renew configured factory, NFT, and Governor instances on a schedule.
 
 ## Community NFT
 
