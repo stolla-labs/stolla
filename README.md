@@ -62,6 +62,18 @@ where the Governor contract was deployed (printed by the deploy script or
 visible in a Stellar explorer). Missing, zero, negative, and non-integer values
 fail with an actionable error when proposal discovery runs.
 
+An optional global incident banner renders in the app shell when configured.
+Set `NEXT_PUBLIC_INCIDENT_BANNER` to a JSON string with `active`, `severity`
+(`info`, `warn`, or `critical`), `message`, and an optional `statusUrl`:
+
+```dotenv
+NEXT_PUBLIC_INCIDENT_BANNER={"active":true,"severity":"warn","message":"RPC is slow","statusUrl":"https://status.example.com"}
+```
+
+Leave the variable unset or set `active` to `false` to hide the banner. Users
+can dismiss it for their session; a `critical` notice reappears on the next
+visit.
+
 You can use an existing deployment or deploy your own contracts using the
 instructions below.
 
