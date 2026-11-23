@@ -5,6 +5,7 @@ import { CommunityRegistryProvider } from "@/lib/community/CommunityRegistryProv
 
 const mocks = vi.hoisted(() => ({
   useParams: vi.fn(),
+  replace: vi.fn(),
   getCommunity: vi.fn(),
   useProposalDiscovery: vi.fn(),
   createReadOnlyGovernorClient: vi.fn(),
@@ -18,6 +19,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({
   useParams: mocks.useParams,
+  usePathname: () => `/communities/${mocks.useParams().id}/proposals`,
+  useRouter: () => ({ replace: mocks.replace }),
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
 vi.mock("@/hooks/useProposalDiscovery", () => ({
@@ -40,6 +44,7 @@ vi.mock("@/lib/contracts", () => ({
 vi.mock("@/context/WalletProvider", () => ({ useWallet: mocks.useWallet }));
 
 import { ProposalState } from "@/lib/proposalState";
+import { serializeProposalMetadata } from "@/lib/proposal-metadata";
 import CommunityProposalHistoryPage from "@/app/(app)/communities/[id]/proposals/page";
 import {
   MOCK_ACCOUNT_CAROL,
@@ -64,6 +69,19 @@ const SECOND_ID = "22".repeat(32);
 const PROPOSAL_ID = "aa".repeat(32);
 const FIRST_GOVERNOR = MOCK_CONTRACT_A;
 const SECOND_GOVERNOR = MOCK_CONTRACT_B;
+const SECOND_PROPOSAL_ID = "bb".repeat(32);
+
+function proposal(id: string, title: string, summary: string) {
+  return {
+    id,
+    description: serializeProposalMetadata({
+      title,
+      summary,
+      body: "Proposal details.",
+      discussionUrl: null,
+    }),
+  };
+}
 
 function communityResult(
   id: string,
@@ -106,6 +124,10 @@ function communityResult(
 describe("community-scoped proposal history", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState(null, "", `/communities/${FIRST_ID}/proposals`);
+    mocks.replace.mockImplementation((url: string) => {
+      window.history.replaceState(null, "", url);
+    });
     mocks.useParams.mockReturnValue({ id: FIRST_ID });
     mocks.getCommunity.mockImplementation(async (id: string) =>
       id === FIRST_ID
@@ -224,6 +246,122 @@ describe("community-scoped proposal history", () => {
     expect(screen.getByRole("button", { name: "Retry proposal history" })).toBeInTheDocument();
     expect(screen.queryByText("No proposals yet")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Create first proposal" })).not.toBeInTheDocument();
+  });
+
+  it("searches parsed titles and summaries case-insensitively and clears to restore the list", async () => {
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [
+        proposal(PROPOSAL_ID, "Treasury Budget", "Allocate grants"),
+        proposal(SECOND_PROPOSAL_ID, "Membership", "Improve VOTING access"),
+        { id: "cc".repeat(32), description: "Legacy voting proposal" },
+      ],
+      loading: false, error: null, empty: false, refresh: mocks.refresh,
+    });
+    renderPage();
+    const search = await screen.findByRole("searchbox", { name: "Search community proposals" });
+
+    fireEvent.change(search, { target: { value: "bUdGeT" } });
+    expect(await screen.findByRole("link", { name: new RegExp(PROPOSAL_ID) })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: new RegExp(SECOND_PROPOSAL_ID) })).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "voting" } });
+    expect(screen.queryByRole("link", { name: new RegExp(PROPOSAL_ID) })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: new RegExp(SECOND_PROPOSAL_ID) })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /View proposal/ })).toHaveLength(1);
+
+    fireEvent.change(search, { target: { value: "missing" } });
+    expect(screen.getByText("No proposals match your search.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.getAllByRole("link", { name: /View proposal/ })).toHaveLength(3);
+    expect(screen.queryByText("No proposals match your search.")).not.toBeInTheDocument();
+    expect(window.location.search).toBe("");
+  });
+
+  it("loads q from the URL and preserves state and other params when updating or clearing it", async () => {
+    window.history.replaceState(null, "", `/communities/${FIRST_ID}/proposals?state=active&tab=history&q=budget`);
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [proposal(PROPOSAL_ID, "Budget", "Allocate grants")],
+      loading: false, error: null, empty: false, refresh: mocks.refresh,
+    });
+    const view = renderPage();
+    const search = await screen.findByRole("searchbox", { name: "Search community proposals" });
+    expect(search).toHaveValue("budget");
+    expect(await screen.findByRole("link", { name: new RegExp(PROPOSAL_ID) })).toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "grants" } });
+    expect(mocks.replace).toHaveBeenCalledWith(
+      `/communities/${FIRST_ID}/proposals?state=active&tab=history&q=grants`,
+      { scroll: false },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(mocks.replace).toHaveBeenLastCalledWith(
+      `/communities/${FIRST_ID}/proposals?state=active&tab=history`,
+      { scroll: false },
+    );
+
+    window.history.replaceState(null, "", `/communities/${FIRST_ID}/proposals?state=active&q=Budget`);
+    view.rerender(
+      <CommunityRegistryProvider registry={registry}>
+        <CommunityProposalHistoryPage />
+      </CommunityRegistryProvider>,
+    );
+    await waitFor(() => expect(search).toHaveValue("Budget"));
+  });
+
+  it("keeps discovery errors visible when a search has no matches", async () => {
+    window.history.replaceState(null, "", `/communities/${FIRST_ID}/proposals?q=missing`);
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [proposal(PROPOSAL_ID, "Budget", "Allocate grants")],
+      loading: false, error: "RPC unavailable", empty: false, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("RPC unavailable");
+    expect(screen.getByText("No proposals match your search.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry proposal history" })).toBeInTheDocument();
+  });
+
+  it("combines text search with the state filter", async () => {
+    window.history.replaceState(null, "", `/communities/${FIRST_ID}/proposals?q=budget`);
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [
+        proposal(PROPOSAL_ID, "Budget for grants", "Allocate grants"),
+        proposal(SECOND_PROPOSAL_ID, "Budget for events", "Allocate events"),
+      ],
+      loading: false, error: null, empty: false, refresh: mocks.refresh,
+    });
+    mocks.createReadOnlyGovernorClient.mockReturnValue({
+      proposal_state: vi.fn().mockImplementation(async ({ proposal_id }: { proposal_id: Uint8Array }) => ({
+        result: Buffer.from(proposal_id).toString("hex") === PROPOSAL_ID
+          ? ProposalState.Active
+          : ProposalState.Defeated,
+      })),
+    });
+    const view = renderPage();
+    const state = await screen.findByRole("combobox", { name: "Filter community proposals by state" });
+    await waitFor(() => expect(screen.getByRole("option", { name: "Active" })).toBeInTheDocument());
+    expect(screen.getAllByRole("link", { name: /View proposal/ })).toHaveLength(2);
+
+    fireEvent.change(state, { target: { value: String(ProposalState.Active) } });
+    view.rerender(
+      <CommunityRegistryProvider registry={registry}>
+        <CommunityProposalHistoryPage />
+      </CommunityRegistryProvider>,
+    );
+    await waitFor(() => expect(screen.getAllByRole("link", { name: /View proposal/ })).toHaveLength(1));
+    expect(screen.getByRole("link", { name: new RegExp(PROPOSAL_ID) })).toBeInTheDocument();
+    expect(new URLSearchParams(window.location.search).get("q")).toBe("budget");
+  });
+
+  it("keeps the empty community state distinct from a search with no matches", async () => {
+    window.history.replaceState(null, "", `/communities/${FIRST_ID}/proposals?q=missing`);
+    mocks.useProposalDiscovery.mockReturnValue({
+      proposals: [], loading: false, error: null, empty: true, refresh: mocks.refresh,
+    });
+    renderPage();
+
+    expect(await screen.findByText("No proposals yet")).toBeInTheDocument();
+    expect(screen.queryByText("No proposals match your search.")).not.toBeInTheDocument();
   });
 
   it("shows loading without an empty action", async () => {
