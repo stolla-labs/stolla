@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Buffer } from "buffer";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
 import { AppButton } from "@/components/ui/AppButton";
@@ -15,6 +15,7 @@ import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { getCommunity } from "@/lib/community/registry";
 import type { CommunityView } from "@/lib/community/types";
 import { createReadOnlyGovernorClient } from "@/lib/contracts";
+import { parseProposalDescription } from "@/lib/proposal-metadata";
 import {
   ProposalState,
   PROPOSAL_STATE_LABELS,
@@ -50,6 +51,28 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
   const [retrying, setRetrying] = useState<string[]>([]);
   const [filter, setFilter] = useProposalStateQuery();
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const queryFromUrl = searchParams.get("q") ?? "";
+  const [previousUrlQuery, setPreviousUrlQuery] = useState(queryFromUrl);
+  const [query, setQuery] = useState(queryFromUrl);
+  // Update the controlled input when URL navigation changes q.
+  if (previousUrlQuery !== queryFromUrl) {
+    setPreviousUrlQuery(queryFromUrl);
+    setQuery(queryFromUrl);
+    setVisibleCount(PAGE_SIZE);
+  }
+
+  function updateQuery(next: string) {
+    setQuery(next);
+    setVisibleCount(PAGE_SIZE);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.trim()) params.set("q", next);
+    else params.delete("q");
+    const search = params.toString();
+    router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
+  }
 
   const loadState = useCallback(
     async (proposalId: string) => {
@@ -88,10 +111,19 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
   const availableStates = PROPOSAL_STATE_ORDER.filter((state) =>
     Object.values(states).includes(state),
   );
-  const filtered =
+  const stateFiltered =
     filter === ALL_STATES
       ? proposals
       : proposals.filter((proposal) => states[proposal.id] === filter);
+  const searchTerm = query.trim().toLowerCase();
+  const filtered = searchTerm
+    ? stateFiltered.filter((proposal) => {
+        const parsed = parseProposalDescription(proposal.description ?? "");
+        return parsed.kind === "versioned" &&
+          (parsed.metadata.title.toLowerCase().includes(searchTerm) ||
+            parsed.metadata.summary.toLowerCase().includes(searchTerm));
+      })
+    : stateFiltered;
   const visible = filtered.slice(0, visibleCount);
   const communityName =
     community.metadata?.name ?? `Community ${community.record.id.slice(0, 8)}`;
@@ -159,6 +191,29 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
           )}
         </div>
 
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label htmlFor="community-proposal-search" className="sr-only">
+            Search community proposals
+          </label>
+          <input
+            id="community-proposal-search"
+            type="search"
+            value={query}
+            onChange={(event) => updateQuery(event.target.value)}
+            placeholder="Search proposal titles and summaries"
+            className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-700 bg-[#0b0f19] px-3 text-slate-100 placeholder:text-slate-500"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => updateQuery("")}
+              className="min-h-10 rounded-lg border border-slate-700 px-3 text-sm text-slate-200"
+            >
+              Clear search
+            </button>
+          )}
+        </div>
+
         {loading && proposals.length === 0 && (
           <>
             <LiveStatus className="sr-only">
@@ -211,7 +266,9 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
 
         {!loading && proposals.length > 0 && filtered.length === 0 && (
           <p className="mt-3 text-sm text-slate-400">
-            No proposals match this state.
+            {searchTerm
+              ? "No proposals match your search."
+              : "No proposals match this state."}
           </p>
         )}
 
