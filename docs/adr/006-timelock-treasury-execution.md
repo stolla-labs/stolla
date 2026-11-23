@@ -540,8 +540,11 @@ communities, and RPC event decoding.
    the allow/deny tests are in place. Still open: Timelock-verified action
    ids, batch sums, SAC code checks, direct-transfer deposits, upgrade and
    bootstrap revocation, and `storage_health`.
-3. Update `CommunityGovernor` to require queueing and expose exact approved
-   action data for Timelock verification.
+3. `CommunityGovernor` requires queueing when a Timelock is set. `queue`
+   stores the exact approved action and submits those bytes to the community
+   Timelock while the proposal is still `Succeeded`, then marks the proposal
+   `Queued`. Direct `execute` is rejected, so the Timelock delay cannot be
+   bypassed. Deployments with no Timelock stay on the signaling execute path.
 4. Add per-community deployment/registry integration after the
    CommunityFactory decision in issue #91.
 5. Add upgrade entry points and bootstrap-role revocation proofs to every

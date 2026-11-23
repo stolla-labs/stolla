@@ -300,6 +300,7 @@ name = "community-governor"
 version = "0.1.0"
 dependencies = [
  "community-nft",
+ "community-timelock",
  "soroban-sdk",
  "stellar-governance",
 ]

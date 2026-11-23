@@ -15,3 +15,4 @@ stellar-governance = { workspace = true }
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
 community-nft = { path = "../community-nft" }
+community-timelock = { path = "../community-timelock" }

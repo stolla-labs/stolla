@@ -18,6 +18,7 @@ use stellar_governance::{
 };
 
 use community_nft::{CommunityNft, CommunityNftClient};
+use community_timelock;
 
 use crate::{
     CommunityGovernor, CommunityGovernorClient, STORAGE_EXTEND_AMOUNT, STORAGE_TTL_THRESHOLD,
@@ -1510,4 +1511,109 @@ fn governor_storage_survives_advancement_and_instance_ttl_renews_at_boundary() {
     e.as_contract(&fixture.governor_id, || {
         assert_eq!(e.storage().instance().get_ttl(), STORAGE_EXTEND_AMOUNT);
     });
+}
+
+#[test]
+fn signaling_mode_rejects_queue_until_a_timelock_is_set() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    assert!(!fixture.governor.proposals_need_queuing());
+    let proposal = executable_proposal(&e, 7);
+    let operator = fixture.primary_voter().clone();
+    let rejected = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.queue(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &0,
+            &operator,
+        );
+    }));
+    assert!(rejected.is_err());
+}
+
+#[test]
+fn timelock_requires_queue_and_rejects_direct_or_mismatched_execution() {
+    let e = Env::default();
+    set_ledger_sequence(&e, 100);
+    let fixture = setup_governance(&e);
+    let admin = fixture.owner.clone();
+    let timelock_id = e.register(
+        community_timelock::CommunityTimelock,
+        (admin.clone(), fixture.governor_id.clone(), admin.clone()),
+    );
+    let governor = CommunityGovernorClient::new(&e, &fixture.governor_id);
+    governor.set_timelock(&timelock_id);
+    assert!(fixture.governor.proposals_need_queuing());
+
+    let proposer = fixture.primary_voter().clone();
+    let proposal = executable_proposal(&e, 42);
+    let target = GovernorExecutionTargetClient::new(&e, &proposal.target_id);
+    advance_ledger(&e, 1);
+    let proposal_id = pass_executable_proposal(&fixture, &proposal, &proposer);
+
+    let early = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &admin,
+        );
+    }));
+    assert!(early.is_err());
+    assert_eq!(target.calls(), 0);
+
+    let mismatched = executable_proposal(&e, 99);
+    let wrong = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.queue(
+            &mismatched.targets,
+            &mismatched.functions,
+            &mismatched.args,
+            &mismatched.description_hash,
+            &0,
+            &admin,
+        );
+    }));
+    assert!(wrong.is_err());
+
+    let queued_id = fixture.governor.queue(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+        &0,
+        &admin,
+    );
+    assert_eq!(queued_id, proposal_id);
+    assert_eq!(
+        fixture.governor.proposal_state(&proposal_id),
+        ProposalState::Queued
+    );
+    let approved = governor.get_approved_action(&proposal_id).unwrap();
+    assert_eq!(approved.targets, proposal.targets);
+    assert_eq!(approved.description_hash, proposal.description_hash);
+    let timelock = community_timelock::CommunityTimelockClient::new(&e, &timelock_id);
+    let action_id = timelock.action_id(
+        &proposal.targets,
+        &proposal.functions,
+        &proposal.args,
+        &proposal.description_hash,
+    );
+    assert!(timelock.get_action(&action_id).is_some());
+
+    let bypass = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        fixture.governor.execute(
+            &proposal.targets,
+            &proposal.functions,
+            &proposal.args,
+            &proposal.description_hash,
+            &admin,
+        );
+    }));
+    assert!(bypass.is_err());
+    assert_eq!(target.calls(), 0);
+    assert_eq!(target.value(), 0);
 }
