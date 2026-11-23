@@ -23,6 +23,11 @@ import { parseProposalId } from "@/lib/proposals";
 import { useTransactionLifecycle } from "@/hooks/useTransactionLifecycle";
 import { TransactionLifecycleDisplay } from "@/components/TransactionLifecycleDisplay";
 import { truncateMiddle } from "@/lib/truncate";
+import {
+  buildProposalShareText,
+  buildWarpcastIntentUrl,
+  buildXIntentUrl,
+} from "@/lib/shareIntent";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import type { CommunityView } from "@/lib/community/types";
 
@@ -455,7 +460,7 @@ export default function ProposalDetailPage({
       return;
     }
     setShareStatus("");
-    const canonicalUrl = `${window.location.origin}/communities/${community.record.id}/proposals/${proposalIdHex}`;
+    const canonicalUrl = buildProposalCanonicalUrl();
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({
@@ -470,6 +475,10 @@ export default function ProposalDetailPage({
       return;
     }
     await copyProposalUrl(canonicalUrl);
+  }
+
+  function buildProposalCanonicalUrl(): string {
+    return `${window.location.origin}/communities/${community!.record.id}/proposals/${proposalIdHex}`;
   }
 
   return (
@@ -508,15 +517,43 @@ export default function ProposalDetailPage({
           Copy
         </button>
         {community ? (
-          <AppButton
-            type="button"
-            tone="secondary"
-            size="sm"
-            onClick={() => void shareProposalUrl()}
-            aria-label="Share proposal page link"
-          >
-            Share link
-          </AppButton>
+          <>
+            <AppButton
+              type="button"
+              tone="secondary"
+              size="sm"
+              onClick={() => void shareProposalUrl()}
+              aria-label="Share proposal page link"
+            >
+              Share link
+            </AppButton>
+            <AppLinkButton
+              href={buildXIntentUrl(
+                buildProposalShareText(communityName),
+                buildProposalCanonicalUrl(),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              tone="secondary"
+              size="sm"
+              aria-label="Share proposal on X"
+            >
+              Share on X
+            </AppLinkButton>
+            <AppLinkButton
+              href={buildWarpcastIntentUrl(
+                buildProposalShareText(communityName),
+                buildProposalCanonicalUrl(),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              tone="secondary"
+              size="sm"
+              aria-label="Share proposal on Warpcast"
+            >
+              Share on Warpcast
+            </AppLinkButton>
+          </>
         ) : null}
       </div>
       <LiveStatus className="mt-2 text-sm text-slate-400">
