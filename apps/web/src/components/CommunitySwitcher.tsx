@@ -129,7 +129,7 @@ export function CommunitySwitcher({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={accessibleName}
-        className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-slate-700 bg-slate-900/70 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
+        className="flex min-h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-shell-border bg-slate-900/70 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
       >
         <span
           className={
@@ -140,7 +140,7 @@ export function CommunitySwitcher({
         >
           {selectedLabel}
         </span>
-        <span aria-hidden="true" className="text-xs text-slate-500">
+        <span aria-hidden="true" className="text-xs text-shell-muted">
           ▾
         </span>
       </button>
@@ -198,7 +198,7 @@ export function CommunitySwitcher({
                   className="block min-h-11 rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 aria-[current=page]:bg-indigo-950 aria-[current=page]:text-indigo-200"
                 >
                   <span className="block truncate">{name}</span>
-                  <span className="block truncate font-mono text-xs text-slate-500">
+                  <span className="block truncate font-mono text-xs text-shell-muted">
                     {truncateMiddle(community.record.id)}
                   </span>
                 </Link>

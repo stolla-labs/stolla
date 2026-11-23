@@ -92,13 +92,13 @@ describe("Header", () => {
     ).not.toBeInTheDocument();
 
     const wallet = screen.getByRole("button", { name: "Connect Wallet" });
-    expect(wallet.className).toContain("border-slate-700");
+    expect(wallet.className).toContain("border-shell-border");
     expect(wallet.className).not.toContain("bg-indigo-500");
 
     pathname.value = "/proposals";
     rerender(<Header />);
     const primaryWallet = screen.getByRole("button", { name: "Connect Wallet" });
-    expect(primaryWallet.className).toContain("bg-indigo-500");
+    expect(primaryWallet.className).toContain("bg-shell-primary");
   });
 
   it("keeps focus order logo → nav → switcher → wallet", () => {

@@ -234,6 +234,9 @@ export default function CommunitiesPage() {
           tone="primary"
           className="shrink-0 w-full sm:w-auto"
           aria-disabled={factoryUnavailable}
+          onClick={(event) => {
+            if (factoryUnavailable) event.preventDefault();
+          }}
         >
           Create a community
         </AppLinkButton>

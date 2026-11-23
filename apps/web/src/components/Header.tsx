@@ -7,6 +7,7 @@ import { useWallet } from "@/context/WalletProvider";
 import { truncateMiddle } from "@/lib/truncate";
 import { LiveStatus } from "@/components/ui/LiveStatus";
 import { CommunitySwitcher } from "@/components/CommunitySwitcher";
+import { AppButton } from "@/components/ui/AppButton";
 
 const navItems = [
   { href: "/communities", label: "Communities" },
@@ -98,7 +99,7 @@ export function Header() {
                 <>
                   <div className="hidden items-center gap-2 sm:flex">
                     <span
-                      className="truncate text-xs text-slate-500 sm:max-w-[120px] md:max-w-[180px]"
+                      className="truncate text-xs text-shell-muted sm:max-w-[120px] md:max-w-[180px]"
                       title={address}
                     >
                       {truncateMiddle(address)}
@@ -106,7 +107,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={disconnect}
-                      className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800"
+                      className="rounded-lg border border-shell-border px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-800"
                     >
                       Disconnect
                     </button>
@@ -138,7 +139,7 @@ export function Header() {
                       >
                         <div className="mb-3 flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-shell-muted">
                               Connected account
                             </p>
                             <p className="mt-1 break-all font-mono text-sm text-slate-200">
@@ -159,7 +160,7 @@ export function Header() {
                               handleDisconnect();
                             }
                           }}
-                          className="w-full rounded-lg border border-slate-700 px-3 py-2 text-left text-sm text-slate-300 transition hover:bg-slate-800"
+                          className="w-full rounded-lg border border-shell-border px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
                         >
                           Disconnect
                         </button>
@@ -168,9 +169,10 @@ export function Header() {
                   </div>
                 </>
               ) : (
-                <button
+                <AppButton
                   ref={triggerRef}
                   type="button"
+                  tone={demoteWalletCta ? "secondary" : "primary"}
                   onClick={connect}
                   disabled={isConnecting}
                   aria-describedby={
@@ -178,14 +180,10 @@ export function Header() {
                       ? "wallet-connection-status"
                       : undefined
                   }
-                  className={
-                    demoteWalletCta
-                      ? "rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800 disabled:opacity-50 sm:px-4"
-                      : "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50 sm:px-4"
-                  }
+                  className="sm:px-4"
                 >
                   {isConnecting ? "Connecting..." : "Connect Wallet"}
-                </button>
+                </AppButton>
               )}
             </div>
             {isConnecting ? (

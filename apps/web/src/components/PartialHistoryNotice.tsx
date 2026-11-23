@@ -32,7 +32,7 @@ export function PartialHistoryNotice({
             type="button"
             onClick={onRetry}
             disabled={isRetrying}
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-600 px-4 py-2 text-sm font-medium text-amber-50 hover:bg-amber-900/40 disabled:opacity-50"
+            className="shell-disabled-action inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-600 px-4 py-2 text-sm font-medium text-amber-50 hover:bg-amber-900/40"
           >
             {isRetrying ? "Retrying…" : "Retry proposal index"}
           </button>
