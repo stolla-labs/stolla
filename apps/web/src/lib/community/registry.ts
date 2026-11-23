@@ -11,6 +11,7 @@ import {
   parseCommunityMetadata,
   resolveCommunityResourceUrl,
 } from "./schema";
+import { parseCommunityActivity, type CommunityActivity } from "./communityActivity";
 import type {
   CommunityDetailResult,
   CommunityRegistry,
@@ -229,12 +230,25 @@ async function loadGovernance(
   };
 }
 
+async function loadActivity(communityId: string): Promise<CommunityActivity> {
+  try {
+    const value = await readContract(
+      requireCommunityFactoryId(),
+      "community_activity",
+      [nativeToScVal(Uint8Array.from(Buffer.from(communityId, "hex")))],
+    );
+    return parseCommunityActivity(value);
+  } catch {
+    return "active";
+  }
+}
 async function hydrateRecord(
   record: CommunityRegistryRecord,
 ): Promise<CommunityView> {
-  const [metadataResult, governanceResult] = await Promise.allSettled([
+  const [metadataResult, governanceResult, activityResult] = await Promise.allSettled([
     loadMetadata(record),
     loadGovernance(record),
+    loadActivity(record.id),
   ]);
 
   return {
@@ -251,6 +265,8 @@ async function hydrateRecord(
       governanceResult.status === "fulfilled"
         ? governanceResult.value
         : { ...EMPTY_GOVERNANCE },
+    activity:
+      activityResult.status === "fulfilled" ? activityResult.value : "active",
   };
 }
 

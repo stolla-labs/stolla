@@ -41,6 +41,8 @@ import { LiveStatus } from "@/components/ui/LiveStatus";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
 import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import { BatchMintPanel } from "@/components/community/BatchMintPanel";
+import { communityWriteBlockReason } from "@/lib/community/communityActivity";
+import { CommunityWriteBlockedNotice } from "@/components/community/CommunityActivityBadge";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
@@ -309,6 +311,11 @@ export default function CommunityPage() {
   }
 
   async function handleMint() {
+    const blocked = communityWriteBlockReason(activeCommunity?.activity);
+    if (blocked) {
+      setStatus({ message: blocked, tone: "error" });
+      return;
+    }
     if (!address || mintOwner !== address) {
       setStatus({ message: "Only the current NFT owner can mint. Refresh the page if ownership changed.", tone: "error" });
       return;
@@ -357,6 +364,7 @@ export default function CommunityPage() {
   }
 
   async function mintBatchRecipient(to: string) {
+    if (communityWriteBlockReason(activeCommunity?.activity)) return;
     if (!address) throw new Error("Connect your wallet first.");
     const published = await pinTokenMetadata();
     if (!published) {
@@ -766,6 +774,7 @@ export default function CommunityPage() {
                 onClick={() => void handleMint()}
                 disabled={
                   mainnetWritesBlocked() ||
+                  Boolean(communityWriteBlockReason(activeCommunity?.activity)) ||
                   !address ||
                   !tokenDraftValid ||
                   pinState.kind === "pinning" ||
@@ -806,8 +815,10 @@ export default function CommunityPage() {
                     : undefined,
                 }}
               />
+              <CommunityWriteBlockedNotice activity={activeCommunity?.activity} />
               <BatchMintPanel
                 disabled={
+                  Boolean(communityWriteBlockReason(activeCommunity?.activity)) ||
                   !address ||
                   !tokenDraftValid ||
                   pinState.kind === "pinning" ||

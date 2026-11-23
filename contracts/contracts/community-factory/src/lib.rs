@@ -67,6 +67,24 @@ pub struct CommunityRecord {
     pub metadata_schema_version: u32,
 }
 
+/// Registry status for one community. Missing storage means Active.
+/// Rows are never deleted.
+#[contracttype]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CommunityActivity {
+    Active = 0,
+    Paused = 1,
+    Archived = 2,
+}
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CommunityActivityChanged {
+    #[topic]
+    pub community_id: BytesN<32>,
+    #[topic]
+    pub operator: Address,
+    pub activity: CommunityActivity,
+}
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CommunityPage {
@@ -87,6 +105,7 @@ enum DataKey {
     CommunityCount,
     Community(BytesN<32>),
     CommunityAt(u32),
+    Activity(BytesN<32>),
 }
 
 #[contracterror]
@@ -111,6 +130,7 @@ pub enum FactoryError {
     PendingOwnerExpired = 16,
     CommunityNotFound = 17,
     CommunityOwnerNotSet = 18,
+    ActivityUnauthorized = 19,
 }
 
 #[contractclient(name = "NftOwnershipClient")]
@@ -348,6 +368,53 @@ impl CommunityFactory {
         record
     }
 
+    /// Active when the community exists and nobody has paused or archived it.
+    pub fn community_activity(
+        e: &Env,
+        community_id: BytesN<32>,
+    ) -> Result<CommunityActivity, FactoryError> {
+        if get_record(e, &community_id).is_none() {
+            return Err(FactoryError::CommunityNotFound);
+        }
+        extend_instance_ttl(e);
+        Ok(e.storage()
+            .persistent()
+            .get(&DataKey::Activity(community_id))
+            .unwrap_or(CommunityActivity::Active))
+    }
+
+    /// Mark one community paused or archived without deleting its history.
+    ///
+    /// `operator` must be that community's `community_owner` or the factory
+    /// owner. Either role may later set the activity back to `Active`.
+    /// Reads stay available. This does not pause the whole factory, and it
+    /// does not pause a community automatically for inactivity.
+    pub fn set_community_activity(
+        e: &Env,
+        community_id: BytesN<32>,
+        activity: CommunityActivity,
+        operator: Address,
+    ) -> Result<(), FactoryError> {
+        let record = get_record(e, &community_id).ok_or(FactoryError::CommunityNotFound)?;
+        if operator != record.community_owner && operator != owner(e) {
+            return Err(FactoryError::ActivityUnauthorized);
+        }
+        operator.require_auth();
+        let key = DataKey::Activity(community_id.clone());
+        e.storage().persistent().set(&key, &activity);
+        e.storage()
+            .persistent()
+            .extend_ttl(&key, FACTORY_TTL_THRESHOLD, FACTORY_TTL_EXTEND);
+        extend_instance_ttl(e);
+        CommunityActivityChanged {
+            community_id,
+            operator,
+            activity,
+        }
+        .publish(e);
+        Ok(())
+    }
+
     /// Reflect the NFT's accepted owner in the registry. The NFT enforces its
     /// own two-step transfer; no caller can choose the address stored here.
     pub fn sync_community_owner(
@@ -520,6 +587,12 @@ impl CommunityFactory {
     }
 }
 
+
+fn get_record(e: &Env, community_id: &BytesN<32>) -> Option<CommunityRecord> {
+    e.storage()
+        .persistent()
+        .get(&DataKey::Community(community_id.clone()))
+}
 fn owner(e: &Env) -> Address {
     e.storage()
         .instance()

@@ -4,6 +4,7 @@ import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import type { Community, CommunityRegistry } from "@/lib/community/types";
 import type { GuardianAdapter } from "@/lib/community/guardian";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
+import { CommunityActivityControl } from "./CommunityActivityControl";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
 import { GuardianControls } from "./GuardianControls";
@@ -51,6 +52,7 @@ function CommunityDetailPanel({ community, guardianAdapter }: { community: Commu
       />
 
       <h1 className="mt-4 text-2xl font-bold text-slate-100">{displayName}</h1>
+      <CommunityActivityControl community={community} />
 
       {community.record.timelockContract && (
         <GuardianControls timelockId={community.record.timelockContract} adapter={guardianAdapter} />

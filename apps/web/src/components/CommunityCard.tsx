@@ -1,6 +1,7 @@
 "use client";
 
 import { CommunityAvatar } from "@/components/CommunityAvatar";
+import { CommunityActivityBadge } from "@/components/community/CommunityActivityBadge";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { useCommunityMembership } from "@/hooks/useCommunityMembership";
@@ -41,6 +42,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
             <h2 className="break-words text-lg font-semibold text-slate-100 [overflow-wrap:anywhere]">
               {name}
             </h2>
+            <CommunityActivityBadge activity={community.activity} />
             {membershipText &&
             (membership === "member" ||
               membership === "non_member" ||

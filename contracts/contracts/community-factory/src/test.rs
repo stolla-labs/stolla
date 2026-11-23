@@ -11,7 +11,7 @@ use stellar_governance::governor::GovernorClient;
 
 use crate::{
     derive_salt, CommunityCreated, CommunityFactory, CommunityFactoryClient, CommunityMetadata,
-    CreateCommunityRequest, FactoryError, GovernanceParams, METADATA_SCHEMA_VERSION,
+    CommunityActivity, CreateCommunityRequest, FactoryError, GovernanceParams, METADATA_SCHEMA_VERSION,
 };
 
 const NFT_WASM: &[u8] = include_bytes!("../test_wasm/community_nft.wasm");
@@ -399,6 +399,39 @@ fn community_owner_sync_follows_accepted_nft_owner() {
     assert_eq!(nft.get_owner(), Some(next_owner));
     assert_eq!(
         client.try_sync_community_owner(&BytesN::from_array(&fixture.e, &[0; 32])),
+        Err(Ok(FactoryError::CommunityNotFound))
+    );
+}
+
+#[test]
+fn community_activity_is_owner_controlled_and_preserves_the_record() {
+    let fixture = Fixture::new();
+    fixture.e.mock_all_auths();
+    let client = fixture.client();
+    let request = fixture.request(b"activity");
+    let record = client.create_community(&fixture.owner, &request);
+    let id = record.community_id.clone();
+    assert_eq!(client.community_activity(&id), CommunityActivity::Active);
+    assert_eq!(client.get_community(&id).unwrap().community_id, id);
+
+    let stranger = Address::generate(&fixture.e);
+    assert_eq!(
+        client.try_set_community_activity(&id, &CommunityActivity::Paused, &stranger),
+        Err(Ok(FactoryError::ActivityUnauthorized))
+    );
+    assert_eq!(client.community_activity(&id), CommunityActivity::Active);
+
+    client.set_community_activity(&id, &CommunityActivity::Paused, &request.community_owner);
+    assert_eq!(client.community_activity(&id), CommunityActivity::Paused);
+    assert_eq!(client.get_community(&id).unwrap().metadata_uri, record.metadata_uri);
+
+    client.set_community_activity(&id, &CommunityActivity::Archived, &fixture.owner);
+    assert_eq!(client.community_activity(&id), CommunityActivity::Archived);
+    client.set_community_activity(&id, &CommunityActivity::Active, &request.community_owner);
+    assert_eq!(client.community_activity(&id), CommunityActivity::Active);
+
+    assert_eq!(
+        client.try_community_activity(&BytesN::from_array(&fixture.e, &[9; 32])),
         Err(Ok(FactoryError::CommunityNotFound))
     );
 }
