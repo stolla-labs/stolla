@@ -13,17 +13,12 @@ export const COMMUNITY_LIMITS = {
   externalLinks: 10,
 } as const;
 
+/** Bounds from docs/community-metadata-governance-schema.md and the factory. */
 export const GOVERNANCE_LIMITS = {
-  votingDelay: { min: 1, max: 4_294_967_295 },
-  votingPeriod: { min: 2, max: 4_294_967_295 },
-  proposalThreshold: {
-    min: BigInt(1),
-    max: (BigInt(1) << BigInt(128)) - BigInt(1),
-  },
-  quorum: {
-    min: BigInt(1),
-    max: (BigInt(1) << BigInt(128)) - BigInt(1),
-  },
+  votingDelay: { min: 0, max: 120_960 },
+  votingPeriod: { min: 1, max: 1_555_200 },
+  proposalThreshold: { min: BigInt(1), max: BigInt(4_294_967_295) },
+  quorum: { min: BigInt(1), max: BigInt(4_294_967_295) },
 } as const;
 
 export type GovernanceDraft = {
@@ -240,7 +235,7 @@ export function validateGovernanceDraft(
     proposalThreshold > GOVERNANCE_LIMITS.proposalThreshold.max
   ) {
     errors.proposalThreshold =
-      "Enter a whole number from 1 through the maximum u128 value.";
+      "Enter a whole number of NFT votes from 1 through 4,294,967,295.";
   }
   if (
     quorum === null ||
@@ -248,24 +243,22 @@ export function validateGovernanceDraft(
     quorum > GOVERNANCE_LIMITS.quorum.max
   ) {
     errors.quorum =
-      "Enter a whole number from 1 through the maximum u128 value.";
+      "Enter a whole number of NFT votes from 1 through 4,294,967,295.";
   }
   if (
     votingDelay === null ||
     votingDelay < BigInt(GOVERNANCE_LIMITS.votingDelay.min) ||
     votingDelay > BigInt(GOVERNANCE_LIMITS.votingDelay.max)
   ) {
-    errors.votingDelay = "Enter a whole number from 1 through 4,294,967,295 ledgers.";
+    errors.votingDelay = "Enter a whole number of ledgers from 0 through 120,960 (about 7 days).";
   }
   if (
     votingPeriod === null ||
     votingPeriod < BigInt(GOVERNANCE_LIMITS.votingPeriod.min) ||
     votingPeriod > BigInt(GOVERNANCE_LIMITS.votingPeriod.max)
   ) {
-    errors.votingPeriod = "Enter a whole number from 2 through 4,294,967,295 ledgers.";
-  } else if (votingDelay !== null && votingPeriod <= votingDelay) {
     errors.votingPeriod =
-      "Voting period must be greater than the voting delay.";
+      "Enter a whole number of ledgers from 1 through 1,555,200 (about 90 days).";
   }
 
   return errors;

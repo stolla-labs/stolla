@@ -225,7 +225,7 @@ describe("CreateCommunityPage", () => {
     expect(screen.getByLabelText(/NFT symbol/)).toHaveValue("BUILD");
   });
 
-  it("rejects governance boundaries and contradictory ledger periods", () => {
+  it("rejects governance values outside the schema bounds", () => {
     render(<CreateCommunityPage />);
     enterValidMetadata();
     fireEvent.click(
@@ -239,16 +239,23 @@ describe("CreateCommunityPage", () => {
       target: { value: "-1" },
     });
     fireEvent.change(screen.getByLabelText(/Voting delay/), {
-      target: { value: "20" },
+      target: { value: "120961" },
     });
     fireEvent.change(screen.getByLabelText(/Voting period/), {
-      target: { value: "20" },
+      target: { value: "1555201" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Review community" }));
 
-    expect(screen.getAllByText(/maximum u128 value/)).toHaveLength(2);
+    expect(screen.getAllByText("Enter a whole number of NFT votes from 1 through 4,294,967,295.")).toHaveLength(2);
     expect(
-      screen.getByText("Voting period must be greater than the voting delay."),
+      screen.getByText(
+        "Enter a whole number of ledgers from 0 through 120,960 (about 7 days).",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Enter a whole number of ledgers from 1 through 1,555,200 (about 90 days).",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText("Deployment target")).not.toBeInTheDocument();
   });
