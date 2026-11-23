@@ -632,25 +632,25 @@ export function CommunityCreationWizard() {
                   field: "proposalThreshold",
                   label: "Proposal threshold",
                   unit: "NFT votes",
-                  help: "Minimum delegated voting power required to create a proposal.",
+                  help: "NFT votes required to create a proposal. Whole number from 1 through 4,294,967,295.",
                 },
                 {
                   field: "quorum",
                   label: "Quorum",
                   unit: "NFT votes",
-                  help: "For and abstain votes required for a proposal to meet quorum.",
+                  help: "For and abstain votes needed for quorum. Whole number from 1 through 4,294,967,295. Independent of the proposal threshold.",
                 },
                 {
                   field: "votingDelay",
                   label: "Voting delay",
                   unit: "Stellar ledgers",
-                  help: "Ledgers between proposal creation and the voting snapshot.",
+                  help: "Ledgers before voting starts. 0 through 120,960 (about 7 days). 0 means voting can start immediately. Each ledger is about 5 seconds.",
                 },
                 {
                   field: "votingPeriod",
                   label: "Voting period",
                   unit: "Stellar ledgers",
-                  help: "Ledgers voting remains open; this must exceed the voting delay.",
+                  help: "Ledgers voting stays open. 1 through 1,555,200 (about 90 days). This does not have to be longer than the delay.",
                 },
               ] as const
             ).map(({ field, label, unit, help }) => (

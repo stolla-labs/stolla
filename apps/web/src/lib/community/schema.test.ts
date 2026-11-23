@@ -143,12 +143,28 @@ describe("community metadata schema", () => {
       }),
     ).toEqual({
       proposalThreshold:
-        "Enter a whole number from 1 through the maximum u128 value.",
-      quorum: "Enter a whole number from 1 through the maximum u128 value.",
+        "Enter a whole number of NFT votes from 1 through 4,294,967,295.",
+      quorum: "Enter a whole number of NFT votes from 1 through 4,294,967,295.",
       votingDelay:
-        "Enter a whole number from 1 through 4,294,967,295 ledgers.",
+        "Enter a whole number of ledgers from 0 through 120,960 (about 7 days).",
       votingPeriod:
-        "Enter a whole number from 2 through 4,294,967,295 ledgers.",
+        "Enter a whole number of ledgers from 1 through 1,555,200 (about 90 days).",
     });
+    expect(
+      validateGovernanceDraft({
+        proposalThreshold: "4294967295",
+        quorum: "1",
+        votingDelay: "0",
+        votingPeriod: "1",
+      }),
+    ).toEqual({});
+    expect(
+      validateGovernanceDraft({
+        proposalThreshold: "1",
+        quorum: "1",
+        votingDelay: "120961",
+        votingPeriod: "1555201",
+      }).votingDelay,
+    ).toMatch(/120,960/);
   });
 });
