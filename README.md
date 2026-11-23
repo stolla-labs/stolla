@@ -206,6 +206,18 @@ environment files, dependencies, npm caches, and the root lockfile.
 4. **Proposer** creates a proposal (needs delegated NFT voting power)
 5. **Member** casts a vote on the proposal detail page
 
+## Membership FAQ
+
+**Can a community owner revoke or burn a member's NFT?** No. The current
+`community_nft` has no owner burn/revoke function. A collection owner also
+cannot transfer a member's token without the member's authorization or an
+approval that member granted. If the member controls the token, they can move
+it to a safe wallet and delegate again. Removing an uncooperative or
+compromised member requires a separately reviewed contract upgrade or
+governance migration; the existing Governor continues to count the token until
+such a change takes effect. See [ADR-001](docs/adr/001-nft-voting-model.md#membership-removal-decision)
+for the contract decision and incident guidance.
+
 ## Project structure
 
 ```

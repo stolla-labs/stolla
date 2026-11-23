@@ -316,6 +316,33 @@ fn transfers_and_redelegation_move_voting_power_without_changing_supply() {
 }
 
 #[test]
+fn collection_owner_cannot_transfer_members_token_without_member_auth() {
+    let e = Env::default();
+    let (owner, member, client) = setup(&e);
+    let recipient = Address::generate(&e);
+    let uri = String::from_str(&e, "ipfs://members/revoke-check.json");
+    let token_id = mint_with_owner_auth(&e, &client, &owner, &member, &uri);
+    delegate_with_auth(&e, &client, &member, &member);
+
+    e.mock_auths(&[MockAuth {
+        address: &owner,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "transfer",
+            args: (&member, &recipient, token_id).into_val(&e),
+            sub_invokes: &[],
+        },
+    }]);
+    assert!(client.try_transfer(&member, &recipient, &token_id).is_err());
+    assert_eq!(client.owner_of(&token_id), member.clone());
+    assert_eq!(client.balance(&member), 1);
+    assert_eq!(VotesClient::new(&e, &client.address).get_votes(&member), 1);
+
+    transfer_with_auth(&e, &client, &member, &recipient, token_id);
+    assert_eq!(client.owner_of(&token_id), recipient);
+}
+
+#[test]
 #[should_panic(expected = "Error(Contract, #1)")]
 fn empty_token_uri_returns_stable_contract_error() {
     let e = Env::default();
