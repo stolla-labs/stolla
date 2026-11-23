@@ -39,6 +39,8 @@ export type Community = {
   metadata: CommunityMetadata | null;
   metadataError: string | null;
   governance: GovernanceSnapshot;
+  /** Missing means active. A paused or archived community keeps its record. */
+  activity?: import("./communityActivity").CommunityActivity;
 };
 
 /** @deprecated Prefer `Community`. Kept for existing imports. */

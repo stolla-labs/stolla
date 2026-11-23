@@ -9,7 +9,9 @@ import { useOperationLifecycle } from "@/hooks/useOperationLifecycle";
 import { validateProposalMetadataDraft, hasProposalMetadataErrors, serializeProposalMetadata, type ProposalMetadataDraft, type ProposalMetadataErrors, type ProposalMetadataField } from "@/lib/proposal-metadata";
 import { ProposalMetadataFields } from "@/components/proposal/ProposalMetadataFields";
 import { TransactionLifecycleStatus } from "@/components/TransactionLifecycleStatus";
+import { CommunityWriteBlockedNotice } from "@/components/community/CommunityActivityBadge";
 import { AppButton } from "@/components/ui/AppButton";
+import { communityWriteBlockReason } from "@/lib/community/communityActivity";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -79,6 +81,7 @@ export function ScopedProposalEmptyState({
   }
 
   async function createProposal() {
+    if (communityWriteBlockReason(community.activity)) return;
     if (!address || !canPropose || creation.isInFlight) return;
     const nextErrors = validateProposalMetadataDraft(draft);
     if (hasProposalMetadataErrors(nextErrors)) {
@@ -121,7 +124,18 @@ export function ScopedProposalEmptyState({
             {isConnecting ? "Connecting…" : "Connect wallet to propose"}
           </AppButton>
         ) : canPropose ? (
-          !formOpen && <AppButton tone="primary" onClick={() => setFormOpen(true)}>Create first proposal</AppButton>
+          <>
+            <CommunityWriteBlockedNotice activity={community.activity} />
+            {!formOpen && (
+              <AppButton
+                tone="primary"
+                disabled={Boolean(communityWriteBlockReason(community.activity))}
+                onClick={() => setFormOpen(true)}
+              >
+                Create first proposal
+              </AppButton>
+            )}
+          </>
         ) : threshold === null ? (
           <AppLinkButton href={`/communities/${community.record.id}`} tone="primary">
             Review proposal readiness
@@ -145,7 +159,7 @@ export function ScopedProposalEmptyState({
         <div className="mt-4 border-t border-slate-700 pt-4">
           <h3 className="font-semibold text-slate-200">Create proposal</h3>
           <ProposalMetadataFields value={draft} errors={errors} onChange={updateDraft} />
-          <AppButton tone="primary" className="mt-3" onClick={() => void createProposal()} disabled={creation.isInFlight}>
+          <AppButton tone="primary" className="mt-3" onClick={() => void createProposal()} disabled={creation.isInFlight || Boolean(communityWriteBlockReason(community.activity))}>
             {creation.isInFlight ? "Creating proposal…" : "Create proposal"}
           </AppButton>
           <TransactionLifecycleStatus stage={creation.stage} operationLabel="Propose" error={creation.error} />

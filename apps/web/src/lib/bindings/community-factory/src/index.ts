@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { Contract, nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
 import { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 import type {
@@ -16,6 +17,11 @@ export type {
   CommunityFactoryMetadata,
 };
 
+export type SetCommunityActivityArgs = {
+  communityId: string;
+  activity: "active" | "paused" | "archived";
+  operator: string;
+};
 export type DeployCommunityArgs = {
   creator: string;
   metadata: CommunityFactoryMetadata;
@@ -27,6 +33,10 @@ export interface CommunityFactoryClient {
     args: DeployCommunityArgs,
     options?: MethodOptions,
   ) => Promise<AssembledTransaction<CommunityDeploymentResult>>;
+  set_community_activity: (
+    args: SetCommunityActivityArgs,
+    options?: MethodOptions,
+  ) => Promise<AssembledTransaction<null>>;
 }
 
 export class Client implements CommunityFactoryClient {
@@ -68,4 +78,26 @@ export class Client implements CommunityFactoryClient {
         scValToNative(value) as CommunityDeploymentResult,
     });
   }
+
+  set_community_activity(
+    { communityId, activity, operator }: SetCommunityActivityArgs,
+    options?: MethodOptions,
+  ): Promise<AssembledTransaction<null>> {
+    const activityValue = activity === "paused" ? 1 : activity === "archived" ? 2 : 0;
+    const contract = new Contract(this.options.contractId);
+    const operation = contract.call(
+      "set_community_activity",
+      nativeToScVal(Buffer.from(communityId, "hex")),
+      nativeToScVal(activityValue, { type: "u32" }),
+      nativeToScVal(operator, { type: "address" }),
+    );
+    return AssembledTransaction.buildWithOp(operation, {
+      ...this.options,
+      ...options,
+      method: "set_community_activity",
+      args: [communityId, activity, operator],
+      parseResultXdr: () => null,
+    });
+  }
+
 }
