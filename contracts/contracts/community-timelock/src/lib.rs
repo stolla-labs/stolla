@@ -61,6 +61,8 @@ enum DataKey {
     BootstrapActive,
     Action(BytesN<32>),
     Proposal(BytesN<32>),
+    // Present only while `queue_from_governor` is calling `queue`.
+    TrustGovernor,
 }
 
 /// Single XDR preimage for the domain-separated action id.
@@ -353,6 +355,21 @@ impl CommunityTimelock {
         action_id_for(e, &governor, &proposal_id, &targets, &functions, &args)
     }
 
+    /// Same record as `queue`. Used by the Governor, which cannot be re-entered
+    /// for a `proposal_state` callback. The Governor checks Succeeded first.
+    #[allow(clippy::too_many_arguments)]
+    pub fn queue_from_governor(
+        e: &Env,
+        targets: Vec<Address>,
+        functions: Vec<Symbol>,
+        args: Vec<Vec<Val>>,
+        description_hash: BytesN<32>,
+        operator: Address,
+    ) -> BytesN<32> {
+        e.storage().instance().set(&DataKey::TrustGovernor, &true);
+        Self::queue(e, targets, functions, args, description_hash, operator)
+    }
+
     /// Queues a succeeded proposal. Only the configured Governor may authorize it.
     #[allow(clippy::too_many_arguments)]
     pub fn queue(
@@ -374,7 +391,19 @@ impl CommunityTimelock {
             panic_with_error!(e, TimelockError::AlreadyQueued);
         }
 
-        require_succeeded(e, &governor, &proposal_id);
+        let trust_governor: bool = e
+            .storage()
+            .instance()
+            .get(&DataKey::TrustGovernor)
+            .unwrap_or(false);
+        if trust_governor {
+            // The Governor is on the stack. Reading proposal_state would
+            // re-enter it, and the host rejects that. The Governor already
+            // checked Succeeded. Direct `queue` never sets this flag.
+            e.storage().instance().remove(&DataKey::TrustGovernor);
+        } else {
+            require_succeeded(e, &governor, &proposal_id);
+        }
 
         let queued_at = e.ledger().sequence();
         let (earliest_ledger, expiry_ledger) = checked_window(e, queued_at);
