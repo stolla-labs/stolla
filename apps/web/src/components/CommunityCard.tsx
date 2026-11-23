@@ -3,6 +3,7 @@
 import { CommunityAvatar } from "@/components/CommunityAvatar";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { useCommunityMembership } from "@/hooks/useCommunityMembership";
 import { useCommunityWatchlist } from "@/hooks/useCommunityWatchlist";
 import {
@@ -41,6 +42,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
             <h2 className="break-words text-lg font-semibold text-slate-100 [overflow-wrap:anywhere]">
               {name}
             </h2>
+            <VerifiedBadge communityId={record.id} />
             {membershipText &&
             (membership === "member" ||
               membership === "non_member" ||

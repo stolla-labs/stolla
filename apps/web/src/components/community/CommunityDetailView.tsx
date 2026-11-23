@@ -1,6 +1,7 @@
 "use client";
 
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import type { Community, CommunityRegistry } from "@/lib/community/types";
 import type { GuardianAdapter } from "@/lib/community/guardian";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
@@ -50,7 +51,10 @@ function CommunityDetailPanel({ community, guardianAdapter }: { community: Commu
         communityName={displayName}
       />
 
-      <h1 className="mt-4 text-2xl font-bold text-slate-100">{displayName}</h1>
+      <div className="mt-4 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-slate-100">{displayName}</h1>
+        <VerifiedBadge communityId={community.record.id} />
+      </div>
 
       {community.record.timelockContract && (
         <GuardianControls timelockId={community.record.timelockContract} adapter={guardianAdapter} />
