@@ -62,7 +62,7 @@ export function ProposalExportControls({
               ? "Export unavailable while proposals are loading"
               : "Download proposal history as CSV"
           }
-          className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700/80 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/50 disabled:text-slate-500"
+          className="shell-disabled-action inline-flex items-center justify-center rounded-lg border border-shell-border bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700/80"
         >
           Export CSV
         </button>
@@ -81,14 +81,14 @@ export function ProposalExportControls({
               ? "Export unavailable while proposals are loading"
               : "Download proposal history as JSON"
           }
-          className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700/80 disabled:cursor-not-allowed disabled:border-slate-800 disabled:bg-slate-900/50 disabled:text-slate-500"
+          className="shell-disabled-action inline-flex items-center justify-center rounded-lg border border-shell-border bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-700/80"
         >
           Export JSON
         </button>
       </div>
 
       {isLoading ? (
-        <span className="text-[11px] text-slate-500" role="status">
+        <span className="text-[11px] text-shell-muted" role="status">
           Export unavailable while proposals are loading
         </span>
       ) : (

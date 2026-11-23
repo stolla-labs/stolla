@@ -4,6 +4,10 @@
   --font-sans: var(--font-ibm-plex), system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
   --animate-shimmer: skeleton-shimmer 1.6s linear infinite;
+  --color-shell-muted: var(--shell-muted);
+  --color-shell-primary: var(--shell-primary);
+  --color-shell-primary-hover: var(--shell-primary-hover);
+  --color-shell-border: var(--shell-border);
 }
 
 /*
@@ -65,14 +69,24 @@
    * --input-help     : slate-400 (#94a3b8) — same token; meets WCAG AA (4.5:1) for
    *                    non-decorative text against #0b0f19.
    * --input-focus-border: indigo-400 (#818cf8) — high-visibility accent on focus.
-   * --disabled-opacity: 0.45 + grayscale filter distinguishes disabled from enabled
-   *                    primary buttons without relying on opacity alone.
    */
   --input-border: #475569;
   --input-placeholder: #94a3b8;
   --input-help: #94a3b8;
   --input-focus-border: #818cf8;
-  --disabled-opacity: 0.45;
+
+  /*
+   * Shell contrast on #151b2b: muted text 6.69:1, border 3.61:1.
+   * White on primary/hover: 6.29:1 / 7.90:1.
+   * Disabled text on its fill: 8.40:1; dashed border signals state.
+   */
+  --shell-muted: #94a3b8;
+  --shell-primary: #4f46e5;
+  --shell-primary-hover: #4338ca;
+  --shell-border: #64748b;
+  --shell-disabled-bg: #334155;
+  --shell-disabled-text: #e2e8f0;
+  --shell-disabled-border: #94a3b8;
 }
 
 html {
@@ -142,13 +156,11 @@ h3 {
   color: var(--input-placeholder);
 }
 
-/*
- * Clearly disabled primary button: reduced opacity + grayscale so the
- * brand-purple cannot be mistaken for an active clickable target.
- */
-.btn-disabled-primary {
-  opacity: var(--disabled-opacity);
-  filter: grayscale(0.6);
-  pointer-events: none;
+/* A dashed boundary makes unavailable actions recognizable without color. */
+.shell-disabled-action:disabled,
+.shell-disabled-action[aria-disabled="true"] {
   cursor: not-allowed;
+  border: 2px dashed var(--shell-disabled-border);
+  background: var(--shell-disabled-bg);
+  color: var(--shell-disabled-text);
 }

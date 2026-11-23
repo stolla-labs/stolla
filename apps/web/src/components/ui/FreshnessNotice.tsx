@@ -38,7 +38,7 @@ export function FreshnessNotice({
           type="button"
           onClick={onRefresh}
           disabled={refreshing}
-          className="mt-3 min-h-11 rounded-lg border border-amber-700 px-4 py-2 font-medium text-amber-100 hover:bg-amber-900/50 disabled:opacity-50"
+          className="shell-disabled-action mt-3 min-h-11 rounded-lg border border-amber-700 px-4 py-2 font-medium text-amber-100 hover:bg-amber-900/50"
         >
           {refreshing ? "Refreshing…" : refreshLabel}
         </button>

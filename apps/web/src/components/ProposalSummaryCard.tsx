@@ -52,8 +52,8 @@ function OptionalMeta({
       : String(value);
 
   return (
-    <p className="mt-1 min-w-0 truncate text-xs text-slate-500">
-      <span className="text-slate-600">{label}: </span>
+    <p className="mt-1 min-w-0 truncate text-xs text-shell-muted">
+      <span>{label}: </span>
       <span title={display === "Unavailable" ? undefined : display}>
         {display}
       </span>
@@ -75,7 +75,7 @@ function DescriptionText({
         className={`mt-1 min-w-0 text-xs [overflow-wrap:anywhere] ${
           hasDescription
             ? "line-clamp-2 break-words text-slate-400"
-            : "text-slate-600"
+            : "text-shell-muted"
         }`}
         title={hasDescription ? trimmed : undefined}
       >
@@ -91,7 +91,7 @@ function DescriptionText({
     <span className="mt-1 min-w-0">
       {title && <span className="block truncate text-sm font-medium text-slate-200">{title}</span>}
       <span
-        className={`block text-xs [overflow-wrap:anywhere] ${hasDescription ? "line-clamp-2 break-words text-slate-400" : "text-slate-600"}`}
+        className={`block text-xs [overflow-wrap:anywhere] ${hasDescription ? "line-clamp-2 break-words text-slate-400" : "text-shell-muted"}`}
         title={hasDescription ? display : undefined}
       >
         {hasDescription ? display : "Description unavailable"}
@@ -131,7 +131,7 @@ export function ProposalSummaryCard({
     <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80">
       <Link
         href={href ?? `/proposals/${proposalId}`}
-        className="flex min-w-0 flex-1 flex-col gap-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+        className="flex min-w-0 flex-1 flex-col gap-0.5 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
         aria-label={`View proposal ${proposalId}, state ${stateText}`}
       >
         <span className="flex min-w-0 items-center gap-3">
@@ -142,7 +142,7 @@ export function ProposalSummaryCard({
             className={
               stateStatus === "unavailable"
                 ? "shrink-0 text-amber-300"
-                : "shrink-0 text-slate-500"
+                : "shrink-0 text-shell-muted"
             }
           >
             {stateText}
@@ -155,8 +155,8 @@ export function ProposalSummaryCard({
           <OptionalMeta label="Proposer" value={summary.proposer} />
         )}
         {"voteEnd" in summary && (
-          <p className="mt-1 min-w-0 text-xs text-slate-500">
-            <span className="text-slate-600">Voting end ledger: </span>
+          <p className="mt-1 min-w-0 text-xs text-shell-muted">
+            <span>Voting end ledger: </span>
             <span className="font-mono">{summary.voteEnd ?? "Unavailable"}</span>
             {deadlineEstimate && (
               <>
@@ -175,7 +175,7 @@ export function ProposalSummaryCard({
             type="button"
             onClick={onRetryState}
             disabled={isRetryingState}
-            className="rounded px-2 py-1 text-xs font-medium text-amber-200 transition hover:bg-amber-900/50 disabled:opacity-50"
+            className="shell-disabled-action rounded border border-amber-600 px-2 py-1 text-xs font-medium text-amber-200 transition hover:bg-amber-900/50"
             aria-label={`Retry loading state for proposal ${proposalId}`}
           >
             {isRetryingState ? "Retrying…" : "Retry state"}

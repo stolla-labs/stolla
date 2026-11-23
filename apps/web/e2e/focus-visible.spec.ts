@@ -60,6 +60,7 @@ for (const viewport of [
     for (const path of [
       "/",
       "/community",
+      "/communities",
       "/proposals",
       "/proposals/invalid",
     ]) {

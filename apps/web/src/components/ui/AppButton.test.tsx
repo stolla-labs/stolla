@@ -9,10 +9,10 @@ import { AppLinkButton } from "./AppLinkButton";
 const tones: AppButtonTone[] = ["primary", "secondary", "danger", "success"];
 
 const toneClassExpectations: Record<AppButtonTone, string> = {
-  primary: "bg-indigo-500",
-  secondary: "border-slate-600",
+  primary: "bg-shell-primary",
+  secondary: "border-shell-border",
   danger: "border-rose-700",
-  success: "bg-emerald-600",
+  success: "bg-emerald-700",
 };
 
 describe("AppButton", () => {
@@ -91,6 +91,7 @@ describe("AppButton", () => {
     );
     const button = screen.getByRole("button", { name: "Disabled" });
     expect(button).toBeDisabled();
+    expect(button.className).toContain("shell-disabled-action");
     await userEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
   });
