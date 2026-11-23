@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { resolveCommunityResourceUrl } from "@/lib/community/schema";
+import { useState } from "react";
+import { communityLogoUrls } from "@/lib/community/ipfsGateways";
 
 const FALLBACK_STYLES = [
   "border-indigo-700 bg-indigo-950 text-indigo-300",
@@ -30,16 +30,11 @@ export function CommunityAvatar({
   logo?: string;
   size?: "card" | "detail";
 }) {
-  const source = useMemo(() => {
-    if (!logo) return null;
-    try {
-      return resolveCommunityResourceUrl(logo);
-    } catch {
-      return null;
-    }
-  }, [logo]);
-  const [failedSource, setFailedSource] = useState<string | null>(null);
-  const failed = source !== null && failedSource === source;
+  const urls = communityLogoUrls(logo);
+  const [attempt, setAttempt] = useState(0);
+  const [attemptLogo, setAttemptLogo] = useState(logo);
+  const index = attemptLogo === logo ? attempt : 0;
+  const source = urls[index];
 
   const sizeClass =
     size === "detail"
@@ -47,7 +42,7 @@ export function CommunityAvatar({
       : "h-12 w-12 text-lg";
   const sharedClass = `${sizeClass} shrink-0 rounded-xl border`;
 
-  if (source && !failed) {
+  if (source) {
     return (
       // The adjacent heading already provides the community name.
       // eslint-disable-next-line @next/next/no-img-element
@@ -56,7 +51,10 @@ export function CommunityAvatar({
         alt=""
         width={size === "detail" ? 80 : 48}
         height={size === "detail" ? 80 : 48}
-        onError={() => setFailedSource(source)}
+        onError={() => {
+          setAttemptLogo(logo);
+          setAttempt(index + 1);
+        }}
         className={`${sharedClass} bg-slate-900 object-cover`}
       />
     );

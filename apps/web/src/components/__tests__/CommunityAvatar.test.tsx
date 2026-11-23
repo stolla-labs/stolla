@@ -28,4 +28,30 @@ describe("CommunityAvatar", () => {
     expect(screen.queryByRole("presentation")).not.toBeInTheDocument();
     expect(screen.getByText("C")).toHaveAttribute("aria-hidden", "true");
   });
+
+  it("shows the primary gateway first and fails over before the placeholder", () => {
+    process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL = "https://ipfs.io/ipfs/";
+    process.env.NEXT_PUBLIC_IPFS_GATEWAY_URLS = "https://one.example/ipfs/";
+    render(
+      <CommunityAvatar
+        communityId={"ef".repeat(32)}
+        name="Guild"
+        logo="ipfs://bafy-logo/logo.png"
+      />,
+    );
+    const image = screen.getByRole("presentation");
+    expect(image).toHaveAttribute(
+      "src",
+      "https://one.example/ipfs/bafy-logo/logo.png",
+    );
+    fireEvent.error(image);
+    expect(screen.getByRole("presentation")).toHaveAttribute(
+      "src",
+      "https://ipfs.io/ipfs/bafy-logo/logo.png",
+    );
+    fireEvent.error(screen.getByRole("presentation"));
+    expect(screen.queryByRole("presentation")).not.toBeInTheDocument();
+    expect(screen.getByText("G")).toHaveAttribute("aria-hidden", "true");
+    delete process.env.NEXT_PUBLIC_IPFS_GATEWAY_URLS;
+  });
 });
