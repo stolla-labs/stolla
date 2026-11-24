@@ -9,9 +9,14 @@ import {
   multiCommunityRegistry,
 } from "@/test/fixtures/communities";
 import { createGovernorReaderFactory } from "@/test-support/stellar";
+import { MOCK_CONTRACT_OTHER } from "@/test-support/stellar/fixtures";
+import { SIGNALING_NO_CUSTODY_MESSAGE } from "@/components/proposal/ProposalActionsPanel";
 
 import { fetchVoteTotals } from "@/lib/proposal-events/votes";
 vi.mock("@/lib/proposal-events/votes", () => ({ fetchVoteTotals: vi.fn() }));
+vi.mock("@/lib/proposal-actions/fetch", () => ({
+  fetchProposalActionRecord: vi.fn().mockResolvedValue(null),
+}));
 
 describe("CommunityProposalDetailView", () => {
   it("scopes an identical proposal id to the routed community's own Governor", async () => {
@@ -189,6 +194,54 @@ describe("CommunityProposalDetailView", () => {
     expect(await screen.findByText("Active")).toBeInTheDocument();
     expect(screen.getByText("Quorum progress unavailable.")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+
+  it("shows the signaling-only action summary on the proposal detail page", async () => {
+    const getReader = createGovernorReaderFactory([
+      { contractId: atlasCommunity.record.governorContract, proposals: { "01": ProposalState.Active } },
+    ]);
+    render(<CommunityProposalDetailView
+      communityId={atlasCommunity.record.id} proposalId="01"
+      registry={multiCommunityRegistry} getReader={getReader}
+      getActionRecord={vi.fn().mockResolvedValue({ targets: [], functions: [], args: [] })}
+    />);
+
+    expect(await screen.findByText(SIGNALING_NO_CUSTODY_MESSAGE)).toBeInTheDocument();
+  });
+
+  it("decodes the proposal's action record for the routed Governor", async () => {
+    const getReader = createGovernorReaderFactory([
+      { contractId: atlasCommunity.record.governorContract, proposals: { "01": ProposalState.Active } },
+    ]);
+    const getActionRecord = vi.fn().mockResolvedValue({
+      targets: [MOCK_CONTRACT_OTHER],
+      functions: ["upgrade"],
+      args: [[]],
+    });
+    render(<CommunityProposalDetailView
+      communityId={atlasCommunity.record.id} proposalId="01"
+      registry={multiCommunityRegistry} getReader={getReader}
+      getActionRecord={getActionRecord}
+    />);
+
+    expect(await screen.findByText("Unrecognized action")).toBeInTheDocument();
+    expect(getActionRecord).toHaveBeenCalledWith(atlasCommunity.record.governorContract, "01");
+  });
+
+  it("keeps the proposal usable when the action record fails to load", async () => {
+    const getReader = createGovernorReaderFactory([
+      { contractId: atlasCommunity.record.governorContract, proposals: { "01": ProposalState.Active } },
+    ]);
+    render(<CommunityProposalDetailView
+      communityId={atlasCommunity.record.id} proposalId="01"
+      registry={multiCommunityRegistry} getReader={getReader}
+      getActionRecord={vi.fn().mockRejectedValue(new Error("Events unavailable"))}
+    />);
+
+    expect(await screen.findByText("Active")).toBeInTheDocument();
+    expect(await screen.findByText(/Events unavailable/)).toBeInTheDocument();
+    expect(screen.queryByText(SIGNALING_NO_CUSTODY_MESSAGE)).not.toBeInTheDocument();
   });
 
 });
