@@ -69,7 +69,7 @@ export function Header() {
             />
             Stolla
           </Link>
-          <nav aria-label="Primary" className="flex shrink-0 gap-1 sm:gap-2">
+          <nav aria-label="Primary" className="hidden shrink-0 gap-1 md:flex md:gap-2">
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
