@@ -182,6 +182,7 @@ a new factory and an explicit migration registry rather than rewriting IDs.
 - Add deterministic-address, duplicate-ID, authorization, pagination-limit,
   atomic rollback, and TTL-boundary tests.
 - Define governance parameter bounds and metadata size limits.
-- Add factory deployment and code-hash rotation tooling.
+- Add factory deployment and code-hash rotation tooling. Rotation tooling and
+  procedure: [factory WASM hash rotation runbook](../factory-wasm-rotation-runbook.md).
 - Update the web app to discover communities and regenerate bindings.
 - Document production multisig, keeper, upgrade, and migration runbooks.

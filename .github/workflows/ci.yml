@@ -48,6 +48,8 @@ jobs:
         run: npm run test --workspace=web
       - name: Test production health checker
         run: node --test scripts/check-production-health.test.mjs
+      - name: Test factory WASM rotation script
+        run: node --test scripts/rotate-factory-wasm.test.mjs
       - name: Build frontend
         run: npm run build --workspace=web
         env:
