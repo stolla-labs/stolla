@@ -62,6 +62,18 @@ where the Governor contract was deployed (printed by the deploy script or
 visible in a Stellar explorer). Missing, zero, negative, and non-integer values
 fail with an actionable error when proposal discovery runs.
 
+An optional global incident banner renders in the app shell when configured.
+Set `NEXT_PUBLIC_INCIDENT_BANNER` to a JSON string with `active`, `severity`
+(`info`, `warn`, or `critical`), `message`, and an optional `statusUrl`:
+
+```dotenv
+NEXT_PUBLIC_INCIDENT_BANNER={"active":true,"severity":"warn","message":"RPC is slow","statusUrl":"https://status.example.com"}
+```
+
+Leave the variable unset or set `active` to `false` to hide the banner. Users
+can dismiss it for their session; a `critical` notice reappears on the next
+visit.
+
 You can use an existing deployment or deploy your own contracts using the
 instructions below.
 
@@ -140,8 +152,6 @@ To preview or test command construction without broadcasting transactions:
 
 Restart the development server after deploying so Next.js picks up the new values.
 
-To rotate the approved NFT/Governor WASM hashes on an existing factory (dry-run by default), see the [factory WASM rotation runbook](docs/factory-wasm-rotation-runbook.md).
-
 ## Deploy the web app
 
 Import the repo on [Vercel](https://vercel.com/new).
@@ -176,7 +186,6 @@ Add these environment variables in the Vercel project settings:
 | `NEXT_PUBLIC_IPFS_GATEWAY_URL` | Public IPFS gateway ending in `/ipfs/` |
 | `PINATA_JWT` | Server-only Pinata JWT used by `/api/ipfs/pin` (required for create and mint) |
 | `NEXT_PUBLIC_ALLOW_MAINNET_WRITES` | `true` only after the testnet-to-mainnet runbook. Default off. Mainnet create, mint, and propose stay disabled until this is set. Testnet is unchanged. |
-| `NEXT_PUBLIC_PERMISSIONLESS_CREATE` | Pilot flag, default off, ignored on mainnet. `true` lets any connected wallet create a community from the web app. Set it only when the deployed factory accepts non-owner creators. See ADR-005 addendum. |
 
 After the first production deployment, Vercel will redeploy automatically when
 new commits are pushed to the production branch.
@@ -209,18 +218,6 @@ environment files, dependencies, npm caches, and the root lockfile.
 4. **Proposer** creates a proposal (needs delegated NFT voting power)
 5. **Member** casts a vote on the proposal detail page
 
-## Membership FAQ
-
-**Can a community owner revoke or burn a member's NFT?** No. The current
-`community_nft` has no owner burn/revoke function. A collection owner also
-cannot transfer a member's token without the member's authorization or an
-approval that member granted. If the member controls the token, they can move
-it to a safe wallet and delegate again. Removing an uncooperative or
-compromised member requires a separately reviewed contract upgrade or
-governance migration; the existing Governor continues to count the token until
-such a change takes effect. See [ADR-001](docs/adr/001-nft-voting-model.md#membership-removal-decision)
-for the contract decision and incident guidance.
-
 ## Project structure
 
 ```
@@ -232,8 +229,6 @@ stolla/
 ```
 
 ## Documentation
-
-- [Seven-day community launch playbook](docs/growth-launch-playbook.md) sequences creation, membership, delegation, the first proposal, alerts, and launch review for contributors.
 
 - [ADR-003: IPFS Metadata](docs/adr/003-ipfs-metadata.md) explains upload-first metadata. Stolla pins through `/api/ipfs/pin` with the server-only `PINATA_JWT`, so users never paste URIs.
 
