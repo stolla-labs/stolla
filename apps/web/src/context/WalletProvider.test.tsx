@@ -7,7 +7,15 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/Header";
-import { WalletProvider } from "./WalletProvider";
+import { membershipFromBalance } from "@/lib/community/membership";
+import { readMembershipBalance } from "@/lib/walletKitModules";
+import {
+  WalletProvider,
+  getDefaultWalletModuleIdForUi,
+  resetWalletKitForTests,
+  setWalletKitModuleFactoryForTests,
+  useWallet,
+} from "./WalletProvider";
 
 const walletKit = vi.hoisted(() => ({
   authModal: vi.fn(),
@@ -31,7 +39,17 @@ vi.mock("@creit.tech/stellar-wallets-kit/types", () => ({
 }));
 
 vi.mock("@creit.tech/stellar-wallets-kit/modules/freighter", () => ({
-  FreighterModule: class FreighterModule {},
+  FreighterModule: class FreighterModule {
+    productId = "freighter";
+    productName = "Freighter";
+  },
+}));
+
+vi.mock("@creit.tech/stellar-wallets-kit/modules/lobstr", () => ({
+  LobstrModule: class LobstrModule {
+    productId = "lobstr";
+    productName = "LOBSTR";
+  },
 }));
 
 vi.mock("next/navigation", () => ({
@@ -46,8 +64,23 @@ function renderWalletHeader() {
   );
 }
 
+function ConnectedAddressProbe() {
+  const { address } = useWallet();
+  return <span data-testid="connected-address">{address ?? ""}</span>;
+}
+
+function renderWalletWithProbe() {
+  return render(
+    <WalletProvider>
+      <Header />
+      <ConnectedAddressProbe />
+    </WalletProvider>,
+  );
+}
+
 describe("wallet connection feedback", () => {
   beforeEach(() => {
+    resetWalletKitForTests();
     walletKit.authModal.mockReset();
     walletKit.disconnect.mockReset();
     walletKit.getNetwork.mockReset();
@@ -62,6 +95,7 @@ describe("wallet connection feedback", () => {
 
   afterEach(() => {
     cleanup();
+    resetWalletKitForTests();
     vi.restoreAllMocks();
   });
 
@@ -251,5 +285,111 @@ describe("wallet connection feedback", () => {
     expect(
       await screen.findByRole("button", { name: "Disconnect" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("multi-wallet connect → balance smoke matrix", () => {
+  beforeEach(() => {
+    resetWalletKitForTests();
+    walletKit.authModal.mockReset();
+    walletKit.disconnect.mockReset();
+    walletKit.getNetwork.mockReset();
+    walletKit.getNetwork.mockResolvedValue({
+      network: "testnet",
+      networkPassphrase: "Test SDF Network ; September 2015",
+    });
+    walletKit.init.mockReset();
+    walletKit.on.mockClear();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    cleanup();
+    resetWalletKitForTests();
+    vi.restoreAllMocks();
+  });
+
+  it("keeps Freighter as the default UI module id", () => {
+    expect(getDefaultWalletModuleIdForUi()).toBe("freighter");
+  });
+
+  it("runs connect → NFT balance for Freighter then Lobstr without crashing", async () => {
+    const { FreighterModule } = await import(
+      "@creit.tech/stellar-wallets-kit/modules/freighter"
+    );
+    const { LobstrModule } = await import(
+      "@creit.tech/stellar-wallets-kit/modules/lobstr"
+    );
+
+    const balanceByAccount: Record<string, number> = {
+      GFREIGHTER: 1,
+      GLOBSTR: 3,
+    };
+
+    setWalletKitModuleFactoryForTests(() => [new FreighterModule()]);
+    walletKit.authModal.mockResolvedValue({ address: "GFREIGHTER" });
+    renderWalletWithProbe();
+
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
+    expect(
+      await screen.findByRole("button", { name: "Disconnect" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("connected-address").textContent).toBe(
+      "GFREIGHTER",
+    );
+
+    const freighterInit = walletKit.init.mock.calls.at(-1)?.[0] as {
+      modules: Array<{ productId: string }>;
+    };
+    expect(freighterInit.modules.map((module) => module.productId)).toEqual([
+      "freighter",
+    ]);
+
+    const freighterBalance = await readMembershipBalance(
+      "GFREIGHTER",
+      async (account) => balanceByAccount[account] ?? 0,
+    );
+    expect(membershipFromBalance(freighterBalance)).toBe("member");
+
+    cleanup();
+    walletKit.init.mockClear();
+    walletKit.authModal.mockReset();
+    walletKit.authModal.mockResolvedValue({ address: "GLOBSTR" });
+    setWalletKitModuleFactoryForTests(() => [new LobstrModule()]);
+
+    expect(() => renderWalletWithProbe()).not.toThrow();
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
+    expect(
+      await screen.findByRole("button", { name: "Disconnect" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("connected-address").textContent).toBe("GLOBSTR");
+
+    const lobstrInit = walletKit.init.mock.calls.at(-1)?.[0] as {
+      modules: Array<{ productId: string }>;
+    };
+    expect(lobstrInit.modules.map((module) => module.productId)).toEqual([
+      "lobstr",
+    ]);
+
+    const lobstrBalance = await readMembershipBalance(
+      "GLOBSTR",
+      async (account) => balanceByAccount[account] ?? 0,
+    );
+    expect(membershipFromBalance(lobstrBalance)).toBe("member");
+  });
+
+  it("keeps Freighter unavailable copy after a Lobstr module smoke switch", async () => {
+    const { LobstrModule } = await import(
+      "@creit.tech/stellar-wallets-kit/modules/lobstr"
+    );
+    setWalletKitModuleFactoryForTests(() => [new LobstrModule()]);
+    walletKit.authModal.mockRejectedValue(new Error("Freighter is not connected"));
+    renderWalletHeader();
+
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Freighter is unavailable. Install or unlock the wallet, then try again.",
+    );
   });
 });
