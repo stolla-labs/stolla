@@ -1,9 +1,9 @@
 "use client";
 
 import { CommunityAvatar } from "@/components/CommunityAvatar";
-import { CommunityActivityBadge } from "@/components/community/CommunityActivityBadge";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { useCommunityMembership } from "@/hooks/useCommunityMembership";
 import { useCommunityWatchlist } from "@/hooks/useCommunityWatchlist";
 import {
@@ -42,7 +42,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
             <h2 className="break-words text-lg font-semibold text-slate-100 [overflow-wrap:anywhere]">
               {name}
             </h2>
-            <CommunityActivityBadge activity={community.activity} />
+            <VerifiedBadge communityId={record.id} />
             {membershipText &&
             (membership === "member" ||
               membership === "non_member" ||
@@ -57,7 +57,7 @@ export function CommunityCard({ community }: { community: CommunityView }) {
             ) : null}
           </div>
           <p
-            className="mt-0.5 break-all font-mono text-xs text-shell-muted"
+            className="mt-0.5 break-all font-mono text-xs text-slate-500"
             title={record.id}
           >
             {truncateMiddle(record.id, 10, 8)}
@@ -83,28 +83,28 @@ export function CommunityCard({ community }: { community: CommunityView }) {
 
       <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-800 pt-4 text-sm">
         <div className="min-w-0">
-          <dt className="text-xs text-shell-muted">Proposal threshold</dt>
+          <dt className="text-xs text-slate-500">Proposal threshold</dt>
           <dd className="mt-1 break-words text-slate-200">
             {governance.proposalThreshold ?? "Unavailable"}{" "}
             {governance.proposalThreshold ? "NFT votes" : ""}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-shell-muted">Quorum</dt>
+          <dt className="text-xs text-slate-500">Quorum</dt>
           <dd className="mt-1 break-words text-slate-200">
             {governance.quorum ?? "Unavailable"}{" "}
             {governance.quorum ? "NFT votes" : ""}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-shell-muted">Voting delay</dt>
+          <dt className="text-xs text-slate-500">Voting delay</dt>
           <dd className="mt-1 break-words text-slate-200">
             {governance.votingDelay ?? "Unavailable"}{" "}
             {governance.votingDelay !== null ? "ledgers" : ""}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-xs text-shell-muted">Voting period</dt>
+          <dt className="text-xs text-slate-500">Voting period</dt>
           <dd className="mt-1 break-words text-slate-200">
             {governance.votingPeriod ?? "Unavailable"}{" "}
             {governance.votingPeriod !== null ? "ledgers" : ""}
