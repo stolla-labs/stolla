@@ -17,6 +17,15 @@ import type { SignTransaction } from "@stellar/stellar-sdk/contract";
 import { getE2EBridge } from "@/lib/e2eMock";
 import { activeNetwork } from "@/lib/stellar";
 import { describeNetwork } from "@/lib/network";
+import { DEFAULT_WALLET_MODULE_ID } from "@/lib/walletKitModules";
+
+/** Minimal shape shared by Freighter, Lobstr, and kit mocks. */
+export type WalletKitModuleLike = {
+  productId?: string;
+  productName?: string;
+};
+
+type WalletKitModuleFactory = () => WalletKitModuleLike[];
 
 export type WalletConnectionError = {
   code: "request-rejected" | "wallet-unavailable" | "connection-failed";
@@ -41,7 +50,28 @@ export function useOptionalWallet(): WalletContextValue | null {
 }
 
 let kitInitialized = false;
+let walletKitModuleFactory: WalletKitModuleFactory = () => [
+  new FreighterModule(),
+];
 const MODAL_DISMISSED_MESSAGE = "The user closed the modal.";
+
+/** Test-only: rebuild kit modules on the next ensureKit call. */
+export function setWalletKitModuleFactoryForTests(
+  factory: WalletKitModuleFactory,
+): void {
+  walletKitModuleFactory = factory;
+  kitInitialized = false;
+}
+
+/** Test-only: restore Freighter-only production defaults. */
+export function resetWalletKitForTests(): void {
+  walletKitModuleFactory = () => [new FreighterModule()];
+  kitInitialized = false;
+}
+
+export function getDefaultWalletModuleIdForUi(): string {
+  return DEFAULT_WALLET_MODULE_ID;
+}
 
 function walletErrorDetails(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -115,7 +145,7 @@ export function toWalletConnectionError(
 function ensureKit() {
   if (!kitInitialized && typeof window !== "undefined") {
     StellarWalletsKit.init({
-      modules: [new FreighterModule()],
+      modules: walletKitModuleFactory(),
       network:
         activeNetwork.id === "mainnet" ? Networks.PUBLIC : Networks.TESTNET,
     });
