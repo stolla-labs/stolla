@@ -1,7 +1,7 @@
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { IncidentBanner } from "@/components/IncidentBanner";
 import { WalletProvider } from "@/context/WalletProvider";
-import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +12,12 @@ export default function AppLayout({
 }>) {
   return (
     <WalletProvider>
+      <IncidentBanner />
       <Header />
-      <main id="main-content" tabIndex={-1} className="flex-1 pb-24 focus:outline-none md:pb-0">
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         {children}
       </main>
       <Footer />
-      <MobileBottomNav />
     </WalletProvider>
   );
 }
