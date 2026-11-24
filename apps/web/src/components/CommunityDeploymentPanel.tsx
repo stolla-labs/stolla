@@ -26,7 +26,7 @@ import type {
   GovernanceDraft,
 } from "@/lib/community/schema";
 import { getE2EBridge } from "@/lib/e2eMock";
-import { config } from "@/lib/stellar";
+import { activeCapabilities, config } from "@/lib/stellar";
 import { buildStellarExplorerTxUrl } from "@/lib/stellarExplorer";
 import type { TransactionLifecycleStage } from "@/lib/transactionLifecycle";
 import { emitAnalytics } from "@/lib/analytics";
@@ -42,6 +42,12 @@ type Props = {
   network: "testnet" | "mainnet";
   factoryId: string;
   confirmed: boolean;
+  /**
+   * When true the factory owner check is skipped because the pilot flag says
+   * the deployed factory accepts any creator. Defaults to the
+   * `permissionlessCreate` capability.
+   */
+  permissionlessCreate?: boolean;
 };
 
 export type FactoryAuthorizationStatus =
@@ -92,6 +98,7 @@ export function CommunityDeploymentPanel({
   network,
   factoryId,
   confirmed,
+  permissionlessCreate = activeCapabilities.permissionlessCreate.available,
 }: Props) {
   const {
     address,
@@ -198,15 +205,18 @@ export function CommunityDeploymentPanel({
 
   const authorization: FactoryAuthorizationStatus = useMemo(() => {
     if (staticAuthorization !== null) return staticAuthorization;
+    if (permissionlessCreate) return "ready";
     if (ownerRead === null) return "checking";
     if (ownerRead.status === "ok") {
       return ownerRead.owner === address ? "ready" : "unauthorized";
     }
     return "read-failed";
-  }, [address, ownerRead, staticAuthorization]);
+  }, [address, ownerRead, permissionlessCreate, staticAuthorization]);
 
   useEffect(() => {
-    if (transactionHash || staticAuthorization !== null) return;
+    if (transactionHash || staticAuthorization !== null || permissionlessCreate) {
+      return;
+    }
     // Sequence the reads instead of blocking on an in-flight flag: React's
     // Strict Mode mounts, unmounts and remounts effects in development, and a
     // "one read at a time" guard would cancel the first read and never start
@@ -227,6 +237,7 @@ export function CommunityDeploymentPanel({
     address,
     authorizationCheck,
     factoryId,
+    permissionlessCreate,
     staticAuthorization,
     transactionHash,
   ]);
