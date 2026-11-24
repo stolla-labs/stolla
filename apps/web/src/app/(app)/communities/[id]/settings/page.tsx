@@ -14,6 +14,7 @@ import {
   retainSettingsDraft,
   writeMetadataOverlay,
 } from "@/lib/community/settings";
+import { writeSeasonOverlay } from "@/lib/community/season";
 import type { Community } from "@/lib/community/types";
 import { createIpfsPinClient } from "@/lib/ipfs/pin";
 
@@ -34,6 +35,9 @@ export default function CommunitySettingsPage() {
   const [community, setCommunity] = useState<Community | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [seasonName, setSeasonName] = useState("");
+  const [seasonStart, setSeasonStart] = useState("");
+  const [seasonEnd, setSeasonEnd] = useState("");
   const [hashPreview, setHashPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -80,6 +84,14 @@ export default function CommunitySettingsPage() {
         metadataUri: published.payload.metadataUri,
         metadataHash: published.payload.metadataHash,
       });
+      if (seasonName && seasonStart && seasonEnd) {
+        writeSeasonOverlay(community.record.id, {
+          name: seasonName,
+          startDate: seasonStart,
+          endDate: seasonEnd,
+          createdAt: new Date().toISOString(),
+        });
+      }
       setHashPreview(published.payload.metadataHash);
       setSaved(true);
     } catch (cause) {
@@ -145,6 +157,49 @@ export default function CommunitySettingsPage() {
         rows={4}
         className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-slate-100"
       />
+
+      <h2 className="mt-8 text-sm font-semibold text-slate-200">Governance season</h2>
+      <p className="mt-1 text-xs text-slate-400">
+        Optionally define a season name and date range. The community page shows a
+        progress banner to guests while the season is active.
+      </p>
+      <label className="mt-4 block text-sm text-slate-300" htmlFor="settings-season-name">
+        Season name
+      </label>
+      <input
+        id="settings-season-name"
+        value={seasonName}
+        onChange={(event) => setSeasonName(event.target.value)}
+        placeholder="Season 1"
+        className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-slate-100"
+      />
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm text-slate-300" htmlFor="settings-season-start">
+            Start date
+          </label>
+          <input
+            id="settings-season-start"
+            type="date"
+            value={seasonStart}
+            onChange={(event) => setSeasonStart(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-slate-100"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-slate-300" htmlFor="settings-season-end">
+            End date
+          </label>
+          <input
+            id="settings-season-end"
+            type="date"
+            value={seasonEnd}
+            onChange={(event) => setSeasonEnd(event.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-700 bg-[#0b0f19] px-3 py-2 text-slate-100"
+          />
+        </div>
+      </div>
+
       {hashPreview ? (
         <p className="mt-3 break-all font-mono text-xs text-slate-400">Hash preview: {hashPreview}</p>
       ) : null}
