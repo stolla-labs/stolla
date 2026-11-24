@@ -7,6 +7,7 @@ import { CommunityAvatar } from "@/components/CommunityAvatar";
 import { CommunityInviteBanner } from "@/components/community/CommunityInviteBanner";
 import { CommunityInviteLinkBuilder } from "@/components/community/CommunityInviteLinkBuilder";
 import { CommunityOwnershipSettings } from "@/components/community/CommunityOwnershipSettings";
+import { PriceOracleDebugPanel } from "@/components/community/PriceOracleDebugPanel";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import { LiveStatus } from "@/components/ui/LiveStatus";
@@ -505,6 +506,7 @@ export default function CommunityDetailPage() {
       </section>
 
       <CommunityOwnershipSettings record={record} refresh={load} />
+      <PriceOracleDebugPanel />
     </div>
   );
 }
