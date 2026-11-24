@@ -21,6 +21,11 @@ import {
 import type { TimelockActionName } from "@/lib/timelock/proposalExecution";
 import { useTimelockWindow } from "@/lib/timelock/useTimelockWindow";
 import { ProposalTimelockActions } from "./ProposalTimelockActions";
+import { ProposalActionsPanel } from "@/components/proposal/ProposalActionsPanel";
+import {
+  useProposalActionRecord,
+  type ProposalActionRecordLoader,
+} from "@/lib/proposal-actions/useProposalActionRecord";
 import { QuorumProgress } from "@/components/QuorumProgress";
 import { fmt } from "@/lib/voteDisplay";
 
@@ -48,6 +53,10 @@ export type CommunityProposalDetailViewProps = {
   signTransaction?: SignTransaction;
   correctNetwork?: boolean;
   onTimelockAction?: (action: TimelockActionName) => Promise<TimelockCallResult>;
+  /** Override how the proposal's action record is loaded. */
+  getActionRecord?: ProposalActionRecordLoader;
+  /** The community's Treasury contract, used to verify payment targets. */
+  treasuryContractId?: string | null;
 };
 
 export function CommunityProposalDetailView({
@@ -62,6 +71,8 @@ export function CommunityProposalDetailView({
   signTransaction,
   correctNetwork,
   onTimelockAction,
+  getActionRecord,
+  treasuryContractId,
 }: CommunityProposalDetailViewProps) {
   const resolution = useRegistryCommunity(communityId, registry);
 
@@ -95,6 +106,32 @@ export function CommunityProposalDetailView({
       signTransaction={signTransaction}
       correctNetwork={correctNetwork}
       onTimelockAction={onTimelockAction}
+      getActionRecord={getActionRecord}
+      treasuryContractId={treasuryContractId}
+    />
+  );
+}
+
+function CommunityProposalActions({
+  governorContractId,
+  proposalId,
+  getActionRecord,
+  treasuryContractId,
+}: {
+  governorContractId: string;
+  proposalId: string;
+  getActionRecord?: ProposalActionRecordLoader;
+  treasuryContractId?: string | null;
+}) {
+  const resolution = useProposalActionRecord(
+    governorContractId,
+    proposalId,
+    getActionRecord,
+  );
+  return (
+    <ProposalActionsPanel
+      resolution={resolution}
+      context={{ treasuryContractId }}
     />
   );
 }
@@ -110,6 +147,8 @@ function CommunityProposalDetailPanel({
   signTransaction,
   correctNetwork,
   onTimelockAction,
+  getActionRecord,
+  treasuryContractId,
 }: {
   community: Community;
   proposalId: string;
@@ -121,6 +160,8 @@ function CommunityProposalDetailPanel({
   signTransaction?: SignTransaction;
   correctNetwork?: boolean;
   onTimelockAction?: (action: TimelockActionName) => Promise<TimelockCallResult>;
+  getActionRecord?: ProposalActionRecordLoader;
+  treasuryContractId?: string | null;
 }) {
   const resolution = useCommunityProposal(
     community.record.governorContract,
@@ -204,6 +245,12 @@ function CommunityProposalDetailPanel({
               </dd>
             </div>
           </dl>
+          <CommunityProposalActions
+            governorContractId={community.record.governorContract}
+            proposalId={proposalId}
+            getActionRecord={getActionRecord}
+            treasuryContractId={treasuryContractId}
+          />
           <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
             <h2 className="font-semibold text-slate-100">Votes</h2>
             {resolution.votes && !resolution.votes.error ? (
