@@ -47,6 +47,7 @@ import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
 import { emitAnalytics } from "@/lib/analytics";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
+import { DelegateToOtherPanel } from "@/components/community/DelegateToOtherPanel";
 import {
   loadCommunityData,
   runCommunityRefresh,
@@ -383,12 +384,13 @@ export default function CommunityPage() {
     await client.mint({ to, token_uri: published.tokenUri });
   }
 
-  async function handleDelegate() {
-    if (!address) {
+  /** Delegates to `delegatee` (self by default). Resolves true on success. */
+  async function handleDelegate(delegatee: string | null = address): Promise<boolean> {
+    if (!address || !delegatee) {
       setStatus({ message: "Connect your wallet first.", tone: "error" });
-      return;
+      return false;
     }
-    if (delegationLifecycle.isInFlight) return;
+    if (delegationLifecycle.isInFlight) return false;
 
     setStatus(null);
     delegationLifecycle.reset();
@@ -401,17 +403,21 @@ export default function CommunityPage() {
       });
       return client.delegate({
         account: address,
-        delegatee: address,
+        delegatee,
       });
     });
 
     if (result.ok) {
       setStatus({
-        message: "Delegated voting power to yourself.",
+        message:
+          delegatee === address
+            ? "Delegated voting power to yourself."
+            : "Delegated voting power to the selected address.",
         tone: "routine",
       });
       await refresh();
     }
+    return result.ok;
   }
 
   return (
@@ -555,6 +561,15 @@ export default function CommunityPage() {
                   ? "Delegation in progress…"
                   : "Delegate to self"}
               </AppButton>
+              <DelegateToOtherPanel
+                account={address}
+                currentDelegate={delegate}
+                balance={balance}
+                onDelegate={handleDelegate}
+                disabled={
+                  mintLifecycle.isInFlight || delegationLifecycle.isInFlight
+                }
+              />
               <TransactionLifecycleStatus
                 stage={delegationLifecycle.stage}
                 operationLabel="Delegate"

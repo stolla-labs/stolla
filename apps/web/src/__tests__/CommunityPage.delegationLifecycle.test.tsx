@@ -19,7 +19,8 @@ vi.mock("@/lib/contracts", () => ({
   createReadOnlyNftClient: mocks.createReadOnlyNftClient,
 }));
 
-vi.mock("@/lib/stellar", () => ({
+vi.mock("@/lib/stellar", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/stellar")>()),
   contractIds: { nft: "CNFT", governor: "CGOV" },
 }));
 
@@ -48,6 +49,9 @@ describe("CommunityPage delegation lifecycle", () => {
       address: "GWALLET",
       signTransaction: vi.fn(),
       isConnecting: false,
+    });
+    mocks.createReadOnlyNftClient.mockReturnValue({
+      get_owner: vi.fn().mockResolvedValue({ result: null }),
     });
     mocks.runCommunityRefresh.mockImplementation(
       async (
@@ -236,5 +240,70 @@ describe("CommunityPage delegation lifecycle", () => {
         .length,
     ).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("Delegate confirmed")).not.toBeInTheDocument();
+  });
+
+  describe("delegating to another address", () => {
+    const DELEGATEE = "GAWDU43EJGJQY6JTUJVLENDMEAFWCCKWJFC4562RVWH6ZH2YM6ZYUUIB";
+
+    function reviewDelegatee(value: string) {
+      fireEvent.change(screen.getByLabelText("Delegate address"), {
+        target: { value },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Review delegation" }));
+    }
+
+    it("does not open the wallet for an invalid address", async () => {
+      mocks.createNftClient.mockReturnValue({ delegate: vi.fn() });
+
+      render(<CommunityPage />);
+      await screen.findByLabelText("Delegate address");
+      reviewDelegatee("GNOTVALID");
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        /valid Stellar G address/,
+      );
+      expect(mocks.createNftClient).not.toHaveBeenCalled();
+    });
+
+    it("rejects an address that fails validation before the wallet opens", async () => {
+      mocks.createNftClient.mockReturnValue({ delegate: vi.fn() });
+
+      render(<CommunityPage />);
+      await screen.findByLabelText("Delegate address");
+      reviewDelegatee("");
+
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+      expect(mocks.createNftClient).not.toHaveBeenCalled();
+    });
+
+    it("delegates to the confirmed address and refreshes community data", async () => {
+      const delegate = vi.fn().mockResolvedValue({
+        sign: async () => undefined,
+        send: async () => ({ status: "SUCCESS", hash: "abc" }),
+      });
+      mocks.createNftClient.mockReturnValue({ delegate });
+
+      render(<CommunityPage />);
+      await screen.findByLabelText("Delegate address");
+      reviewDelegatee(DELEGATEE);
+
+      expect(mocks.createNftClient).not.toHaveBeenCalled();
+      const refreshCallsBefore = mocks.runCommunityRefresh.mock.calls.length;
+      fireEvent.click(
+        screen.getByRole("button", { name: "Confirm delegation" }),
+      );
+
+      await waitFor(() => {
+        expect(delegate).toHaveBeenCalledWith({
+          account: "GWALLET",
+          delegatee: DELEGATEE,
+        });
+      });
+      await waitFor(() => {
+        expect(mocks.runCommunityRefresh.mock.calls.length).toBeGreaterThan(
+          refreshCallsBefore,
+        );
+      });
+    });
   });
 });
