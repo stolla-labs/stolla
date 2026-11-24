@@ -62,6 +62,18 @@ where the Governor contract was deployed (printed by the deploy script or
 visible in a Stellar explorer). Missing, zero, negative, and non-integer values
 fail with an actionable error when proposal discovery runs.
 
+An optional global incident banner renders in the app shell when configured.
+Set `NEXT_PUBLIC_INCIDENT_BANNER` to a JSON string with `active`, `severity`
+(`info`, `warn`, or `critical`), `message`, and an optional `statusUrl`:
+
+```dotenv
+NEXT_PUBLIC_INCIDENT_BANNER={"active":true,"severity":"warn","message":"RPC is slow","statusUrl":"https://status.example.com"}
+```
+
+Leave the variable unset or set `active` to `false` to hide the banner. Users
+can dismiss it for their session; a `critical` notice reappears on the next
+visit.
+
 You can use an existing deployment or deploy your own contracts using the
 instructions below.
 
@@ -205,18 +217,6 @@ environment files, dependencies, npm caches, and the root lockfile.
 3. **Member** delegates voting power to themselves
 4. **Proposer** creates a proposal (needs delegated NFT voting power)
 5. **Member** casts a vote on the proposal detail page
-
-## Membership FAQ
-
-**Can a community owner revoke or burn a member's NFT?** No. The current
-`community_nft` has no owner burn/revoke function. A collection owner also
-cannot transfer a member's token without the member's authorization or an
-approval that member granted. If the member controls the token, they can move
-it to a safe wallet and delegate again. Removing an uncooperative or
-compromised member requires a separately reviewed contract upgrade or
-governance migration; the existing Governor continues to count the token until
-such a change takes effect. See [ADR-001](docs/adr/001-nft-voting-model.md#membership-removal-decision)
-for the contract decision and incident guidance.
 
 ## Project structure
 
