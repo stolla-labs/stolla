@@ -243,6 +243,58 @@ describe("CommunityDeploymentPanel", () => {
     expect(approveButton()).not.toBeInTheDocument();
   });
 
+  it("keeps a non-owner wallet blocked when permissionlessCreate is off", async () => {
+    const deployment = adapter();
+    mocks.useWallet.mockReturnValue({
+      address: MOCK_ACCOUNT_BOB,
+      signTransaction: vi.fn(),
+      walletNetwork: "testnet",
+      walletNetworkPassphrase: "Test SDF Network ; September 2015",
+    });
+    mocks.getE2EBridge.mockReturnValue({ deployment });
+    render(<CommunityDeploymentPanel {...props} permissionlessCreate={false} />);
+
+    await screen.findByText(/Only the CommunityFactory owner can create communities/);
+    expect(deployment.readFactoryOwner).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a non-owner wallet create without an owner read when permissionlessCreate is on", async () => {
+    const deployment = adapter();
+    mocks.useWallet.mockReturnValue({
+      address: MOCK_ACCOUNT_BOB,
+      signTransaction: vi.fn(),
+      walletNetwork: "testnet",
+      walletNetworkPassphrase: "Test SDF Network ; September 2015",
+    });
+    mocks.getE2EBridge.mockReturnValue({ deployment });
+    render(<CommunityDeploymentPanel {...props} permissionlessCreate />);
+
+    await awaitReady();
+    expect(
+      screen.queryByText(/Only the CommunityFactory owner can create communities/),
+    ).not.toBeInTheDocument();
+    expect(deployment.readFactoryOwner).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Simulate deployment" }));
+    await waitFor(() => expect(deployment.simulate).toHaveBeenCalledTimes(1));
+  });
+
+  it("still requires a connected wallet when permissionlessCreate is on", async () => {
+    mocks.useWallet.mockReturnValue({
+      address: null,
+      signTransaction: vi.fn(),
+      walletNetwork: null,
+      walletNetworkPassphrase: null,
+    });
+    render(<CommunityDeploymentPanel {...props} permissionlessCreate />);
+
+    expect(
+      await screen.findByText(/Connect your wallet to check whether this account can create a community/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Simulate deployment" }),
+    ).toBeDisabled();
+  });
+
   it("reports a disconnected wallet as disconnected and holds actions", async () => {
     mocks.useWallet.mockReturnValue({
       address: null,

@@ -175,6 +175,56 @@ a new factory and an explicit migration registry rather than rewriting IDs.
 - The registry enables public multi-community discovery without an indexer,
   while long-history event aggregation may still require one.
 
+## Addendum: permissionless creation pilot flag
+
+### Status
+
+Accepted. Default off. Mainnet is out of scope.
+
+### Decision
+
+The web app gets a `permissionlessCreate` capability, set by
+`NEXT_PUBLIC_PERMISSIONLESS_CREATE=true`. It is a UI switch only. It does not
+change factory authorization on-chain. The initial creator policy above
+(`creator == FactoryOwner`) stays the default.
+
+- **Off (default):** the create flow reads the factory owner and blocks any
+  other wallet with the existing owner-only message. The app does not mention
+  permissionless creation.
+- **On:** the create flow skips the owner check, so any connected wallet on the
+  expected network can simulate and submit `create_community`. The factory is
+  still the authority. If it rejects the creator, the simulation fails and the
+  error is shown before any signature is requested.
+- **Mainnet:** the flag is ignored. Enabling it there needs a new decision.
+
+### Risks and controls
+
+| Risk | Control for the pilot |
+|---|---|
+| Registry spam and wasted ledger resources | Testnet only. Creator pays the fees. Pause creation with the factory owner's `pause` if abused. |
+| Open vs allowlist | Open creation is the only mode the flag models. An allowlist is a creator policy contract on the factory and needs no web flag. Use it if a pilot needs named creators only. |
+| Rate limits | None in the app. Any limit must live in the factory policy, because the UI can be bypassed. |
+| Impersonation of community names | `community_id` binds the creator address, so duplicates by other creators get distinct IDs. Discovery UIs must show the creator. |
+| Flag set while the factory is still owner-only | Safe. Simulation fails with the factory's authorization error and nothing is signed. |
+
+### Enabling for a pilot
+
+1. Confirm the testnet factory accepts non-owner creators (a reviewed creator
+   policy upgrade, per this ADR). Simulate `create_community` from a
+   non-owner account to check.
+2. Set `NEXT_PUBLIC_PERMISSIONLESS_CREATE=true` in the web deployment
+   environment and redeploy. `NEXT_PUBLIC_*` values are read at build time.
+3. Check that a non-owner wallet can reach the simulate step on the create page.
+4. To roll back, remove the variable and redeploy.
+
+### Review checklist
+
+- [ ] Flag is unset by default in `.env.example` and the README table.
+- [ ] Flag is ignored when `NEXT_PUBLIC_STELLAR_NETWORK=mainnet`.
+- [ ] With the flag off, a non-owner wallet sees the owner-only message.
+- [ ] With the flag on, the owner read is skipped and a non-owner can simulate.
+- [ ] The factory policy, not the web flag, enforces any rate limit or allowlist.
+
 ## Follow-up work
 
 - Implement the factory, stable errors, events, storage keys, and generated

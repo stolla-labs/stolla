@@ -152,6 +152,11 @@ export type NetworkCapabilities = {
   legacyContracts: CapabilityAvailability & { nftContractId: string; governorContractId: string };
   proposalDiscovery: CapabilityAvailability & { governorContractId: string; startLedger: number | null };
   privilegedWrites: CapabilityAvailability;
+  /**
+   * Pilot-only flag (ADR-005 addendum). Not a readiness gate: it is off by
+   * default and intentionally absent from `NetworkCapabilityName`.
+   */
+  permissionlessCreate: CapabilityAvailability;
 };
 
 type CapabilityEnvironment = Record<string, string | undefined>;
@@ -176,6 +181,21 @@ export function mainnetWritesAllowed(
   const flag =
     environment.NEXT_PUBLIC_ALLOW_MAINNET_WRITES ?? environment.ALLOW_MAINNET_WRITES;
   return flag?.trim().toLowerCase() === "true";
+}
+
+/**
+ * Permissionless community creation is a pilot flag. It is ignored on mainnet
+ * and never enables anything on-chain: the factory must already accept
+ * non-owner creators (ADR-005 addendum).
+ */
+export function permissionlessCreateEnabled(
+  id: ActiveNetworkId,
+  environment: CapabilityEnvironment = process.env,
+): boolean {
+  if (id === "mainnet") return false;
+  return (
+    environment.NEXT_PUBLIC_PERMISSIONLESS_CREATE?.trim().toLowerCase() === "true"
+  );
 }
 
 export function resolveActiveNetworkId(value?: string): ActiveNetworkId {
@@ -236,6 +256,14 @@ export function buildNetworkCapabilities(
       : unavailable(
           "Mainnet writes are off. You can still browse the registry and proposals. See docs/testnet-to-mainnet-runbook.md.",
           "NEXT_PUBLIC_ALLOW_MAINNET_WRITES",
+        ),
+    permissionlessCreate: permissionlessCreateEnabled(id, environment)
+      ? { available: true as const }
+      : unavailable(
+          id === "mainnet"
+            ? "Permissionless community creation is not available on mainnet."
+            : "Permissionless community creation is off. Only the CommunityFactory owner can create communities.",
+          "NEXT_PUBLIC_PERMISSIONLESS_CREATE",
         ),
   };
 }

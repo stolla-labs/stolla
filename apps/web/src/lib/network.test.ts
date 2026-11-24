@@ -165,6 +165,52 @@ describe("network capability matrix", () => {
   });
 });
 
+describe("permissionlessCreate capability", () => {
+  it("defaults to off on every network", () => {
+    for (const id of ["testnet", "mainnet"] as const) {
+      const capabilities = buildNetworkCapabilities(id, {});
+      expect(capabilities.permissionlessCreate.available).toBe(false);
+      if (!capabilities.permissionlessCreate.available) {
+        expect(capabilities.permissionlessCreate.requiredEnvironment).toEqual([
+          "NEXT_PUBLIC_PERMISSIONLESS_CREATE",
+        ]);
+      }
+    }
+  });
+
+  it("turns on for testnet only when the flag is exactly true", () => {
+    const on = (value: string) =>
+      buildNetworkCapabilities("testnet", {
+        NEXT_PUBLIC_PERMISSIONLESS_CREATE: value,
+      }).permissionlessCreate.available;
+    expect(on("true")).toBe(true);
+    expect(on(" TRUE ")).toBe(true);
+    expect(on("1")).toBe(false);
+    expect(on("")).toBe(false);
+  });
+
+  it("stays off on mainnet even when the flag is set", () => {
+    const capabilities = buildNetworkCapabilities("mainnet", {
+      NEXT_PUBLIC_PERMISSIONLESS_CREATE: "true",
+      NEXT_PUBLIC_ALLOW_MAINNET_WRITES: "true",
+    });
+    expect(capabilities.permissionlessCreate.available).toBe(false);
+    if (!capabilities.permissionlessCreate.available) {
+      expect(capabilities.permissionlessCreate.reason).toContain("mainnet");
+    }
+  });
+
+  it("is not a readiness gate", () => {
+    const capabilities = createNetworkCapabilitiesFixture("testnet");
+    expect(listUnavailableCapabilities(capabilities)).toEqual([]);
+    expect(
+      buildHealthGates(capabilities).some(
+        (gate) => (gate.name as string) === "permissionlessCreate",
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("buildHealthGates", () => {
   it("reports every gate available with no reason when the environment is complete", () => {
     const gates = buildHealthGates(createNetworkCapabilitiesFixture("testnet"));
