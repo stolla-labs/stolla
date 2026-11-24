@@ -3,11 +3,13 @@
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
 import type { Community, CommunityRegistry } from "@/lib/community/types";
 import type { GuardianAdapter } from "@/lib/community/guardian";
+import { readSeasonOverlay } from "@/lib/community/season";
 import { useRegistryCommunity } from "@/lib/community/useRegistryCommunity";
 import { CommunityActivityControl } from "./CommunityActivityControl";
 import { CommunityBreadcrumbs } from "./CommunityBreadcrumbs";
 import { CommunityNotFound } from "./CommunityNotFound";
 import { GuardianControls } from "./GuardianControls";
+import { SeasonBanner } from "./SeasonBanner";
 
 export type CommunityDetailViewProps = {
   communityId: string;
@@ -44,6 +46,8 @@ function CommunityDetailPanel({ community, guardianAdapter }: { community: Commu
     community.metadata?.name ??
     `Community ${community.record.id.slice(0, 8)}`;
 
+  const season = readSeasonOverlay(community.record.id);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <CommunityBreadcrumbs
@@ -53,6 +57,14 @@ function CommunityDetailPanel({ community, guardianAdapter }: { community: Commu
 
       <h1 className="mt-4 text-2xl font-bold text-slate-100">{displayName}</h1>
       <CommunityActivityControl community={community} />
+
+      {season ? (
+        <SeasonBanner
+          season={season}
+          isOwner={false}
+          proposalsHref={`/community/${community.record.id}/proposals`}
+        />
+      ) : null}
 
       {community.record.timelockContract && (
         <GuardianControls timelockId={community.record.timelockContract} adapter={guardianAdapter} />
