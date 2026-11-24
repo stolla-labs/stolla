@@ -1,19 +1,21 @@
-# Passive: not run on push/PR. Re-enable triggers when CI is green again.
-# Manual run: Actions → CI → Run workflow
 name: CI
 
 on:
+  push:
+    branches: [main, master]
+  pull_request:
   workflow_dispatch:
 
 jobs:
   contracts:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Install Stellar CLI
-        run: cargo install --locked stellar-cli
+        with:
+          targets: wasm32v1-none,wasm32-unknown-unknown
+      # Official pinned prebuilt binary — avoids cargo install / dbus-1 on Ubuntu runners.
+      - uses: stellar/stellar-cli@v30.0.1
       - name: Test contracts
         run: cd contracts && cargo test
       - name: Build contracts
@@ -21,7 +23,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -58,6 +59,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    # Advisory while browser-level E2E flake hardening is tracked in #265 and #395.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +73,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx --workspace=web playwright install --with-deps chromium
       - name: Run multi-community browsing flow
-        run: npm run test:e2e --workspace=web
+        run: npm run test:e2e:ci --workspace=web
         env:
           CI: true
           NEXT_PUBLIC_STELLAR_NETWORK: testnet

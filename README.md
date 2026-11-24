@@ -201,6 +201,52 @@ manifest/cache errors, then restart the development server. The command only
 removes `apps/web/.next` and `apps/web/.turbo`; it preserves source and
 environment files, dependencies, npm caches, and the root lockfile.
 
+## Continuous Integration (CI)
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on `push` to `main`/`master`,
+on `pull_request`, and via manual `workflow_dispatch`:
+
+- **contracts (required):** Installs the pinned official prebuilt Stellar CLI
+  (`stellar/stellar-cli@v30.0.1`, no `cargo install` / dbus build), runs
+  `cargo test`, then `CARGO_TARGET_DIR=target stellar contract build`.
+- **frontend (required):** Rejects a nested `apps/web/package-lock.json`, runs
+  `npm ci`, `npm run check:workspace`, `npm run lint`,
+  `npm run typecheck --workspace=web`, `npm run test --workspace=web`, the
+  production-health and factory WASM rotation script tests, and a production
+  Next.js build.
+- **e2e (advisory):** Installs Playwright Chromium and runs
+  `npm run test:e2e:ci --workspace=web`. Marked `continue-on-error: true` while
+  browser-level E2E hardening is tracked in #265 and #395.
+
+### Local equivalents
+
+Install [Rust](https://www.rustup.rs/) and the
+[Stellar CLI](https://developers.stellar.org/docs/tools/cli/install-cli)
+(prefer the install script or Homebrew so you get a prebuilt binary), then from
+the repository root:
+
+```bash
+# Contracts job
+npm run test:contracts
+npm run build:contracts
+
+# Frontend job
+npm ci
+npm run check:workspace
+npm run lint
+npm run typecheck --workspace=web
+npm run test --workspace=web
+node --test scripts/check-production-health.test.mjs
+node --test scripts/rotate-factory-wasm.test.mjs
+NEXT_PUBLIC_STELLAR_NETWORK=testnet \
+  NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org \
+  npm run build --workspace=web
+
+# E2E job (advisory in CI)
+npx --workspace=web playwright install --with-deps chromium
+npm run test:e2e:ci --workspace=web
+```
+
 ## End-to-end flow
 
 1. Connect Freighter on testnet
