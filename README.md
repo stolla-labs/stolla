@@ -140,6 +140,8 @@ To preview or test command construction without broadcasting transactions:
 
 Restart the development server after deploying so Next.js picks up the new values.
 
+To rotate the approved NFT/Governor WASM hashes on an existing factory (dry-run by default), see the [factory WASM rotation runbook](docs/factory-wasm-rotation-runbook.md).
+
 ## Deploy the web app
 
 Import the repo on [Vercel](https://vercel.com/new).

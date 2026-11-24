@@ -15,7 +15,7 @@
     "lint": "npm run lint --workspace=web",
     "clean": "node scripts/clean.mjs",
     "typecheck": "npm run typecheck --workspace=web",
-    "test": "npm run test --workspace=web && node --test scripts/check-production-health.test.mjs scripts/deploy-testnet.test.mjs apps/web/scripts/contract-ttl-keeper.test.mjs",
+    "test": "npm run test --workspace=web && node --test scripts/check-production-health.test.mjs scripts/deploy-testnet.test.mjs scripts/rotate-factory-wasm.test.mjs apps/web/scripts/contract-ttl-keeper.test.mjs",
     "keeper:ttl": "node apps/web/scripts/contract-ttl-keeper.mjs",
     "test:web": "npm run test --workspace=web",
     "test:e2e": "npm run test:e2e --workspace=web",
