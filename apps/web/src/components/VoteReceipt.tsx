@@ -9,6 +9,11 @@ import {
   resolveStellarNetworkId,
   type StellarNetworkId,
 } from "@/lib/stellarExplorer";
+import {
+  buildProposalShareText,
+  buildWarpcastIntentUrl,
+  buildXIntentUrl,
+} from "@/lib/shareIntent";
 import { truncateMiddle } from "@/lib/truncate";
 
 const VOTE_TYPE_LABELS: Record<number, string> = {
@@ -132,6 +137,28 @@ export function VoteReceipt(props: VoteReceiptProps) {
         <AppButton tone="secondary" onClick={() => void handleShare()}>
           Share receipt
         </AppButton>
+        <AppLinkButton
+          href={buildXIntentUrl(
+            buildProposalShareText(communityName),
+            window.location.href,
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          tone="secondary"
+        >
+          Share on X
+        </AppLinkButton>
+        <AppLinkButton
+          href={buildWarpcastIntentUrl(
+            buildProposalShareText(communityName),
+            window.location.href,
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          tone="secondary"
+        >
+          Share on Warpcast
+        </AppLinkButton>
         {explorerUrl && (
           <AppLinkButton
             href={explorerUrl}
