@@ -29,6 +29,7 @@ import { getE2EBridge } from "@/lib/e2eMock";
 import { config } from "@/lib/stellar";
 import { buildStellarExplorerTxUrl } from "@/lib/stellarExplorer";
 import type { TransactionLifecycleStage } from "@/lib/transactionLifecycle";
+import { emitAnalytics } from "@/lib/analytics";
 
 type Props = {
   metadata: CommunityMetadataDraft;
@@ -235,6 +236,7 @@ export function CommunityDeploymentPanel({
       setRegistryState("checking");
       const result = await adapter.verifyRegistry(expected);
       if (result === "verified") {
+        emitAnalytics("create_finish", { network, outcome: "verified" }, { onceKey: expected.id });
         setRegistryState("verified");
         setStage("success");
         setMessage("The canonical registry record matches the deployed NFT and Governor contracts.");
@@ -264,7 +266,7 @@ export function CommunityDeploymentPanel({
         "The transaction is confirmed, but the canonical registry record is not visible yet. Retry verification without reconnecting your wallet.",
       );
     },
-    [adapter, recoveryKey],
+    [adapter, network, recoveryKey],
   );
 
   const observeTransaction = useCallback(

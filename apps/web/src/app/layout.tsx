@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Inter, Syne } from "next/font/google";
 import { SkipLink } from "@/components/SkipLink";
+import { AnalyticsPageView } from "@/components/AnalyticsPageView";
 import "./globals.css";
 import "./landing.css";
 
@@ -47,6 +48,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-[#0b0f19] text-slate-100">
         <SkipLink />
+        <AnalyticsPageView />
         {children}
       </body>
     </html>
