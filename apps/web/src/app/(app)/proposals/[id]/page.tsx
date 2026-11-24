@@ -37,6 +37,7 @@ import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { ProposalMetadataDisplay } from "@/components/proposal/ProposalMetadataDisplay";
 import { LEDGER_TIME_ASSUMPTION_NOTE } from "@/lib/community/governanceDisplay";
 import { formatProposalDeadlineEstimate } from "@/lib/proposalDeadline";
+import { emitAnalytics } from "@/lib/analytics";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
 
@@ -366,6 +367,7 @@ export default function ProposalDetailPage({
         governor: governorContractId,
         voter: address,
       });
+      emitAnalytics("first_vote", { outcome: "confirmed" }, { onceKey: "browser-session" });
       return { hash };
     });
   }

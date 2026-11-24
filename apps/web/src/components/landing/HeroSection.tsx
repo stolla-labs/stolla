@@ -52,8 +52,8 @@ export function HeroSection() {
             and network fees, and confirmation is not instant.
           </p>
           <div className="landing-hero-actions">
-            <LinkButton href="/communities/create">Create a community</LinkButton>
-            <LinkButton href="/communities" variant="ghost">
+            <LinkButton href="/communities/create" analyticsEvent="landing_cta" analyticsProperties={{ source: "hero", destination: "create" }}>Create a community</LinkButton>
+            <LinkButton href="/communities" variant="ghost" analyticsEvent="landing_cta" analyticsProperties={{ source: "hero", destination: "browse" }}>
               Browse communities
             </LinkButton>
           </div>

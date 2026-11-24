@@ -7,6 +7,7 @@ const footerLinks = {
     { href: "/proposals", label: "Proposals" },
   ],
   resources: [
+    { href: "/privacy", label: "Privacy & analytics", external: false },
     {
       href: "https://developers.stellar.org/docs/build/smart-contracts",
       label: "Soroban Docs",
@@ -73,14 +74,14 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               {footerLinks.resources.map((link) => (
                 <li key={link.href}>
-                  <a
+                  {link.external === false ? <Link href={link.href} className="text-sm text-slate-400 transition-colors hover:text-indigo-300">{link.label}</Link> : <a
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-slate-400 transition-colors hover:text-indigo-300"
                   >
                     {link.label}
-                  </a>
+                  </a>}
                 </li>
               ))}
             </ul>

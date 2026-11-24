@@ -21,10 +21,10 @@ export function CtaSection() {
               requires approval, network fees, and ledger confirmation.
             </p>
             <div className="landing-hero-actions">
-              <LinkButton href="/communities/create">
+              <LinkButton href="/communities/create" analyticsEvent="landing_cta" analyticsProperties={{ source: "final_cta", destination: "create" }}>
                 Create a community
               </LinkButton>
-              <LinkButton href="/communities" variant="ghost">
+              <LinkButton href="/communities" variant="ghost" analyticsEvent="landing_cta" analyticsProperties={{ source: "final_cta", destination: "browse" }}>
                 Browse communities
               </LinkButton>
             </div>

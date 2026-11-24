@@ -14,6 +14,7 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const RESOURCE_LINKS = [
+  { href: "/privacy", label: "Privacy & analytics", internal: true },
   { href: "https://stellar.org", label: "Stellar" },
   { href: "https://developers.stellar.org", label: "Developers" },
   {
@@ -89,14 +90,14 @@ export function LandingFooter() {
             <ul className="landing-footer-list">
               {RESOURCE_LINKS.map((link) => (
                 <li key={link.label}>
-                  <a
+                  {"internal" in link ? <Link href={link.href} className="landing-footer-link">{link.label}</Link> : <a
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="landing-footer-link"
                   >
                     {link.label} ↗
-                  </a>
+                  </a>}
                 </li>
               ))}
             </ul>

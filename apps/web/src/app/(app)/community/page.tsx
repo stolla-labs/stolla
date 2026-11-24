@@ -33,7 +33,7 @@ import {
 } from "@/lib/contracts";
 import { useCommunityRegistry } from "@/lib/community/CommunityRegistryProvider";
 import type { Community } from "@/lib/community/types";
-import { contractIds } from "@/lib/stellar";
+import { activeNetwork, contractIds } from "@/lib/stellar";
 import { MainnetWriteGate, mainnetWritesBlocked } from "@/components/MainnetWriteGate";
 import { Skeleton, SkeletonStat } from "@/components/ui/Skeleton";
 import { AppButton } from "@/components/ui/AppButton";
@@ -44,6 +44,7 @@ import { BatchMintPanel } from "@/components/community/BatchMintPanel";
 import { communityWriteBlockReason } from "@/lib/community/communityActivity";
 import { CommunityWriteBlockedNotice } from "@/components/community/CommunityActivityBadge";
 import { validateMintTokenUri } from "@/lib/community/mint-token-uri";
+import { emitAnalytics } from "@/lib/analytics";
 import { SelfDelegateCallout } from "@/components/community/SelfDelegateCallout";
 import { VotingPowerCompositionDisplay } from "@/components/community/VotingPowerCompositionDisplay";
 import {
@@ -342,6 +343,7 @@ export default function CommunityPage() {
       return;
     }
 
+    emitAnalytics("claim_start", { network: activeNetwork.id });
     const result = await mintLifecycle.execute(async () => {
       const client = createNftClient({
         publicKey: address,
@@ -352,6 +354,7 @@ export default function CommunityPage() {
     });
 
     if (result.ok) {
+      emitAnalytics("claim_finish", { network: activeNetwork.id, outcome: "confirmed" });
       setStatus({
         message:
           result.result !== undefined && result.result !== null
