@@ -36,7 +36,7 @@ export function ProposalMetadataDisplay({ description }: { description: string }
           referrerPolicy="no-referrer"
           className="mt-4 inline-flex min-h-10 items-center rounded-lg border border-indigo-500/50 px-3 py-2 text-sm font-medium text-indigo-300 hover:bg-indigo-950/50"
         >
-          Open discussion
+          Join discussion
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
       )}

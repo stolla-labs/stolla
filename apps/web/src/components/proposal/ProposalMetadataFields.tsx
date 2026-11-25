@@ -51,7 +51,7 @@ export function ProposalMetadataFields({
         id="proposal-discussion-url"
         label="Discussion link"
         optional
-        help="Optional HTTPS link to the public discussion."
+        help="Link the public discussion so voters can deliberate before they decide. Optional, HTTPS only."
         value={value.discussionUrl ?? ""}
         error={errors.discussionUrl}
         maxLength={PROPOSAL_METADATA_LIMITS.discussionUrl}

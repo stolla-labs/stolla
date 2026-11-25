@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
 import type { ProposalSummary } from "@/lib/proposal-events";
+import { VERSIONED_PROPOSAL_DESCRIPTION } from "@/lib/proposal-metadata/fixtures";
 
 const FULL_ID = "ab".repeat(32);
 
@@ -202,5 +203,53 @@ describe("ProposalSummaryCard", () => {
       "href",
       `/proposals/${"ff".repeat(32)}`,
     );
+  });
+
+  it("surfaces a validated discussion link beside the detail link", () => {
+    const { container } = render(
+      <ProposalSummaryCard
+        summary={baseSummary({
+          description: VERSIONED_PROPOSAL_DESCRIPTION,
+        })}
+        showDescription
+        stateStatus="ready"
+        stateLabel="Active"
+      />,
+    );
+
+    const discussionLink = screen.getByRole("link", {
+      name: /Join discussion/,
+    });
+    expect(discussionLink).toHaveAttribute(
+      "href",
+      "https://forum.example.org/t/governance-tooling",
+    );
+    expect(discussionLink).toHaveAttribute("target", "_blank");
+    expect(discussionLink).toHaveAttribute("rel", "noopener noreferrer");
+    // The discussion link lives outside the nested detail link (no <a> in <a>).
+    expect(discussionLink.closest("a")).toBe(discussionLink);
+    expect(container.querySelectorAll("a")).toHaveLength(2);
+  });
+
+  it("omits the discussion link for legacy or discussion-free descriptions", () => {
+    const { rerender } = render(
+      <ProposalSummaryCard
+        summary={baseSummary({ description: "Plain legacy proposal text" })}
+        showDescription
+        stateStatus="ready"
+        stateLabel="Active"
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /Join discussion/ })).toBeNull();
+
+    rerender(
+      <ProposalSummaryCard
+        summary={baseSummary({ description: null })}
+        showDescription
+        stateStatus="ready"
+        stateLabel="Active"
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /Join discussion/ })).toBeNull();
   });
 });
