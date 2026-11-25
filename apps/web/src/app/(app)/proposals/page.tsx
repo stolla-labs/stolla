@@ -13,6 +13,13 @@ import {
   PROPOSAL_STATE_ORDER,
 } from "@/lib/proposalState";
 import { ALL_PROPOSAL_STATES } from "@/lib/proposals/state-filter";
+import {
+  graphFromProposals,
+  resolveSupersede,
+  supersedeLinkCaution,
+  supersedeLinkError,
+  supersedeTargetProblem,
+} from "@/lib/proposals/supersede";
 import { useProposalStateQuery } from "@/lib/proposals/useProposalStateQuery";
 import { contractIds } from "@/lib/stellar";
 import { SkeletonProposalRow } from "@/components/ui/Skeleton";
@@ -116,6 +123,26 @@ export default function ProposalsPage() {
   const proposalIds = useMemo(
     () => proposals.map((proposal) => proposal.id),
     [proposals],
+  );
+  const supersedeGraph = useMemo(() => graphFromProposals(proposals), [proposals]);
+  /* Only an unambiguous single replacement earns a marker in the list. A fork
+     or a loop is explained on the proposal itself, where there is room to say
+     what it means, rather than compressed into one word on a row. */
+  const supersedesCaution = useMemo(
+    () =>
+      supersedeLinkCaution(
+        metadataDraft.supersedes
+          ? supersedeTargetProblem(supersedeGraph, metadataDraft.supersedes)
+          : null,
+      ),
+    [metadataDraft.supersedes, supersedeGraph],
+  );
+  const supersededByFor = useCallback(
+    (id: string) => {
+      const resolved = resolveSupersede(supersedeGraph, id);
+      return resolved.kind === "replaced" ? resolved.canonical : null;
+    },
+    [supersedeGraph],
   );
 
   const descriptionsById = useMemo(() => {
@@ -244,7 +271,8 @@ export default function ProposalsPage() {
     setMetadataDraft((current) => {
       const next = {
         ...current,
-        [field]: field === "discussionUrl" ? value || null : value,
+        [field]:
+          field === "discussionUrl" || field === "supersedes" ? value || null : value,
       };
       if (contractIds.governor) writeProposalDraft(contractIds.governor, next);
       return next;
@@ -281,8 +309,18 @@ export default function ProposalsPage() {
       summary: metadataDraft.summary,
       body: metadataDraft.body,
       discussionUrl: metadataDraft.discussionUrl,
+      supersedes: metadataDraft.supersedes ?? null,
     };
     const nextErrors = validateProposalMetadataDraft(draftSnapshot);
+    const linkProblem = draftSnapshot.supersedes
+      ? supersedeTargetProblem(supersedeGraph, draftSnapshot.supersedes)
+      : null;
+    /* An id this browser has not discovered is a caution rather than a
+       refusal: proposal history can be partial, so refusing would block a
+       legitimate amendment whenever the RPC retention window is short. A loop
+       can never be true, so it is refused. */
+    const linkError = supersedeLinkError(linkProblem);
+    if (linkError) nextErrors.supersedes = linkError;
     if (hasProposalMetadataErrors(nextErrors)) {
       setMetadataErrors(nextErrors);
       setStatus(null);
@@ -429,6 +467,7 @@ export default function ProposalsPage() {
               <ProposalMetadataFields
                 value={metadataDraft}
                 errors={metadataErrors}
+                supersedesCaution={supersedesCaution}
                 onChange={updateMetadataField}
               />
             </div>
@@ -642,6 +681,7 @@ export default function ProposalsPage() {
                       }}
                       currentLedger={latestLedger}
                       showDescription
+                      supersededBy={supersededByFor(id)}
                       stateStatus={stateStatus}
                       stateLabel={stateLabel}
                       onRetryState={

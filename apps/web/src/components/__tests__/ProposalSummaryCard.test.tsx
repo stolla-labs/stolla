@@ -203,4 +203,32 @@ describe("ProposalSummaryCard", () => {
       `/proposals/${"ff".repeat(32)}`,
     );
   });
+  it("marks a proposal another one has replaced", () => {
+    const replacement = "cd".repeat(32);
+    render(
+      <ProposalSummaryCard
+        summary={baseSummary()}
+        stateStatus="ready"
+        stateLabel="Defeated"
+        supersededBy={replacement}
+      />,
+    );
+
+    // A replaced proposal listed as plainly as the current one is how a voter
+    // ends up reading the wrong text.
+    expect(screen.getByTestId("superseded-chip")).toHaveAttribute(
+      "title",
+      `Replaced by proposal ${replacement}`,
+    );
+    expect(screen.getByRole("link").getAttribute("aria-label")).toContain("superseded");
+  });
+
+  it("says nothing about superseding when nothing replaced it", () => {
+    render(
+      <ProposalSummaryCard summary={baseSummary()} stateStatus="ready" stateLabel="Active" />,
+    );
+
+    expect(screen.queryByTestId("superseded-chip")).toBeNull();
+    expect(screen.getByRole("link").getAttribute("aria-label")).not.toContain("superseded");
+  });
 });

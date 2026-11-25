@@ -21,7 +21,8 @@ export function isEmptyProposalDraft(draft: ProposalMetadataDraft): boolean {
     isBlank(draft.title) &&
     isBlank(draft.summary) &&
     isBlank(draft.body) &&
-    isBlank(draft.discussionUrl)
+    isBlank(draft.discussionUrl) &&
+    isBlank(draft.supersedes ?? null)
   );
 }
 
@@ -32,7 +33,12 @@ function isValidDraftShape(value: unknown): value is ProposalMetadataDraft {
     typeof draft.title === "string" &&
     typeof draft.summary === "string" &&
     typeof draft.body === "string" &&
-    (draft.discussionUrl === null || typeof draft.discussionUrl === "string")
+    (draft.discussionUrl === null || typeof draft.discussionUrl === "string") &&
+    /* Absent, not null, in every draft written before supersede links
+       existed — those drafts must still restore. */
+    (draft.supersedes === undefined ||
+      draft.supersedes === null ||
+      typeof draft.supersedes === "string")
   );
 }
 

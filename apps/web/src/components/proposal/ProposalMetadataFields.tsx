@@ -8,10 +8,17 @@ import type {
 export function ProposalMetadataFields({
   value,
   errors,
+  supersedesCaution = null,
   onChange,
 }: {
   value: ProposalMetadataDraft;
   errors: ProposalMetadataErrors;
+  /**
+   * A doubt about the supersede link that must not block submission — an id
+   * no loaded proposal has, which with partial history is not the same thing
+   * as an id that does not exist.
+   */
+  supersedesCaution?: string | null;
   onChange: (field: ProposalMetadataField, value: string) => void;
 }) {
   return (
@@ -59,6 +66,22 @@ export function ProposalMetadataFields({
         placeholder="https://forum.example.org/t/proposal"
         onChange={(next) => onChange("discussionUrl", next)}
       />
+      <ProposalField
+        id="proposal-supersedes"
+        label="Replaces proposal"
+        optional
+        help="Optional id of the proposal this one replaces. Both proposals then say so."
+        value={value.supersedes ?? ""}
+        error={errors.supersedes}
+        maxLength={PROPOSAL_METADATA_LIMITS.supersedes}
+        placeholder="64-character proposal id"
+        onChange={(next) => onChange("supersedes", next)}
+      />
+      {supersedesCaution && !errors.supersedes && (
+        <p role="status" className="-mt-2 text-xs text-amber-200" data-testid="supersedes-caution">
+          {supersedesCaution}
+        </p>
+      )}
       {errors.envelope && (
         <p role="alert" className="text-xs text-rose-300">
           {errors.envelope}
