@@ -16,6 +16,7 @@ import { getCommunity } from "@/lib/community/registry";
 import type { CommunityView } from "@/lib/community/types";
 import { createReadOnlyGovernorClient } from "@/lib/contracts";
 import { parseProposalDescription } from "@/lib/proposal-metadata";
+import { graphFromProposals, resolveSupersede } from "@/lib/proposals/supersede";
 import {
   ProposalState,
   PROPOSAL_STATE_LABELS,
@@ -44,6 +45,16 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
         new Map(discovered.map((proposal) => [proposal.id, proposal])).values(),
       ),
     [discovered],
+  );
+  const supersedeGraph = useMemo(() => graphFromProposals(proposals), [proposals]);
+  /* Only an unambiguous single replacement earns a marker in the list; a fork
+     or a loop is explained on the proposal itself, where there is room for it. */
+  const supersededByFor = useCallback(
+    (id: string) => {
+      const resolved = resolveSupersede(supersedeGraph, id);
+      return resolved.kind === "replaced" ? resolved.canonical : null;
+    },
+    [supersedeGraph],
   );
   const [states, setStates] = useState<
     Record<string, ProposalState | "unavailable">
@@ -288,6 +299,7 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
                     }}
                     currentLedger={latestLedger}
                     showDescription
+                    supersededBy={supersededByFor(proposal.id)}
                     href={`/communities/${community.record.id}/proposals/${proposal.id}`}
                     stateStatus={
                       unavailable

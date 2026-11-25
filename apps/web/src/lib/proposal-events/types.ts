@@ -67,8 +67,12 @@ export interface ProposalSummary {
    */
   description: string;
 
-  /** Parsed structured metadata when the description contains a valid v1 envelope. */
-  metadata?: import("@/lib/proposal-metadata").ProposalMetadataV1 | null;
+  /**
+   * Parsed structured metadata when the description contains a valid envelope
+   * of any version. v2 carries the `supersedes` link; read it with
+   * `supersedesOf` rather than by checking the version at each call site.
+   */
+  metadata?: import("@/lib/proposal-metadata").ProposalMetadata | null;
 }
 
 // ---------------------------------------------------------------------------

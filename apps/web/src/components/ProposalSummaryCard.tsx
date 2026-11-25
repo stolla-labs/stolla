@@ -37,6 +37,12 @@ export type ProposalSummaryCardProps = {
   isRetryingState?: boolean;
   onCopyId?: () => void;
   href?: string;
+  /**
+   * The proposal that replaced this one, when the caller has resolved the
+   * supersede links. A list showing a replaced proposal as plainly as the
+   * current one is how a voter reads the wrong text.
+   */
+  supersededBy?: string | null;
 };
 
 function OptionalMeta({
@@ -113,6 +119,7 @@ export function ProposalSummaryCard({
   isRetryingState = false,
   onCopyId,
   href,
+  supersededBy = null,
 }: ProposalSummaryCardProps) {
   const { proposalId } = summary;
   const stateText =
@@ -132,7 +139,9 @@ export function ProposalSummaryCard({
       <Link
         href={href ?? `/proposals/${proposalId}`}
         className="flex min-w-0 flex-1 flex-col gap-0.5 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
-        aria-label={`View proposal ${proposalId}, state ${stateText}`}
+        aria-label={`View proposal ${proposalId}, state ${stateText}${
+          supersededBy ? ", superseded" : ""
+        }`}
       >
         <span className="flex min-w-0 items-center gap-3">
           <span className="truncate font-mono" title={proposalId}>
@@ -147,6 +156,15 @@ export function ProposalSummaryCard({
           >
             {stateText}
           </span>
+          {supersededBy && (
+            <span
+              className="shrink-0 rounded border border-amber-700/70 px-1.5 py-0.5 text-xs text-amber-200"
+              title={`Replaced by proposal ${supersededBy}`}
+              data-testid="superseded-chip"
+            >
+              Superseded
+            </span>
+          )}
         </span>
         {showDescription && (
           <DescriptionText description={summary.description} />

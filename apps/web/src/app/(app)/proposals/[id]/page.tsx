@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useWallet } from "@/context/WalletProvider";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppLinkButton } from "@/components/ui/AppLinkButton";
@@ -35,6 +35,8 @@ import { fmt, pct } from "@/lib/voteDisplay";
 import { PartialHistoryNotice } from "@/components/PartialHistoryNotice";
 import { useProposalDiscovery } from "@/hooks/useProposalDiscovery";
 import { ProposalMetadataDisplay } from "@/components/proposal/ProposalMetadataDisplay";
+import { SupersedeNotice } from "@/components/proposal/SupersedeNotice";
+import { graphFromProposals } from "@/lib/proposals/supersede";
 import { LEDGER_TIME_ASSUMPTION_NOTE } from "@/lib/community/governanceDisplay";
 import { formatProposalDeadlineEstimate } from "@/lib/proposalDeadline";
 import { emitAnalytics } from "@/lib/analytics";
@@ -76,6 +78,13 @@ export default function ProposalDetailPage({
   const proposalDescription = discoveredProposals.find(
     (candidate) => candidate.id.toLowerCase() === proposalIdHex.toLowerCase(),
   )?.description;
+  /* The reverse link cannot be stored: a Governor description is immutable, so
+     the older proposal never learns about its replacement. It is derived from
+     the same discovered history this page already has. */
+  const supersedeGraph = useMemo(
+    () => graphFromProposals(discoveredProposals),
+    [discoveredProposals],
+  );
   const { address, signTransaction } = useWallet();
   const [result, setResult] = useState<ProposalResult | null>(null);
   const [loadErrorId, setLoadErrorId] = useState<string | null>(null);
@@ -657,7 +666,19 @@ export default function ProposalDetailPage({
 
       <section className="mt-6 rounded-xl border border-slate-800 bg-[#151b2b] p-5">
         {proposalDescription ? (
-          <ProposalMetadataDisplay description={proposalDescription} />
+          <>
+            <SupersedeNotice
+              graph={supersedeGraph}
+              proposalId={proposalIdHex}
+              hrefFor={(id) =>
+                community
+                  ? `/communities/${community.record.id}/proposals/${id}`
+                  : `/proposals/${id}`
+              }
+              historyIncomplete={partialHistory !== null}
+            />
+            <ProposalMetadataDisplay description={proposalDescription} />
+          </>
         ) : (
           <div>
             <h2 className="font-semibold text-slate-100">Description</h2>
