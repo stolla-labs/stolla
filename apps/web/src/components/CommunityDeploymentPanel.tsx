@@ -48,6 +48,13 @@ type Props = {
    * `permissionlessCreate` capability.
    */
   permissionlessCreate?: boolean;
+  /**
+   * Set when the launch rehearsal has an unresolved hard gate (issue #534).
+   * The panel's own checks cover what it can see — the wallet's network, the
+   * factory owner, the write flag — and this carries the ones it cannot, such
+   * as whether the deploying account holds XLM for fees and reserves.
+   */
+  rehearsalBlocked?: boolean;
 };
 
 export type FactoryAuthorizationStatus =
@@ -99,6 +106,7 @@ export function CommunityDeploymentPanel({
   factoryId,
   confirmed,
   permissionlessCreate = activeCapabilities.permissionlessCreate.available,
+  rehearsalBlocked = false,
 }: Props) {
   const {
     address,
@@ -389,6 +397,7 @@ export function CommunityDeploymentPanel({
       inFlight.current ||
       !simulation ||
       !confirmed ||
+      rehearsalBlocked ||
       networkMismatch ||
       walletNetworkUnknown ||
       authorization !== "ready" ||
@@ -583,6 +592,7 @@ export function CommunityDeploymentPanel({
             onClick={() => void simulate()}
             disabled={
               mainnetWritesBlocked() ||
+              rehearsalBlocked ||
               busy ||
               !confirmed ||
               !address ||
@@ -604,6 +614,7 @@ export function CommunityDeploymentPanel({
               onClick={() => void submit()}
               disabled={
                 mainnetWritesBlocked() ||
+                rehearsalBlocked ||
                 busy ||
                 !confirmed ||
                 networkMismatch ||

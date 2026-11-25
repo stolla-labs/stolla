@@ -37,7 +37,10 @@ import type { PublishedCommunityMetadata } from "@/lib/community/publishMetadata
 import { getE2EBridge } from "@/lib/e2eMock";
 import { formatBytes, IPFS_UPLOAD_LIMITS } from "@/lib/ipfs/limits";
 import { createIpfsPinClient, validateImageFile } from "@/lib/ipfs/pin";
-import { contractIds } from "@/lib/stellar";
+import { MainnetRehearsalChecklist } from "@/components/mainnet/MainnetRehearsalChecklist";
+import { useMainnetRehearsal } from "@/hooks/useMainnetRehearsal";
+import { NETWORKS } from "@/lib/network";
+import { activeCapabilities, contractIds } from "@/lib/stellar";
 import { resolveStellarNetworkId } from "@/lib/stellarExplorer";
 
 /**
@@ -75,6 +78,10 @@ const inputClassName =
 
 export function CommunityCreationWizard() {
   const network = resolveStellarNetworkId();
+  const rehearsal = useMainnetRehearsal({
+    networkId: network,
+    capabilities: activeCapabilities,
+  });
   const storageKey = communityWizardStorageKey(network);
   const recoveryKey = communityDeploymentRecoveryKey(network);
   const { address, connect, isConnecting } = useWallet();
@@ -607,11 +614,18 @@ export function CommunityCreationWizard() {
               Back to governance
             </AppButton>
           </div>
+          <MainnetRehearsalChecklist
+            checks={rehearsal.checks}
+            verdict={rehearsal.verdict}
+            onToggle={rehearsal.toggle}
+            networkLabel={NETWORKS[network].label}
+          />
           <CommunityDeploymentPanel
             metadata={draft}
             payload={published?.payload ?? null}
             governance={governance}
             network={network}
+            rehearsalBlocked={rehearsal.verdict.blocked}
             factoryId={contractIds.communityFactory}
             confirmed={confirmed}
           />
