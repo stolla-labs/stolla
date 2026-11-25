@@ -14,6 +14,8 @@ import {
 } from "@/lib/proposalState";
 import { ALL_PROPOSAL_STATES } from "@/lib/proposals/state-filter";
 import { useProposalStateQuery } from "@/lib/proposals/useProposalStateQuery";
+import { GLOBAL_SCOPE } from "@/lib/saved-views";
+import { SavedViews } from "@/components/proposals/SavedViews";
 import { contractIds } from "@/lib/stellar";
 import { SkeletonProposalRow } from "@/components/ui/Skeleton";
 import { ProposalSummaryCard } from "@/components/ProposalSummaryCard";
@@ -534,6 +536,14 @@ export default function ProposalsPage() {
             </div>
           )}
         </div>
+        {uniqueProposalIds.length > 0 && (
+          <div className="mt-3">
+            <SavedViews
+              scope={GLOBAL_SCOPE}
+              onApply={() => setVisibleCount(LOAD_MORE_PAGE_SIZE)}
+            />
+          </div>
+        )}
         {!address && (
           <p className="mt-2 text-sm text-slate-500">
             Proposal history is public. You can review it without connecting a

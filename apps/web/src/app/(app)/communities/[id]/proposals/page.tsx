@@ -23,6 +23,7 @@ import {
 } from "@/lib/proposalState";
 import { ALL_PROPOSAL_STATES } from "@/lib/proposals/state-filter";
 import { useProposalStateQuery } from "@/lib/proposals/useProposalStateQuery";
+import { SavedViews } from "@/components/proposals/SavedViews";
 
 const PAGE_SIZE = 10;
 const ALL_STATES = ALL_PROPOSAL_STATES;
@@ -212,6 +213,15 @@ function ScopedProposalHistory({ community }: { community: CommunityView }) {
               Clear search
             </button>
           )}
+        </div>
+
+        <div className="mt-3">
+          <SavedViews
+            /* Scoped to the registry id rather than the URL segment: the same
+               community reached by a different route keeps its presets. */
+            scope={community.record.id}
+            onApply={() => setVisibleCount(PAGE_SIZE)}
+          />
         </div>
 
         {loading && proposals.length === 0 && (
