@@ -25,6 +25,10 @@ import {
   validateGovernanceDraft,
 } from "@/lib/community/schema";
 import {
+  draftPreviewHref,
+  mintDraftPreviewToken,
+} from "@/lib/community/draft-preview";
+import {
   COMMUNITY_WIZARD_DRAFT_VERSION,
   communityWizardStorageKey,
   EMPTY_METADATA_DRAFT,
@@ -320,6 +324,20 @@ export function CommunityCreationWizard() {
     setStep(3);
   }
 
+  function openPreview() {
+    /* A fresh token on every click, so a link copied out of the address bar
+       stops working as soon as the creator previews again — and after half an
+       hour regardless. */
+    const token = mintDraftPreviewToken(network);
+    if (!token) {
+      setAccountStatus(
+        "Preview needs browser storage, which is unavailable here. Your draft is not being saved either.",
+      );
+      return;
+    }
+    window.open(draftPreviewHref(token), "_blank", "noopener,noreferrer");
+  }
+
   function discardDraft() {
     if (
       dirty &&
@@ -605,6 +623,13 @@ export function CommunityCreationWizard() {
               onClick={() => setStep(2)}
             >
               Back to governance
+            </AppButton>
+            <AppButton
+              tone="secondary"
+              data-testid="open-draft-preview"
+              onClick={openPreview}
+            >
+              Preview as a reader
             </AppButton>
           </div>
           <CommunityDeploymentPanel
