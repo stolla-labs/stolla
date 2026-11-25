@@ -101,6 +101,18 @@ function DescriptionText({
 }
 
 /**
+ * Extracts a validated discussion URL from a proposal description so the list
+ * card can surface a "Join discussion" affordance beside the detail link.
+ * Returns null when the description is legacy, missing, or has no discussion.
+ */
+function discussionUrlFor(description: string | null | undefined): string | null {
+  const trimmed = description?.trim() ?? "";
+  if (!trimmed) return null;
+  const parsed = parseProposalDescription(trimmed);
+  return parsed.kind === "versioned" ? parsed.metadata.discussionUrl : null;
+}
+
+/**
  * Reusable proposal list card backed by {@link ProposalSummary}.
  */
 export function ProposalSummaryCard({
@@ -126,6 +138,9 @@ export function ProposalSummaryCard({
     currentLedger,
     summary.voteSnapshot,
   );
+  const discussionUrl = showDescription
+    ? discussionUrlFor(summary.description)
+    : null;
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-800 bg-[#151b2b] px-4 py-3 text-sm text-slate-200 hover:bg-slate-800/80">
@@ -170,6 +185,18 @@ export function ProposalSummaryCard({
         )}
       </Link>
       <div className="flex shrink-0 items-center gap-1">
+        {discussionUrl && (
+          <a
+            href={discussionUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            referrerPolicy="no-referrer"
+            className="rounded border border-indigo-600/60 px-2 py-1 text-xs font-medium text-indigo-300 transition hover:bg-indigo-950/50"
+          >
+            Join discussion
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        )}
         {stateStatus === "unavailable" && onRetryState && (
           <button
             type="button"

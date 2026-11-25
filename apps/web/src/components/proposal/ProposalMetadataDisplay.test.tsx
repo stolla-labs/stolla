@@ -11,11 +11,11 @@ describe("ProposalMetadataDisplay", () => {
     render(<ProposalMetadataDisplay description={VERSIONED_PROPOSAL_DESCRIPTION} />);
     expect(screen.getByRole("heading", { name: /Fund Unicode/ })).toBeVisible();
     expect(screen.getByText(/deterministic proposal metadata/)).toBeVisible();
-    expect(screen.getByRole("link", { name: /Open discussion/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Join discussion/ })).toHaveAttribute(
       "rel",
       "noopener noreferrer",
     );
-    expect(screen.getByRole("link", { name: /Open discussion/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Join discussion/ })).toHaveAttribute(
       "target",
       "_blank",
     );
